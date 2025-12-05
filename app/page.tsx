@@ -1,11 +1,16 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link as LinkIcon } from "lucide-react";
+import { Link as LinkIcon, User, Lock, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 
 export default function LoginPage() {
+  const [showPassword, setShowPassword] = useState(false);
+
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#008f80]/70 via-[#008f80]/10 to-gray-50">
 
@@ -17,8 +22,8 @@ export default function LoginPage() {
           <div className="flex flex-col items-center gap-6 text-center">
             <div className="relative w-80 h-70">
               <Image
-                src="/logo-fmg.png"
-                alt="Federación Mexicana de Gimnasia Logo"
+                src="/logo-gimnasios.png"
+                alt="Gimnasios Unidos del Estado de México Logo"
                 fill
                 className="object-contain"
                 priority
@@ -27,7 +32,7 @@ export default function LoginPage() {
             <div className="space-y-2">
               <h1 className="text-3xl font-bold tracking-tight text-gray-900">Bienvenido</h1>
               <p className="text-gray-500">
-                Acceder a Intranet FMG
+                Acceder a GUEM
               </p>
             </div>
           </div>
@@ -46,11 +51,14 @@ export default function LoginPage() {
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-white font-medium">Correo electrónico</Label>
-                <Input
-                  id="email"
-                  placeholder="m@ejemplo.com"
-                  className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-11 focus-visible:ring-[#00a896] focus-visible:border-[#00a896]"
-                />
+                <div className="relative">
+                  <Input
+                    id="email"
+                    placeholder="m@ejemplo.com"
+                    className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-11 pl-10 focus-visible:ring-[#00a896] focus-visible:border-[#00a896]"
+                  />
+                  <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                </div>
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
@@ -59,12 +67,26 @@ export default function LoginPage() {
                     ¿Olvidaste tu contraseña?
                   </Link>
                 </div>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="********"
-                  className="bg-white border-gray-300 text-gray-400 h-11 focus-visible:ring-[#00a896] focus-visible:border-[#00a896]"
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="********"
+                    className="bg-white border-gray-300 text-gray-400 h-11 pl-10 pr-10 focus-visible:ring-[#00a896] focus-visible:border-[#00a896]"
+                  />
+                  <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-3 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
 
               <Button className="w-full bg-[#0ac5b2]/90 hover:bg-[#008f80]/70 text-white font-bold h-11 shadow-lg shadow-[#00a896]/20 rounded-lg transition-all mt-2">
