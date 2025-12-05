@@ -3,80 +3,81 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#008f80]/70 via-[#008f80]/10 to-gray-50">
 
+      {/* Main Card Container */}
+      <div className="w-full max-w-4xl bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex flex-col md:flex-row">
 
-
-      {/* Main Card */}
-      <div className="w-full max-w-1/4  space-y-6 bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-        {/* Logo / Brand */}
-        <div className="mb-8 flex flex-col items-center gap-3 text-gray-700">
-          <div className="w-24 h-24 bg-white rounded-xl flex items-center justify-center border border-gray-200 shadow-sm">
-            <span className="font-bold text-sm text-[#00a896]">FMG</span>
-          </div>
-          <div>
-            <span className="font-medium text-lg">Federación Mexicana de Gimnasia</span>
-          </div>
-
-        </div>
-        <div className="text-center space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-gray-900">Bienvenido</h1>
-          <p className="text-sm text-gray-500">
-            Inicia sesión para acceder a la Intranet
-          </p>
-        </div>
-
-        <div className="space-y-4">
-
-
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t border-gray-200" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white px-2 text-gray-500">Credenciales</span>
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700">Correo electrónico</Label>
-              <Input
-                id="email"
-                placeholder="m@ejemplo.com"
-                className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 focus-visible:ring-[#00a896] focus-visible:border-[#00a896]"
+        {/* Left Column: Logo & Welcome */}
+        <div className="w-full md:w-1/2 p-8 flex flex-col items-center justify-center bg-gray-50/50 border-b md:border-b-0 md:border-r border-gray-100">
+          <div className="flex flex-col items-center gap-6 text-center">
+            <div className="relative w-80 h-70">
+              <Image
+                src="/logo-fmg.png"
+                alt="Federación Mexicana de Gimnasia Logo"
+                fill
+                className="object-contain"
+                priority
               />
             </div>
             <div className="space-y-2">
-              <div className="flex items-center justify-between">
-                <Label htmlFor="password" className="text-gray-700">Contraseña</Label>
-                <Link href="#" className="text-xs text-gray-500 hover:text-[#00a896]">
-                  ¿Olvidaste tu contraseña?
-                </Link>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-900">Bienvenido</h1>
+              <p className="text-gray-500">
+                Acceder a Intranet FMG
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column: Form */}
+        <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-[#008f80]/90">
+          <div className="space-y-6">
+
+            <div className="relative py-2">
+              <div className="relative flex justify-center">
+                <span className="px-3 text-white text-xl font-medium">Iniciar Sesión</span>
               </div>
-              <Input
-                id="password"
-                type="password"
-                className="bg-white border-gray-300 text-gray-900 focus-visible:ring-[#00a896] focus-visible:border-[#00a896]"
-              />
             </div>
 
-            <Button className="w-full bg-[#00a896] hover:bg-[#008f80] text-white font-medium h-10 shadow-md shadow-[#00a896]/20">
-              Ingresar
-            </Button>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-white font-medium">Correo electrónico</Label>
+                <Input
+                  id="email"
+                  placeholder="m@ejemplo.com"
+                  className="bg-white border-gray-300 text-gray-900 placeholder:text-gray-400 h-11 focus-visible:ring-[#00a896] focus-visible:border-[#00a896]"
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="password" className="text-white font-medium">Contraseña</Label>
+                  <Link href="#" className="text-xs text-white hover:text-gray-200 font-medium">
+                    ¿Olvidaste tu contraseña?
+                  </Link>
+                </div>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="********"
+                  className="bg-white border-gray-300 text-gray-400 h-11 focus-visible:ring-[#00a896] focus-visible:border-[#00a896]"
+                />
+              </div>
+
+              <Button className="w-full bg-[#0ac5b2]/90 hover:bg-[#008f80]/70 text-white font-bold h-11 shadow-lg shadow-[#00a896]/20 rounded-lg transition-all mt-2">
+                Ingresar
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-8 text-center text-xs text-gray-200">
+            <p className=" transition-colors">Powered by Next.js</p>
           </div>
         </div>
 
-      </div>
-
-      {/* Footer Legal */}
-      <div className="mt-8 text-center text-xs text-gray-500 max-w-xs">
-        <Link href="#" className="underline hover:text-gray-800">Powered by</Link>
-
-        <Link href="#" className="underline hover:text-gray-800">Next.js</Link>.
       </div>
     </div>
   );
