@@ -1,0 +1,47 @@
+[
+    {
+        "id": "1",
+        "nombre": "Juan Perez",
+        "asociacion": "ESTADO DE MÉXICO",
+        "club": "Club 1",
+        "estatus": "Alta",
+        "noAfiliado": "12345",
+        "curp": "CURP1234567890"
+    },
+    {
+        "id": "2",
+        "nombre": "Maria Lopez",
+        "asociacion": "ESTADO DE MÉXICO",
+        "club": "Club 2",
+        "estatus": "Baja",
+        "noAfiliado": "67890",
+        "curp": "CURP0987654321"
+    },
+    {
+        "id": "3",
+        "nombre": "Carlos Sanchez",
+        "asociacion": "ESTADO DE MÉXICO",
+        "club": "Club 1",
+        "estatus": "Alta",
+        "noAfiliado": "11223",
+        "curp": "CURP1122334455"
+    },
+    {
+        "id": "4",
+        "nombre": "Ana Martinez",
+        "asociacion": "ESTADO DE MÉXICO",
+        "club": "Club 2",
+        "estatus": "Alta",
+        "noAfiliado": "33445",
+        "curp": "CURP5566778899"
+    },
+    {
+        "id": "5",
+        "nombre": "Pedro Ramirez",
+        "asociacion": "ESTADO DE MÉXICO",
+        "club": "Club 1",
+        "estatus": "Baja",
+        "noAfiliado": "55667",
+        "curp": "CURP9988776655"
+    }
+]

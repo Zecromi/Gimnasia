@@ -2,9 +2,9 @@
 
 import * as React from "react"
 import {
-    Home,
-    Users,
-    Building2,
+    ShieldHalf,
+    BadgeInfo,
+    Handshake,
     Settings,
     Search,
 } from "lucide-react"
@@ -28,25 +28,21 @@ import {
 // Menu items.
 const items = [
     {
-        title: "Overview",
+        title: "Mi informacion",
         url: "/",
-        icon: Home,
+        icon: BadgeInfo,
     },
     {
-        title: "Customers",
-        url: "#",
-        icon: Users,
+        title: "Clubes",
+        url: "/clubes",
+        icon: ShieldHalf,
     },
     {
-        title: "Products",
-        url: "#",
-        icon: Building2,
+        title: "Afiliados",
+        url: "/afiliados",
+        icon: Handshake,
     },
-    {
-        title: "Settings",
-        url: "#",
-        icon: Settings,
-    },
+
 ]
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -55,7 +51,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel>Application</SidebarGroupLabel>
+                    <SidebarGroupLabel>Gimnasia</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
                             {items.map((item) => (
