@@ -88,8 +88,8 @@ export function ClubesView() {
                             <div className="grid gap-4">
                                 {/* Row 1 */}
                                 <div className="grid gap-3 md:grid-cols-12">
-                                    <InputGroup label="Nombre :" htmlFor="nombre" className="md:col-span-5">
-                                        <Input id="nombre" placeholder="" className="h-8" />
+                                    <InputGroup label="Afiliado :" htmlFor="afiliado" className="md:col-span-5">
+                                        <Input id="afiliado" placeholder="" className="h-8" />
                                     </InputGroup>
                                     <InputGroup label="Asociación :" className="md:col-span-3">
                                         <Input value="ESTADO DE MÉXICO" disabled className="bg-muted/50 h-8" />
