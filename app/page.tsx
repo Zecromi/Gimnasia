@@ -3,22 +3,55 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Link as LinkIcon, User, Lock, Eye, EyeOff, Sun, Moon } from "lucide-react";
+import { Link as LinkIcon, User, Lock, Eye, EyeOff, Sun, Moon, Loader2 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
+import { login } from "@/lib/auth";
+import { useRouter } from "next/navigation";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
+  const [usuario, setUsuario] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const router = useRouter();
+
   // Avoid hydration mismatch
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError("");
+
+    try {
+      const data = await login(usuario, password);
+      console.log("Login successful:", data);
+
+      // Check if the API returned a valid token or success indicator
+      // Adjust this condition based on the actual API response structure
+      if (data) {
+        // Redirect or store token here
+        // router.push("/dashboard"); 
+        alert("Login exitoso (ver consola)");
+      } else {
+        setError("Credenciales inválidas");
+      }
+    } catch (err) {
+      setError("Error al iniciar sesión. Por favor intenta de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!mounted) {
     return null;
@@ -85,13 +118,15 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <div className="space-y-4">
+            <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-white dark:text-zinc-300 font-medium transition-colors duration-500">Correo electrónico</Label>
+                <Label htmlFor="email" className="text-white dark:text-zinc-300 font-medium transition-colors duration-500">Usuario</Label>
                 <div className="relative">
                   <Input
                     id="email"
-                    placeholder="m@ejemplo.com"
+                    placeholder="Usuario"
+                    value={usuario}
+                    onChange={(e) => setUsuario(e.target.value)}
                     className="bg-white dark:bg-zinc-950 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 h-11 pl-10 focus-visible:ring-[#00a896] focus-visible:border-[#00a896] transition-colors duration-500"
                   />
                   <User className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-zinc-500 transition-colors duration-500" />
@@ -109,6 +144,8 @@ export default function LoginPage() {
                     id="password"
                     type={showPassword ? "text" : "password"}
                     placeholder="********"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                     className="bg-white dark:bg-zinc-950 border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-zinc-500 h-11 pl-10 pr-10 focus-visible:ring-[#00a896] focus-visible:border-[#00a896] transition-colors duration-500"
                   />
                   <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400 dark:text-zinc-500 transition-colors duration-500" />
@@ -126,10 +163,27 @@ export default function LoginPage() {
                 </div>
               </div>
 
-              <Button className="w-full bg-[#0ac5b2]/90 dark:bg-[#00a896] hover:bg-[#008f80]/70 dark:hover:bg-[#008f80] text-white font-bold h-11 shadow-lg shadow-[#00a896]/20 rounded-lg transition-all mt-2">
-                Ingresar
+              {error && (
+                <div className="text-red-200 text-sm text-center bg-red-500/20 p-2 rounded">
+                  {error}
+                </div>
+              )}
+
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-[#0ac5b2]/90 dark:bg-[#00a896] hover:bg-[#008f80]/70 dark:hover:bg-[#008f80] text-white font-bold h-11 shadow-lg shadow-[#00a896]/20 rounded-lg transition-all mt-2"
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Ingresando...
+                  </>
+                ) : (
+                  "Ingresar"
+                )}
               </Button>
-            </div>
+            </form>
           </div>
 
           <div className="mt-8 text-center text-xs text-gray-200 dark:text-zinc-500 transition-colors duration-500">
