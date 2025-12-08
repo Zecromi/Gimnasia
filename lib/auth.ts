@@ -1,10 +1,8 @@
-import axios from "axios";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://www.conjurweb.com/ApiServ";
+import api from "./axios";
 
 export const login = async (usuario: string, password: string) => {
     try {
-        const response = await axios.get(`${API_URL}/getTokenLogin${usuario}/${password}`);
+        const response = await api.get(`/getTokenLogin?usuario=${usuario}&password=${password}`);
         return response.data;
     } catch (error) {
         console.error("Login error:", error);
