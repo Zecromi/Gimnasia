@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Search, Plus } from "lucide-react"
+import { Search } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,15 +15,10 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip"
 
 import { columns } from "./clubes-columns"
 import { DataTable } from "./data-table"
+import { ClubDialog } from "./club-dialog"
 import clubesData from "./clubes-data.json"
 
 export function ClubesView() {
@@ -32,7 +27,7 @@ export function ClubesView() {
     useEffect(() => {
         const timer = setTimeout(() => {
             setIsLoading(false)
-        }, 2000)
+        }, 500)
 
         return () => clearTimeout(timer)
     }, [])
@@ -88,30 +83,20 @@ export function ClubesView() {
                             <div className="grid gap-4">
                                 {/* Row 1 */}
                                 <div className="grid gap-3 md:grid-cols-12">
-                                    <InputGroup label="Afiliado :" htmlFor="afiliado" className="md:col-span-5">
-                                        <Input id="afiliado" placeholder="" className="h-8" />
+                                    <InputGroup label="Nombre de club :" htmlFor="club" className="md:col-span-5">
+                                        <Input id="club" placeholder="" className="h-8" />
                                     </InputGroup>
                                     <InputGroup label="Asociación :" className="md:col-span-3">
                                         <Input value="ESTADO DE MÉXICO" disabled className="bg-muted/50 h-8" />
                                     </InputGroup>
-                                    <InputGroup label="Club :" htmlFor="club" className="md:col-span-2">
-                                        <Select>
-                                            <SelectTrigger id="club" size="sm">
-                                                <SelectValue placeholder="Todos" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="todos">Todos</SelectItem>
-                                                <SelectItem value="club1">Club 1</SelectItem>
-                                                <SelectItem value="club2">Club 2</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </InputGroup>
+
                                     <InputGroup label="Estatus :" htmlFor="estatus" className="md:col-span-2">
-                                        <Select defaultValue="alta">
+                                        <Select defaultValue="todos">
                                             <SelectTrigger id="estatus" size="sm">
                                                 <SelectValue placeholder="Seleccionar" />
                                             </SelectTrigger>
                                             <SelectContent>
+                                                <SelectItem value="todos">Todos</SelectItem>
                                                 <SelectItem value="alta">Alta</SelectItem>
                                                 <SelectItem value="baja">Baja</SelectItem>
                                             </SelectContent>
@@ -121,12 +106,10 @@ export function ClubesView() {
 
                                 {/* Row 2 */}
                                 <div className="grid gap-3 md:grid-cols-12 items-end">
-                                    <InputGroup label="No. Afiliado :" htmlFor="no-afiliado" className="md:col-span-5">
-                                        <Input id="no-afiliado" placeholder="" className="h-8" />
+                                    <InputGroup label="Email :" htmlFor="email" className="md:col-span-5">
+                                        <Input id="email" placeholder="" className="h-8" />
                                     </InputGroup>
-                                    <InputGroup label="CURP :" htmlFor="curp" className="md:col-span-5">
-                                        <Input id="curp" placeholder="" className="h-8" />
-                                    </InputGroup>
+
                                     <div className="md:col-span-2 flex justify-end">
                                         <Button className="w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white h-8">
                                             <Search className="mr-2 h-4 w-4" />
@@ -137,18 +120,7 @@ export function ClubesView() {
                             </div>
                         </div>
                         <div className="col-span-1 flex items-center justify-center border-l pl-4">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
-                                            <Plus className="h-6 w-6" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Nuevo Afiliado</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
+                            <ClubDialog />
                         </div>
                     </div>
                 </CardContent>

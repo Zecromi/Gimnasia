@@ -29,17 +29,17 @@ import {
 const items = [
     {
         title: "Mi informacion",
-        url: "/",
+        url: "/dashboard",
         icon: BadgeInfo,
     },
     {
         title: "Clubes",
-        url: "/clubes",
+        url: "/dashboard/clubes",
         icon: ShieldHalf,
     },
     {
         title: "Afiliados",
-        url: "/afiliados",
+        url: "/dashboard/afiliados",
         icon: Handshake,
     },
 

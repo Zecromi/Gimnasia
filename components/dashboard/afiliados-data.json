@@ -1,0 +1,72 @@
+[
+    {
+        "id": "1",
+        "noAfiliado": "12345",
+        "afiliado": "Juan Perez",
+        "asociacion": "ESTADO DE MÉXICO",
+        "club": "Club 1",
+        "curp": "CURP1234567890",
+        "modalidades": "Gimnasia Artística",
+        "segundaValidacionCurp": "Validado",
+        "pagoAfiliacion": "Pagado",
+        "pagoSeguro": "Pagado",
+        "tipoAfiliado": "Deportista",
+        "estatus": "Alta"
+    },
+    {
+        "id": "2",
+        "noAfiliado": "67890",
+        "afiliado": "Maria Lopez",
+        "asociacion": "ESTADO DE MÉXICO",
+        "club": "Club 2",
+        "curp": "CURP0987654321",
+        "modalidades": "Gimnasia Rítmica",
+        "segundaValidacionCurp": "Pendiente",
+        "pagoAfiliacion": "Pendiente",
+        "pagoSeguro": "Pagado",
+        "tipoAfiliado": "Entrenador",
+        "estatus": "Baja"
+    },
+    {
+        "id": "3",
+        "noAfiliado": "11223",
+        "afiliado": "Carlos Sanchez",
+        "asociacion": "ESTADO DE MÉXICO",
+        "club": "Club 1",
+        "curp": "CURP1122334455",
+        "modalidades": "Trampolín",
+        "segundaValidacionCurp": "Validado",
+        "pagoAfiliacion": "Pagado",
+        "pagoSeguro": "Pendiente",
+        "tipoAfiliado": "Juez",
+        "estatus": "Alta"
+    },
+    {
+        "id": "4",
+        "noAfiliado": "33445",
+        "afiliado": "Ana Martinez",
+        "asociacion": "ESTADO DE MÉXICO",
+        "club": "Club 2",
+        "curp": "CURP5566778899",
+        "modalidades": "Gimnasia Artística",
+        "segundaValidacionCurp": "Validado",
+        "pagoAfiliacion": "Pagado",
+        "pagoSeguro": "Pagado",
+        "tipoAfiliado": "Deportista",
+        "estatus": "Alta"
+    },
+    {
+        "id": "5",
+        "noAfiliado": "55667",
+        "afiliado": "Pedro Ramirez",
+        "asociacion": "ESTADO DE MÉXICO",
+        "club": "Club 1",
+        "curp": "CURP9988776655",
+        "modalidades": "Acrobática",
+        "segundaValidacionCurp": "Pendiente",
+        "pagoAfiliacion": "Pendiente",
+        "pagoSeguro": "Pendiente",
+        "tipoAfiliado": "Deportista",
+        "estatus": "Baja"
+    }
+]
