@@ -39,13 +39,8 @@ export default function LoginPage() {
       console.log("Login successful:", data);
 
       if (data) {
-        // Store token in cookie
-        // Adjust based on your API response structure, e.g., if token is in data.token
-        // For now, storing the whole data object or a 'token' field if it exists
         const tokenToStore = data.token ? data.token : JSON.stringify(data);
-        Cookies.set('token', tokenToStore, { expires: 1 }); // Expires in 1 day
-
-        // Redirect to dashboard
+        Cookies.set('token', tokenToStore, { expires: 1 }); 
         router.push("/dashboard");
       } else {
         setError("Credenciales inválidas");
