@@ -16,3 +16,21 @@ export const login = async (usuario: string, password: string) => {
         throw error;
     }
 };
+
+export const logout = async (token: string) => {
+    try {
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+        const formData = new FormData();
+        formData.append('token', token);
+
+        const response = await axios.post(`${apiUrl}/logout`, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    } catch (error) {
+        console.error("Logout error:", error);
+        throw error;
+    }
+};
