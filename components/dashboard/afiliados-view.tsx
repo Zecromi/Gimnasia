@@ -25,6 +25,7 @@ import {
 import { columns } from "./afiliados-columns"
 import { DataTable } from "./data-table"
 import afiliadosData from "./afiliados-data.json"
+import { AfiliadosDialog } from "./afiliados-dialog"
 
 export function AfiliadosView() {
     const [isLoading, setIsLoading] = useState(true)
@@ -138,18 +139,7 @@ export function AfiliadosView() {
                             </div>
                         </div>
                         <div className="col-span-1 flex items-center justify-center border-l pl-4">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
-                                            <Plus className="h-6 w-6" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Nuevo Afiliado</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
+                            <AfiliadosDialog />
                         </div>
                     </div>
                 </CardContent>

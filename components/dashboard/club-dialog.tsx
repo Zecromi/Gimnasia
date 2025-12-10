@@ -92,7 +92,7 @@ export function ClubDialog() {
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
-            <DialogContent className="sm:max-w-[1000px] max-h-[90vh] flex flex-col p-0">
+            <DialogContent className="sm:max-w-[auto] max-h-[auto] flex flex-col p-0">
                 <DialogHeader className="px-6 py-4 border-b">
                     <DialogTitle>Nuevo Club</DialogTitle>
                 </DialogHeader>
