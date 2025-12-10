@@ -8,6 +8,8 @@ import {
     useReactTable,
     getFilteredRowModel,
     ColumnFiltersState,
+    SortingState,
+    getSortedRowModel,
 } from "@tanstack/react-table"
 
 import {
@@ -31,6 +33,7 @@ export function DataTable<TData, TValue>({
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
     )
+    const [sorting, setSorting] = React.useState<SortingState>([])
 
     const table = useReactTable({
         data,
@@ -38,8 +41,11 @@ export function DataTable<TData, TValue>({
         getCoreRowModel: getCoreRowModel(),
         onColumnFiltersChange: setColumnFilters,
         getFilteredRowModel: getFilteredRowModel(),
+        onSortingChange: setSorting,
+        getSortedRowModel: getSortedRowModel(),
         state: {
             columnFilters,
+            sorting,
         },
     })
 

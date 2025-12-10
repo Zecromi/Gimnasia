@@ -1,5 +1,5 @@
 import { Metadata } from "next"
-import { Users, Building2 } from "lucide-react"
+import { Users, Building2, HandCoins, CircleCheck, CopyX, BookDown, ShieldCheck, BadgeCheck, BadgeX, ShieldX } from "lucide-react"
 
 import { SummaryCard } from "@/components/dashboard/summary-card"
 import { Badge } from "@/components/ui/badge"
@@ -23,10 +23,10 @@ export default function DashboardPage() {
                             total={<Badge variant="secondary" className="text-2xl"><CountUp end={9393} /></Badge>}
                             icon={Users}
                             stats={[
-                                { label: "Afiliados con afiliación pagada", value: <Badge variant="secondary" className="text-2xl"><CountUp end={2576} /></Badge> },
-                                { label: "Afiliados en Alta", value: <Badge variant="secondary" className="text-2xl"><CountUp end={5084} /></Badge> },
-                                { label: "Afiliados activos sin 2da validación CURP", value: <Badge variant="secondary" className="text-2xl"><CountUp end={5} /></Badge> },
-                                { label: "Afiliados en Baja", value: <Badge variant="secondary" className="text-2xl"><CountUp end={4309} /></Badge> },
+                                { label: "Afiliados con afiliación pagada", value: <Badge variant="secondary" className="text-2xl"><CountUp end={2576} /></Badge>, icon: HandCoins },
+                                { label: "Afiliados en Alta", value: <Badge variant="secondary" className="text-2xl"><CountUp end={5084} /></Badge>, icon: CircleCheck },
+                                { label: "Afiliados activos sin 2da validación CURP", value: <Badge variant="secondary" className="text-2xl"><CountUp end={5} /></Badge>, icon: CopyX },
+                                { label: "Afiliados en Baja", value: <Badge variant="secondary" className="text-2xl"><CountUp end={4309} /></Badge>, icon: BookDown },
                             ]}
                         />
                         <SummaryCard
@@ -34,10 +34,10 @@ export default function DashboardPage() {
                             total={<Badge variant="secondary" className="text-2xl"><CountUp end={104} /></Badge>}
                             icon={Building2}
                             stats={[
-                                { label: "Clubes activos", value: <Badge variant="secondary" className="text-2xl"><CountUp end={99} /></Badge> },
-                                { label: "Clubes activos con membresía", value: <Badge variant="secondary" className="text-2xl"><CountUp end={75} /></Badge> },
-                                { label: "Clubes activos sin membresía", value: <Badge variant="secondary" className="text-2xl"><CountUp end={217} /></Badge> },
-                                { label: "Clubes inactivos", value: <Badge variant="secondary" className="text-2xl"><CountUp end={5} /></Badge> },
+                                { label: "Clubes activos", value: <Badge variant="secondary" className="text-2xl"><CountUp end={99} /></Badge>, icon: ShieldCheck },
+                                { label: "Clubes activos con membresía", value: <Badge variant="secondary" className="text-2xl"><CountUp end={75} /></Badge>, icon: BadgeCheck },
+                                { label: "Clubes activos sin membresía", value: <Badge variant="secondary" className="text-2xl"><CountUp end={217} /></Badge>, icon: BadgeX },
+                                { label: "Clubes inactivos", value: <Badge variant="secondary" className="text-2xl"><CountUp end={5} /></Badge>, icon: ShieldX },
                             ]}
                         />
                     </div>
