@@ -1,0 +1,52 @@
+[
+    {
+        "id": "1",
+        "noEvento": "EVT-001",
+        "nombre": "Campeonato Nacional 2024",
+        "lugar": "Ciudad de México",
+        "sede": "Gimnasio Juan de la Barrera",
+        "fechaEvento": "2024-05-15",
+        "tieneRestriccion": true,
+        "estatus": "Abierto"
+    },
+    {
+        "id": "2",
+        "noEvento": "EVT-002",
+        "nombre": "Copa Regional Norte",
+        "lugar": "Monterrey",
+        "sede": "Arena Monterrey",
+        "fechaEvento": "2024-06-20",
+        "tieneRestriccion": false,
+        "estatus": "En Curso"
+    },
+    {
+        "id": "3",
+        "noEvento": "EVT-003",
+        "nombre": "Torneo de Verano",
+        "lugar": "Guadalajara",
+        "sede": "Polideportivo López Mateos",
+        "fechaEvento": "2024-07-10",
+        "tieneRestriccion": false,
+        "estatus": "Cerrado"
+    },
+    {
+        "id": "4",
+        "noEvento": "EVT-004",
+        "nombre": "Gala de Invierno",
+        "lugar": "Puebla",
+        "sede": "Gimnasio Miguel Hidalgo",
+        "fechaEvento": "2024-12-05",
+        "tieneRestriccion": true,
+        "estatus": "Abierto"
+    },
+    {
+        "id": "5",
+        "noEvento": "EVT-005",
+        "nombre": "Interclubes 2024",
+        "lugar": "Querétaro",
+        "sede": "Auditorio Josefa Ortiz",
+        "fechaEvento": "2024-09-12",
+        "tieneRestriccion": false,
+        "estatus": "Cancelado"
+    }
+]
