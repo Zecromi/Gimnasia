@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Lock, Eye, EyeOff, Sun, Moon, Loader2 } from "lucide-react";
+import { User, Lock, Eye, EyeOff, Sun, Moon, Loader2, Heading1 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
@@ -40,7 +40,7 @@ export default function LoginPage() {
 
       if (data) {
         const tokenToStore = data.token ? data.token : JSON.stringify(data);
-        Cookies.set('token', tokenToStore, { expires: 1 }); 
+        Cookies.set('token', tokenToStore, { expires: 1 });
         router.push("/dashboard");
       } else {
         setError("Credenciales inválidas");
@@ -57,7 +57,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#008f80]/70 via-[#008f80]/10 to-gray-50 dark:from-zinc-900 dark:via-zinc-950 dark:to-black transition-colors duration-500">
+    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-[#008f80]/50 via-[#008f80]/10 to-red-500/15 dark:from-zinc-900 dark:via-zinc-950 dark:to-black transition-colors duration-500">
 
       {/* Theme Toggle Button */}
       <div className="absolute bottom-4 right-4 z-50">
@@ -74,41 +74,41 @@ export default function LoginPage() {
       </div>
 
       {/* Main Card Container */}
-      <div className="w-full max-w-4xl bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl overflow-hidden border border-gray-100 dark:border-zinc-800 flex flex-col md:flex-row transition-colors duration-500">
+      <div className="w-full max-w-4xl bg-transparent gap-10 dark:transparent overflow-hidden border-none flex flex-col md:flex-row transition-colors duration-500">
 
         {/* Left Column: Logo & Welcome */}
         <motion.div
-          initial={{ x: -100, opacity: 0 }}
+          initial={{ x: 100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="w-full md:w-1/2 p-8 flex flex-col items-center justify-center bg-gray-50/50 dark:bg-zinc-900/50 border-b md:border-b-0 md:border-r border-gray-100 dark:border-zinc-800 transition-colors duration-500"
+          className="w-full md:w-1/2 flex flex-col items-center justify-center bg-transparent dark:bg-transparent border-none dark:border-zinc-800 transition-colors duration-500"
         >
           <div className="flex flex-col items-center gap-6 text-center">
-            <div className="relative w-77 h-52">
+            <div className="relative w-110 h-74 -mt-3">
               <Image
                 src="/logo-gimnasios.png"
                 alt="Gimnasios Unidos del Estado de México Logo"
                 fill
                 sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-contain rounded-xl dark:opacity-90"
+                className="object-contain rounded-2xl dark:opacity-80"
                 priority
               />
             </div>
             <div className="space-y-2">
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white transition-colors duration-500">Bienvenido</h1>
-              <p className="text-gray-500 dark:text-zinc-400 transition-colors duration-500">
-                Acceder a GUEM
-              </p>
+              <h1 className="text-3xl font-bold tracking-tight text-gray-800 dark:text-white transition-colors duration-500">Bienvenido</h1>
+              <h3 className="text-gray-500 dark:text-zinc-400 transition-colors text-xl duration-500 uppercase">
+                Acceder a Intranet GUEM
+              </h3>
             </div>
           </div>
         </motion.div>
 
         {/* Right Column: Form */}
         <motion.div
-          initial={{ x: 100, opacity: 0 }}
+          initial={{ x: -100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
-          className="w-full md:w-1/2 p-8 md:p-12 flex flex-col justify-center bg-[#008f80]/90 dark:bg-[#008f80]/20 transition-colors duration-500"
+          className="w-full md:w-1/2 p-8 md:p-12 flex flex-col rounded-2xl  justify-center bg-[#008f80]/90 dark:bg-[#008f80]/20 transition-colors duration-500"
         >
           <div className="space-y-6">
 
