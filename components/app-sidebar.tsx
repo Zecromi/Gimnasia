@@ -7,6 +7,7 @@ import {
     Handshake,
     Settings,
     Search,
+    Calendar,
 } from "lucide-react"
 
 import { ModeToggle } from "@/components/mode-toggle"
@@ -41,6 +42,11 @@ const items = [
         title: "Afiliados",
         url: "/dashboard/afiliados",
         icon: Handshake,
+    },
+    {
+        title: "Eventos",
+        url: "/dashboard/eventos",
+        icon: Calendar,
     },
 
 ]
