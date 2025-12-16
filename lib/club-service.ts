@@ -1,37 +1,50 @@
 
 import api from "./axios";
 
+export interface Estado {
+    id: number;
+    Nombre: string;
+}
+
+export interface CatalogsResponse {
+    Estados: Estado[];
+    // Add other endpoint response fields here if needed in the future
+}
+
+export const getGlobalInfo = async () => {
+    const response = await api.get<CatalogsResponse>("/GetInf");
+    return response.data;
+};
+
 export interface ClubDefinition {
     nombre: string;
     alias: string;
     rfc: string;
-    tipo_aparatos_nac: string; // "1" | "0"
-    tipo_aparatos_imp: string; // "1" | "0"
-    tipo_aparatos_fig: string; // "1" | "0"
-    latitud: string;
-    longitud: string;
+    tipo_aparatos_nac: boolean;
+    tipo_aparatos_imp: boolean;
+    tipo_aparatos_fig: boolean;
+    tipo_aparatos_otros: boolean;
+    latitud: null;
+    longitud: null;
     asociacion: string;
     email: string;
     web: string;
     id_club_principal: string;
+    fundacion: null;
+    sector: string;
+    tipo_instalaciones: string;
+    tel1: string;
     tel2: string;
-    fecha_alta: string;
-    fecha_baja: string;
-    id_Puesto: number;
 }
 
 export interface ClubAddress {
-    idClub: string;
+    idClub: number;
     calle: string;
     exterior: string;
     interior: string;
     colonia: string;
     cp: string;
-    nombre_contacto: string;
-    nombre_contacto2: string;
-    tipo_domicilio: string;
-    telefono1: string;
-    telefono2: string;
+    tipo_domicilio: number;
 }
 
 export interface SetClubPayload {
@@ -41,67 +54,61 @@ export interface SetClubPayload {
 }
 
 export const createClub = async (payload: SetClubPayload) => {
-    const response = await api.post("/ApiServ/SetClub", payload);
+    const response = await api.post("/SetClub", payload);
     return response.data;
 };
 
-export const mapFormDataToClubPayload = (formData: FormData): SetClubPayload => {
-    const getString = (key: string) => (formData.get(key) as string) || "";
-    // Checkbox returns "on" if checked, null if not. Assuming "1" for true based on string type requirement.
-    const getCheckbox = (key: string) => (formData.get(key) === "on" ? "1" : "0");
+export const mapStateToClubPayload = (data: any): SetClubPayload => {
+    const getString = (key: string) => (data[key] as string) || "";
+    // User requested booleans, but API says "varchar to int error", so we send 1 or 0.
+    const getInt = (key: string) => (data[key] ? 1 : 0);
 
     const demoClub: ClubDefinition = {
         nombre: getString("nombre"),
         alias: getString("alias"),
         rfc: getString("rfc"),
-        tipo_aparatos_nac: getCheckbox("nacionales"),
-        tipo_aparatos_imp: getCheckbox("importados"),
-        tipo_aparatos_fig: getCheckbox("homologados"),
-        latitud: "",
-        longitud: "",
+        tipo_aparatos_nac: false,
+        tipo_aparatos_imp: false,
+        tipo_aparatos_fig: false,
+        tipo_aparatos_otros: false,
+        latitud: null,
+        longitud: null,
         asociacion: getString("asociacion"),
         email: getString("email"),
         web: getString("web"),
-        id_club_principal: "",
+        id_club_principal: "123",
+        fundacion: null,
+        sector: getString("sector"),
+        tipo_instalaciones: getString("tipoInstalaciones"),
+        tel1: getString("telPrincipal"),
         tel2: getString("telSecundario"),
-        fecha_alta: getString("fundacion"),
-        fecha_baja: "",
-        id_Puesto: 0,
     };
 
     const dirClub1: ClubAddress = {
-        idClub: "",
+        idClub: 1,
         calle: getString("calle"),
         exterior: getString("numExt"),
         interior: getString("numInt"),
         colonia: getString("colonia"),
         cp: getString("cp"),
-        nombre_contacto: "",
-        nombre_contacto2: "",
-        tipo_domicilio: "Social",
-        telefono1: getString("telPrincipal"),
-        telefono2: getString("telMovil"),
+        tipo_domicilio: 1, // Social as string "1"
     };
 
-    const isIgual = formData.get("igualDomicilio") === "on";
+    const isIgual = !!data["igualDomicilio"];
 
     const dirClub2: ClubAddress = isIgual
         ? {
             ...dirClub1,
-            tipo_domicilio: "Fiscal",
+            tipo_domicilio: 0, // Fiscal as string "0"
         }
         : {
-            idClub: "",
+            idClub: 2,
             calle: getString("calleFiscal"),
             exterior: getString("numExtFiscal"),
             interior: getString("numIntFiscal"),
             colonia: getString("coloniaFiscal"),
             cp: getString("cpFiscal"),
-            nombre_contacto: "",
-            nombre_contacto2: "",
-            tipo_domicilio: "Fiscal",
-            telefono1: "",
-            telefono2: "",
+            tipo_domicilio: 0 // Fiscal as string "0"
         };
 
     return {
