@@ -38,7 +38,6 @@ export interface ClubDefinition {
 }
 
 export interface ClubAddress {
-    idClub: number;
     calle: string;
     exterior: string;
     interior: string;
@@ -49,8 +48,8 @@ export interface ClubAddress {
 
 export interface SetClubPayload {
     demoClub: ClubDefinition[];
-    dirClub1: ClubAddress[];
-    dirClub2: ClubAddress[];
+    DirClub1: ClubAddress[];
+    DirClub2: ClubAddress[];
 }
 
 export const createClub = async (payload: SetClubPayload) => {
@@ -67,31 +66,30 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
         nombre: getString("nombre"),
         alias: getString("alias"),
         rfc: getString("rfc"),
-        tipo_aparatos_nac: "",
-        tipo_aparatos_imp: "",
-        tipo_aparatos_fig: "",
-        tipo_aparatos_otros: "",
-        latitud: "",
-        longitud: "",
+        tipo_aparatos_nac: "1",
+        tipo_aparatos_imp: "0",
+        tipo_aparatos_fig: "0",
+        tipo_aparatos_otros: "0",
+        latitud: "0",
+        longitud: "0",
         asociacion: getString("asociacion"),
         email: getString("email"),
         web: getString("web"),
         id_club_principal: "123",
-        fundacion: "",
-        sector: getString("sector"),
-        tipo_instalaciones: getString("tipoInstalaciones"),
+        fundacion: "10/12/2025",
+        sector: "0",
+        tipo_instalaciones: "0",
         tel1: getString("telPrincipal"),
         tel2: getString("telSecundario"),
     };
 
     const dirClub1: ClubAddress = {
-        idClub: "1",
         calle: getString("calle"),
         exterior: getString("numExt"),
         interior: getString("numInt"),
         colonia: getString("colonia"),
         cp: getString("cp"),
-        tipo_domicilio: "1", // Social as string "1"
+        tipo_domicilio: "postal", // Social as string "1"
     };
 
     const isIgual = !!data["igualDomicilio"];
@@ -99,21 +97,20 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
     const dirClub2: ClubAddress = isIgual
         ? {
             ...dirClub1,
-            tipo_domicilio: "0", // Fiscal as string "0"
+            tipo_domicilio: "postal", // Fiscal as string "0"
         }
         : {
-            idClub: "2",
             calle: getString("calleFiscal"),
             exterior: getString("numExtFiscal"),
             interior: getString("numIntFiscal"),
             colonia: getString("coloniaFiscal"),
             cp: getString("cpFiscal"),
-            tipo_domicilio: "0" // Fiscal as string "0"
+            tipo_domicilio: "fiscal" // Fiscal as string "0"
         };
 
     return {
         demoClub: [demoClub],
-        dirClub1: [dirClub1],
-        dirClub2: [dirClub2],
+        DirClub1: [dirClub1],
+        DirClub2: [dirClub2],
     };
 };
