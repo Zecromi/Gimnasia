@@ -20,17 +20,17 @@ export interface ClubDefinition {
     nombre: string;
     alias: string;
     rfc: string;
-    tipo_aparatos_nac: boolean;
-    tipo_aparatos_imp: boolean;
-    tipo_aparatos_fig: boolean;
-    tipo_aparatos_otros: boolean;
-    latitud: null;
-    longitud: null;
+    tipo_aparatos_nac: string;
+    tipo_aparatos_imp: string;
+    tipo_aparatos_fig: string;
+    tipo_aparatos_otros: string;
+    latitud: string;
+    longitud: string;
     asociacion: string;
     email: string;
     web: string;
     id_club_principal: string;
-    fundacion: null;
+    fundacion: string;
     sector: string;
     tipo_instalaciones: string;
     tel1: string;
@@ -44,7 +44,7 @@ export interface ClubAddress {
     interior: string;
     colonia: string;
     cp: string;
-    tipo_domicilio: number;
+    tipo_domicilio: string;
 }
 
 export interface SetClubPayload {
@@ -61,23 +61,23 @@ export const createClub = async (payload: SetClubPayload) => {
 export const mapStateToClubPayload = (data: any): SetClubPayload => {
     const getString = (key: string) => (data[key] as string) || "";
     // User requested booleans, but API says "varchar to int error", so we send 1 or 0.
-    const getInt = (key: string) => (data[key] ? 1 : 0);
+    const getInt = (key: string) => (data[key] ? "1" : "0");
 
     const demoClub: ClubDefinition = {
         nombre: getString("nombre"),
         alias: getString("alias"),
         rfc: getString("rfc"),
-        tipo_aparatos_nac: false,
-        tipo_aparatos_imp: false,
-        tipo_aparatos_fig: false,
-        tipo_aparatos_otros: false,
-        latitud: null,
-        longitud: null,
+        tipo_aparatos_nac: "",
+        tipo_aparatos_imp: "",
+        tipo_aparatos_fig: "",
+        tipo_aparatos_otros: "",
+        latitud: "",
+        longitud: "",
         asociacion: getString("asociacion"),
         email: getString("email"),
         web: getString("web"),
         id_club_principal: "123",
-        fundacion: null,
+        fundacion: "",
         sector: getString("sector"),
         tipo_instalaciones: getString("tipoInstalaciones"),
         tel1: getString("telPrincipal"),
@@ -85,13 +85,13 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
     };
 
     const dirClub1: ClubAddress = {
-        idClub: 1,
+        idClub: "1",
         calle: getString("calle"),
         exterior: getString("numExt"),
         interior: getString("numInt"),
         colonia: getString("colonia"),
         cp: getString("cp"),
-        tipo_domicilio: 1, // Social as string "1"
+        tipo_domicilio: "1", // Social as string "1"
     };
 
     const isIgual = !!data["igualDomicilio"];
@@ -99,16 +99,16 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
     const dirClub2: ClubAddress = isIgual
         ? {
             ...dirClub1,
-            tipo_domicilio: 0, // Fiscal as string "0"
+            tipo_domicilio: "0", // Fiscal as string "0"
         }
         : {
-            idClub: 2,
+            idClub: "2",
             calle: getString("calleFiscal"),
             exterior: getString("numExtFiscal"),
             interior: getString("numIntFiscal"),
             colonia: getString("coloniaFiscal"),
             cp: getString("cpFiscal"),
-            tipo_domicilio: 0 // Fiscal as string "0"
+            tipo_domicilio: "0" // Fiscal as string "0"
         };
 
     return {
