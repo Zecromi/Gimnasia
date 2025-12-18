@@ -302,9 +302,6 @@ function ClubForm({ className, id, onSubmit }: React.ComponentProps<"form">) {
                             <InputGroup label="Teléfono secundario" htmlFor="tel-secundario" className="col-span-12 md:col-span-3">
                                 <Input id="tel-secundario" name="telSecundario" value={formData.telSecundario} onChange={handleInputChange} />
                             </InputGroup>
-                            <InputGroup label="Teléfono móvil *" htmlFor="tel-movil" className="col-span-12 md:col-span-3">
-                                <Input id="tel-movil" name="telMovil" value={formData.telMovil} onChange={handleInputChange} />
-                            </InputGroup>
                             <div className="col-span-12 md:col-span-3 space-y-3">
                                 <Label>Tipo de instalaciones</Label>
                                 <RadioGroup value={formData.tipoInstalaciones} onValueChange={(v) => setFormData({ ...formData, tipoInstalaciones: v })} className="flex gap-4" name="tipoInstalaciones">

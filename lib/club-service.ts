@@ -59,26 +59,37 @@ export const createClub = async (payload: SetClubPayload) => {
 
 export const mapStateToClubPayload = (data: any): SetClubPayload => {
     const getString = (key: string) => (data[key] as string) || "";
-    // User requested booleans, but API says "varchar to int error", so we send 1 or 0.
-    const getInt = (key: string) => (data[key] ? "1" : "0");
+    // Send "1" if true, "0" if false
+    const getBoolString = (key: string) => (data[key] ? "1" : "0");
+
+    // Format date from YYYY-MM-DD to DD/MM/YYYY if possible, else return original
+    const formatDate = (dateStr: string) => {
+        if (!dateStr) return "";
+        // Assuming input type="date" returns YYYY-MM-DD
+        const parts = dateStr.split("-");
+        if (parts.length === 3) {
+            return `${parts[2]}/${parts[1]}/${parts[0]}`;
+        }
+        return dateStr;
+    };
 
     const demoClub: ClubDefinition = {
         nombre: getString("nombre"),
         alias: getString("alias"),
         rfc: getString("rfc"),
-        tipo_aparatos_nac: "1",
-        tipo_aparatos_imp: "0",
-        tipo_aparatos_fig: "0",
-        tipo_aparatos_otros: "0",
+        tipo_aparatos_nac: getBoolString("nacionales"),
+        tipo_aparatos_imp: getBoolString("importados"),
+        tipo_aparatos_fig: getBoolString("homologados"),
+        tipo_aparatos_otros: getBoolString("otros"),
         latitud: "0",
         longitud: "0",
         asociacion: getString("asociacion"),
         email: getString("email"),
         web: getString("web"),
-        id_club_principal: "123",
-        fundacion: "10/12/2025",
-        sector: "0",
-        tipo_instalaciones: "0",
+        id_club_principal: "", // keeping empty string as per prompt requirement
+        fundacion: formatDate(getString("fundacion")),
+        sector: data["sector"] === "privado" ? "1" : "0", // 1 privado, 0 publico
+        tipo_instalaciones: data["tipoInstalaciones"] === "rentadas" ? "1" : "0", // 1 rentada, 0 propia
         tel1: getString("telPrincipal"),
         tel2: getString("telSecundario"),
     };
@@ -89,7 +100,7 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
         interior: getString("numInt"),
         colonia: getString("colonia"),
         cp: getString("cp"),
-        tipo_domicilio: "postal", // Social as string "1"
+        tipo_domicilio: "Postal", // Fixed value
     };
 
     const isIgual = !!data["igualDomicilio"];
@@ -97,7 +108,7 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
     const dirClub2: ClubAddress = isIgual
         ? {
             ...dirClub1,
-            tipo_domicilio: "postal", // Fiscal as string "0"
+            tipo_domicilio: "Fiscal", // Fixed value
         }
         : {
             calle: getString("calleFiscal"),
@@ -105,7 +116,7 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
             interior: getString("numIntFiscal"),
             colonia: getString("coloniaFiscal"),
             cp: getString("cpFiscal"),
-            tipo_domicilio: "fiscal" // Fiscal as string "0"
+            tipo_domicilio: "Fiscal", // Fixed value
         };
 
     return {
