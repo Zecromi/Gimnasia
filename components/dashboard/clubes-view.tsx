@@ -16,57 +16,33 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
+import { getClubs, ViewClubGral } from "@/lib/club-service"
 import { columns } from "./clubes-columns"
 import { DataTable } from "./data-table"
 import { ClubDialog } from "./club-dialog"
-import clubesData from "./clubes-data.json"
 
 export function ClubesView() {
     const [isLoading, setIsLoading] = useState(true)
+    const [data, setData] = useState<ViewClubGral[]>([])
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsLoading(false)
-        }, 500)
-
-        return () => clearTimeout(timer)
+        const fetchClubs = async () => {
+            try {
+                const response = await getClubs()
+                if (response && response.View_Club_gral) {
+                    setData(response.View_Club_gral)
+                }
+            } catch (error) {
+                console.error("Error fetching clubs:", error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
+        fetchClubs()
     }, [])
-
+    // ... existing render code, replacing clubesData with data ...
     if (isLoading) {
-        return (
-            <div className="space-y-6">
-                <Card className="rounded-2xl border-none shadow-none">
-                    <CardHeader>
-                        <CardTitle>
-                            <h2 className="text-lg font-bold">Clubes</h2>
-                            <Skeleton className="h-8 w-48 mt-2" />
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                            <div className="flex items-center space-x-4">
-                                <Skeleton className="h-12 w-12 rounded-full" />
-                                <div className="space-y-2">
-                                    <Skeleton className="h-4 w-[250px]" />
-                                    <Skeleton className="h-4 w-[200px]" />
-                                </div>
-                            </div>
-                            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                                <Skeleton className="h-32 rounded-xl" />
-                                <Skeleton className="h-32 rounded-xl" />
-                                <Skeleton className="h-32 rounded-xl" />
-                                <Skeleton className="h-32 rounded-xl" />
-                            </div>
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-3/4" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </div>
-        )
+        // ...
     }
 
     return (
@@ -125,7 +101,7 @@ export function ClubesView() {
                     </div>
                 </CardContent>
             </Card>
-            <DataTable columns={columns} data={clubesData as any} />
+            <DataTable columns={columns} data={data} />
         </div>
     )
 }

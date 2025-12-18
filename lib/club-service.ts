@@ -125,3 +125,21 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
         DirClub2: [dirClub2],
     };
 };
+
+export interface ViewClubGral {
+    Club: string;
+    Alias: string;
+    Email: string;
+    Asociacion: string;
+    membresia: boolean;
+    Estatus: boolean;
+}
+
+export interface GetClubesResponse {
+    View_Club_gral: ViewClubGral[];
+}
+
+export const getClubs = async () => {
+    const response = await api.get<GetClubesResponse>("/GetClubes");
+    return response.data;
+};
