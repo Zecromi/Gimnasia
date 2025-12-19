@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { Plus, Save } from "lucide-react"
+import { toast } from "sonner"
 
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -58,7 +59,7 @@ export function ClubDialog() {
 
             const response = await createClub(payload)
             console.log("Response:", response)
-            alert("Club guardado exitosamente")
+            toast.success("Club guardado exitosamente")
             setOpen(false)
 
         } catch (error: any) {
@@ -66,7 +67,7 @@ export function ClubDialog() {
             if (error.response) {
                 console.error("Server Error Details:", error.response.data)
             }
-            alert("Error al guardar el club")
+            toast.error("Error al guardar el club")
         } finally {
             setIsLoading(false)
         }
