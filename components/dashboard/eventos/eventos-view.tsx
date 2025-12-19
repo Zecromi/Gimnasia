@@ -25,6 +25,7 @@ import {
 import { columns } from "./eventos-columns"
 import { DataTable } from "../data-table"
 import eventosData from "./eventos-data.json"
+import { NewEventoDialog } from "./new-evento-dialog"
 import { Calendar } from "@/components/ui/calendar"
 import {
     Popover,
@@ -181,18 +182,7 @@ export function EventosView() {
                             </div>
                         </div>
                         <div className="col-span-1 flex items-center justify-center pt-4 lg:col-span-1 lg:border-l lg:pl-4 lg:pt-0 border-t lg:border-t-0">
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button size="icon" className="h-10 w-10 text-white bg-teal-600 hover:bg-teal-700 rounded-full shadow-lg">
-                                            <CalendarPlus className="h-6 w-6" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>Nuevo evento</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
+                            <NewEventoDialog />
                         </div>
                     </div>
                 </CardContent>
