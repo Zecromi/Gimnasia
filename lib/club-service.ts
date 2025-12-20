@@ -6,9 +6,44 @@ export interface Estado {
     Nombre: string;
 }
 
+export interface CatalogoItem {
+    id: number;
+    Nombre: string;
+    Descripcion?: string | null;
+}
+
+export interface PuestoItem {
+    id_puesto: number;
+    Nombre: string;
+    Descripcion?: string | null;
+    Privilegios?: string;
+}
+
+export interface ModalidadItem {
+    id: number;
+    Nombre: string;
+    Descripcion?: string;
+    Alias?: string;
+}
+
+export interface ModalidadDetalleItem {
+    id: number;
+    Nombre: string;
+    Alias: string;
+    Nivel: string;
+    titulo: string;
+    edad_ini: number;
+    edad_fin: number;
+}
+
 export interface CatalogsResponse {
     Estados: Estado[];
-    // Add other endpoint response fields here if needed in the future
+    Catalogo_afiliaciones: CatalogoItem[];
+    Niveles_tecnicos: { id: number; Descripcion: string }[];
+    Puestos: PuestoItem[];
+    Escolaridad: CatalogoItem[];
+    Modalidades: ModalidadItem[];
+    View_Modalidades_detalle: ModalidadDetalleItem[];
 }
 
 export const getGlobalInfo = async () => {
@@ -87,7 +122,7 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
         email: getString("email"),
         web: getString("web"),
         id_club_principal: "", // keeping empty string as per prompt requirement
-        fundacion: formatDate(getString("fundacion")),
+        fundacion: getString("fundacion"),
         sector: data["sector"] === "privado" ? "1" : "0", // 1 privado, 0 publico
         tipo_instalaciones: data["tipoInstalaciones"] === "rentadas" ? "1" : "0", // 1 rentada, 0 propia
         tel1: getString("telPrincipal"),

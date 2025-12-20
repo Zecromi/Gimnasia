@@ -1,13 +1,22 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Save } from "lucide-react"
+import { Plus, Save, CalendarIcon } from "lucide-react"
 import { toast } from "sonner"
+import { useCatalogStore } from "@/lib/store/catalog-store"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
+import { Calendar } from "@/components/ui/calendar"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
 
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
-import { createClub, mapStateToClubPayload, getGlobalInfo } from "@/lib/club-service"
+import { createClub, mapStateToClubPayload } from "@/lib/club-service"
 import {
     Dialog,
     DialogContent,
@@ -139,7 +148,7 @@ export function ClubDialog() {
 }
 
 function ClubForm({ className, id, onSubmit }: React.ComponentProps<"form">) {
-    const [estados, setEstados] = React.useState<{ id: number; Nombre: string }[]>([])
+    const { Estados, fetchCatalogs } = useCatalogStore()
     const [formData, setFormData] = React.useState<any>({
         nombre: "",
         alias: "",
@@ -176,20 +185,9 @@ function ClubForm({ className, id, onSubmit }: React.ComponentProps<"form">) {
         homologados: false,
         otros: false,
     })
-
     React.useEffect(() => {
-        const fetchCatalogs = async () => {
-            try {
-                const data = await getGlobalInfo()
-                if (data && data.Estados) {
-                    setEstados(data.Estados)
-                }
-            } catch (error) {
-                console.error("Error fetching catalogs:", error)
-            }
-        }
         fetchCatalogs()
-    }, [])
+    }, [fetchCatalogs])
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target
@@ -213,9 +211,6 @@ function ClubForm({ className, id, onSubmit }: React.ComponentProps<"form">) {
                         estadoFiscal: prev.estado,
                         cpFiscal: prev.cp,
                     }
-                } else {
-                    // Optional: Clear Fiscal fields on uncheck? 
-                    // Keeping previous inputs is usually safer UX unless requested otherwise.
                 }
             }
             return newState
@@ -279,9 +274,41 @@ function ClubForm({ className, id, onSubmit }: React.ComponentProps<"form">) {
                             <InputGroup label="Pagina web" htmlFor="web" className="col-span-12 md:col-span-4">
                                 <Input id="web" name="web" value={formData.web} onChange={handleInputChange} />
                             </InputGroup>
-                            <InputGroup label="Fundación" htmlFor="fundacion" className="col-span-12 md:col-span-2">
-                                <Input id="fundacion" name="fundacion" value={formData.fundacion} onChange={handleInputChange} />
-                            </InputGroup>
+                            <div className="col-span-12 md:col-span-2 flex flex-col space-y-2">
+                                <Label>Fundación</Label>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                        <Button
+                                            variant={"outline"}
+                                            className={cn(
+                                                "w-full pl-3 text-left font-normal",
+                                                !formData.fundacion && "text-muted-foreground"
+                                            )}
+                                        >
+                                            {formData.fundacion ? (
+                                                format(new Date(formData.fundacion + "T12:00:00"), "P", { locale: es })
+                                            ) : (
+                                                <span>Seleccione</span>
+                                            )}
+                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                        </Button>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                        <Calendar
+                                            mode="single"
+                                            selected={formData.fundacion ? new Date(formData.fundacion + "T12:00:00") : undefined}
+                                            onSelect={(date) => {
+                                                const dateString = date ? format(date, "yyyy-MM-dd") : ""
+                                                setFormData((prev: any) => ({ ...prev, fundacion: dateString }))
+                                            }}
+                                            disabled={(date) =>
+                                                date > new Date() || date < new Date("1900-01-01")
+                                            }
+                                            initialFocus
+                                        />
+                                    </PopoverContent>
+                                </Popover>
+                            </div>
                             <div className="col-span-12 md:col-span-2 space-y-3">
                                 <Label>Sector</Label>
                                 <RadioGroup value={formData.sector} onValueChange={(v) => setFormData({ ...formData, sector: v })} className="flex gap-4" name="sector">
@@ -346,7 +373,7 @@ function ClubForm({ className, id, onSubmit }: React.ComponentProps<"form">) {
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {estados.map((estado) => (
+                                        {Estados.map((estado) => (
                                             <SelectItem key={estado.id} value={estado.Nombre}>
                                                 {estado.Nombre}
                                             </SelectItem>
@@ -391,7 +418,7 @@ function ClubForm({ className, id, onSubmit }: React.ComponentProps<"form">) {
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {estados.map((estado) => (
+                                        {Estados.map((estado) => (
                                             <SelectItem key={estado.id} value={estado.Nombre}>
                                                 {estado.Nombre}
                                             </SelectItem>
