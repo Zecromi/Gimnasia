@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CalendarPlus, Save, Calendar as CalendarIcon, FileText, Database, ChevronDown } from "lucide-react"
+import { CalendarPlus, Save, Calendar as CalendarIcon, FileText, Database, ChevronDown, Medal, Users, Hash } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -294,31 +294,55 @@ function NewEventoTabs({ className, id }: { className?: string, id: string }) {
                                                     <div className="border rounded-md overflow-hidden">
                                                         <Table>
                                                             <TableHeader>
-                                                                <TableRow className="bg-muted/50">
-                                                                    <TableHead className="w-[40px] text-center">#</TableHead>
-                                                                    <TableHead>Nivel</TableHead>
-                                                                    <TableHead>Título</TableHead>
-                                                                    <TableHead className="text-center">Edad Inicial</TableHead>
-                                                                    <TableHead className="text-center">Edad Final</TableHead>
+                                                                <TableRow className="bg-muted/50 hover:bg-muted/60 transition-colors">
+                                                                    <TableHead className="w-[50px] text-center">
+                                                                        <Hash className="h-3.5 w-3.5 mx-auto text-muted-foreground" />
+                                                                    </TableHead>
+                                                                    <TableHead>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <Medal className="h-3.5 w-3.5 text-teal-600" />
+                                                                            <span>Nivel</span>
+                                                                        </div>
+                                                                    </TableHead>
+                                                                    <TableHead>
+                                                                        <div className="flex items-center gap-2">
+                                                                            <FileText className="h-3.5 w-3.5 text-teal-600" />
+                                                                            <span>Título</span>
+                                                                        </div>
+                                                                    </TableHead>
+                                                                    <TableHead className="text-center">
+                                                                        <div className="flex items-center justify-center gap-2">
+                                                                            <Users className="h-3.5 w-3.5 text-teal-600" />
+                                                                            <span>Rango de Edad</span>
+                                                                        </div>
+                                                                    </TableHead>
                                                                 </TableRow>
                                                             </TableHeader>
                                                             <TableBody>
                                                                 {modalidadesDetalle
                                                                     .filter((detalle) => detalle.id === modalidad.id)
                                                                     .map((detalle, idx) => (
-                                                                        <TableRow key={idx}>
+                                                                        <TableRow key={idx} className="hover:bg-muted/30 transition-colors">
                                                                             <TableCell className="text-center">
                                                                                 <Checkbox id={`det-${modalidad.id}-${idx}`} />
                                                                             </TableCell>
-                                                                            <TableCell className="font-medium">{detalle.Nivel}</TableCell>
-                                                                            <TableCell>{detalle.titulo}</TableCell>
-                                                                            <TableCell className="text-center">{detalle.edad_ini}</TableCell>
-                                                                            <TableCell className="text-center">{detalle.edad_fin}</TableCell>
+                                                                            <TableCell className="font-medium">
+                                                                                <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900 dark:text-teal-200 dark:border-teal-800 font-normal">
+                                                                                    {detalle.Nivel}
+                                                                                </Badge>
+                                                                            </TableCell>
+                                                                            <TableCell className="text-muted-foreground text-sm">{detalle.titulo}</TableCell>
+                                                                            <TableCell className="text-center text-muted-foreground text-sm">
+                                                                                {detalle.edad_ini === detalle.edad_fin
+                                                                                    ? `${detalle.edad_ini} años`
+                                                                                    : `${detalle.edad_ini} - ${detalle.edad_fin} años`
+                                                                                }
+                                                                            </TableCell>
                                                                         </TableRow>
                                                                     ))}
                                                                 {modalidadesDetalle.filter((d) => d.id === modalidad.id).length === 0 && (
                                                                     <TableRow>
-                                                                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                                                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                                                                             No hay detalles disponibles
                                                                         </TableCell>
                                                                     </TableRow>
