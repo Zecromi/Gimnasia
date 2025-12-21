@@ -52,6 +52,16 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import {
+    Table,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from "@/components/ui/table"
+import { Badge } from "@/components/ui/badge"
+import { getGlobalInfo, ModalidadItem, ModalidadDetalleItem } from "@/lib/club-service"
 
 export function NewEventoDialog() {
     const [open, setOpen] = React.useState(false)
@@ -106,6 +116,26 @@ export function NewEventoDialog() {
 }
 
 function NewEventoTabs({ className, id }: { className?: string, id: string }) {
+    const [modalidades, setModalidades] = React.useState<ModalidadItem[]>([])
+    const [modalidadesDetalle, setModalidadesDetalle] = React.useState<ModalidadDetalleItem[]>([])
+
+    React.useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const data = await getGlobalInfo();
+                if (data.Modalidades) {
+                    setModalidades(data.Modalidades);
+                }
+                if (data.View_Modalidades_detalle) {
+                    setModalidadesDetalle(data.View_Modalidades_detalle);
+                }
+            } catch (error) {
+                console.error("Error fetching modalities:", error);
+            }
+        };
+        fetchData();
+    }, []);
+
     return (
         <Tabs defaultValue="general" className="h-full flex flex-col">
             <div className="px-6 pt-1">
@@ -226,40 +256,76 @@ function NewEventoTabs({ className, id }: { className?: string, id: string }) {
                         <TabsContent value="modalidades" className="m-0 space-y-4">
                             <div className="space-y-4">
                                 <Label className="text-base font-semibold">Seleccione las modalidades</Label>
-                                <Accordion type="single" collapsible className="w-full space-y-2">
-                                    {[
-                                        "Gimnasia de trampolín",
-                                        "Gimnasia artística varonil",
-                                        "Gimnasia artística femenil",
-                                        "Gimnasia rítmica",
-                                        "Congreso FMG",
-                                        "Parkour",
-                                        "Gimnasia aeróbica deportiva",
-                                        "Gimnasia para todos",
-                                        "Gimnasia acrobática"
-                                    ].map((modalidad, index) => (
-                                        <AccordionItem value={`item-${index}`} key={index} className="border rounded-lg px-4 data-[state=open]:bg-muted/30">
+                                <Accordion type="single" collapsible className="w-full space-y-2 pb-6">
+                                    {modalidades.map((modalidad) => (
+                                        <AccordionItem value={`item-${modalidad.id}`} key={modalidad.id} className="border rounded-lg px-4 data-[state=open]:bg-muted/30">
                                             <AccordionPrimitive.Header className="flex items-center py-3">
                                                 <div className="flex items-center mr-3">
-                                                    <Checkbox id={`mod-${modalidad}`} name="modalidades" value={modalidad} />
+                                                    <Checkbox id={`mod-${modalidad.id}`} name="modalidades" value={String(modalidad.id)} />
                                                 </div>
                                                 <AccordionPrimitive.Trigger
                                                     className={cn(
                                                         "flex flex-1 items-center justify-between py-0 text-sm font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180 cursor-pointer"
                                                     )}
                                                 >
-                                                    <Label
-                                                        htmlFor={`mod-${modalidad}`}
-                                                        className="cursor-pointer"
-                                                    >
-                                                        {modalidad}
-                                                    </Label>
+                                                    <div className="flex items-center gap-2">
+                                                        <Label
+                                                            htmlFor={`mod-${modalidad.id}`}
+                                                            className="cursor-pointer pointer-events-none"
+                                                        >
+                                                            {modalidad.Nombre}
+                                                        </Label>
+                                                        {modalidad.Alias && (
+                                                            <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-normal">
+                                                                {modalidad.Alias}
+                                                            </Badge>
+                                                        )}
+                                                    </div>
                                                     <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
                                                 </AccordionPrimitive.Trigger>
                                             </AccordionPrimitive.Header>
                                             <AccordionContent className="pt-2 pb-4 px-2">
-                                                <div className="p-4 bg-muted/40 rounded-md border border-dashed text-sm text-muted-foreground text-center">
-                                                    Configuración específica para {modalidad}
+                                                <div className="space-y-3">
+                                                    {modalidad.Descripcion && (
+                                                        <div className="px-1">
+                                                            <h4 className="text-sm font-medium text-muted-foreground">{modalidad.Descripcion}</h4>
+                                                        </div>
+                                                    )}
+                                                    <div className="border rounded-md overflow-hidden">
+                                                        <Table>
+                                                            <TableHeader>
+                                                                <TableRow className="bg-muted/50">
+                                                                    <TableHead className="w-[40px] text-center">#</TableHead>
+                                                                    <TableHead>Nivel</TableHead>
+                                                                    <TableHead>Título</TableHead>
+                                                                    <TableHead className="text-center">Edad Inicial</TableHead>
+                                                                    <TableHead className="text-center">Edad Final</TableHead>
+                                                                </TableRow>
+                                                            </TableHeader>
+                                                            <TableBody>
+                                                                {modalidadesDetalle
+                                                                    .filter((detalle) => detalle.id === modalidad.id)
+                                                                    .map((detalle, idx) => (
+                                                                        <TableRow key={idx}>
+                                                                            <TableCell className="text-center">
+                                                                                <Checkbox id={`det-${modalidad.id}-${idx}`} />
+                                                                            </TableCell>
+                                                                            <TableCell className="font-medium">{detalle.Nivel}</TableCell>
+                                                                            <TableCell>{detalle.titulo}</TableCell>
+                                                                            <TableCell className="text-center">{detalle.edad_ini}</TableCell>
+                                                                            <TableCell className="text-center">{detalle.edad_fin}</TableCell>
+                                                                        </TableRow>
+                                                                    ))}
+                                                                {modalidadesDetalle.filter((d) => d.id === modalidad.id).length === 0 && (
+                                                                    <TableRow>
+                                                                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                                                            No hay detalles disponibles
+                                                                        </TableCell>
+                                                                    </TableRow>
+                                                                )}
+                                                            </TableBody>
+                                                        </Table>
+                                                    </div>
                                                 </div>
                                             </AccordionContent>
                                         </AccordionItem>
@@ -267,6 +333,7 @@ function NewEventoTabs({ className, id }: { className?: string, id: string }) {
                                 </Accordion>
                             </div>
                         </TabsContent>
+
                     </form>
                 </ScrollArea>
             </div>
