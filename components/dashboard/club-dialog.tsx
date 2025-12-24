@@ -374,7 +374,7 @@ function ClubForm({ className, id, onSubmit }: React.ComponentProps<"form">) {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {Estados.map((estado) => (
-                                            <SelectItem key={estado.id} value={estado.Nombre}>
+                                            <SelectItem key={estado.id} value={estado.id.toString()}>
                                                 {estado.Nombre}
                                             </SelectItem>
                                         ))}
@@ -419,7 +419,7 @@ function ClubForm({ className, id, onSubmit }: React.ComponentProps<"form">) {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {Estados.map((estado) => (
-                                            <SelectItem key={estado.id} value={estado.Nombre}>
+                                            <SelectItem key={estado.id} value={estado.id.toString()}>
                                                 {estado.Nombre}
                                             </SelectItem>
                                         ))}
