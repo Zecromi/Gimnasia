@@ -80,7 +80,7 @@ export function NewEventoDialog() {
                         <DrawerTitle>Nuevo Evento</DrawerTitle>
                     </DrawerHeader>
                     <div className="flex-1 px-4 overflow-hidden">
-                        <NewEventoTabs id="new-evento-form-mobile" />
+                        <NewEventoTabs id="new-evento-form-mobile" onClose={() => setOpen(false)} />
                     </div>
                 </DrawerContent>
             </Drawer>
@@ -108,14 +108,14 @@ export function NewEventoDialog() {
                     <DialogTitle>Nuevo Evento</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 overflow-hidden">
-                    <NewEventoTabs id="new-evento-form-desktop" />
+                    <NewEventoTabs id="new-evento-form-desktop" onClose={() => setOpen(false)} />
                 </div>
             </DialogContent>
         </Dialog>
     )
 }
 
-function NewEventoTabs({ className, id }: { className?: string, id: string }) {
+function NewEventoTabs({ className, id, onClose }: { className?: string, id: string, onClose: () => void }) {
     const [modalidades, setModalidades] = React.useState<ModalidadItem[]>([])
     const [modalidadesDetalle, setModalidadesDetalle] = React.useState<ModalidadDetalleItem[]>([])
 
@@ -363,7 +363,7 @@ function NewEventoTabs({ className, id }: { className?: string, id: string }) {
             </div>
 
             <div className="p-4 border-t mt-auto flex justify-end gap-2 bg-background">
-                <Button variant="outline" type="button" onClick={() => (document.querySelector('[data-state="open"]') as any)?.click()}>Cancelar</Button>
+                <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
                 <Button type="submit" form={id} className="bg-teal-600 hover:bg-teal-700 text-white">
                     <Save className="mr-2 h-4 w-4" />
                     Guardar Evento
