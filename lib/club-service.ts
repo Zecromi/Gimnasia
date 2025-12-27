@@ -34,6 +34,7 @@ export interface ModalidadDetalleItem {
     titulo: string;
     edad_ini: number;
     edad_fin: number;
+    id_nivel: number;
 }
 
 export interface CatalogsResponse {
