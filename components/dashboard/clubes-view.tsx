@@ -66,9 +66,9 @@ export function ClubesView() {
                                         <Input value="ESTADO DE MÉXICO" disabled className="bg-muted/50 h-8" />
                                     </InputGroup>
 
-                                    <InputGroup label="Estatus :" htmlFor="estatus" className="md:col-span-2">
+                                    <InputGroup label="Estatus :" htmlFor="estatus" className="md:col-span-3">
                                         <Select defaultValue="todos">
-                                            <SelectTrigger id="estatus" size="sm">
+                                            <SelectTrigger id="estatus">
                                                 <SelectValue placeholder="Seleccionar" />
                                             </SelectTrigger>
                                             <SelectContent>
