@@ -147,7 +147,7 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
     const dirClub2: ClubAddress = isIgual
         ? {
             ...dirClub1,
-            Tipo_domicilio: "Fiscal", // Fixed value
+            Tipo_domicilio: "Postal", // Fixed value
         }
         : {
             calle: getString("calleFiscal"),
@@ -156,7 +156,7 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
             colonia: getString("coloniaFiscal"),
             municipio: getString("municipioFiscal"),
             id_estado: getString("estadoFiscal"),
-            cp: getString("cpFiscal"),
+            cp: getString("cp"),
             Tipo_domicilio: "Fiscal", // Fixed value
         };
 
