@@ -81,7 +81,7 @@ export interface ClubAddress {
     municipio: string;
     id_estado: string;
     cp: string;
-    Tipo_domicilio: string;
+    tipo_domicilio: string;
 }
 
 export interface SetClubPayload {
@@ -140,7 +140,7 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
         municipio: getString("municipio"),
         id_estado: getString("estado"),
         cp: getString("cp"),
-        Tipo_domicilio: "Postal", // Fixed value
+        tipo_domicilio: "Postal", // Fixed value
     };
 
     const isIgual = !!data["igualDomicilio"];
@@ -148,7 +148,7 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
     const dirClub2: ClubAddress = isIgual
         ? {
             ...dirClub1,
-            Tipo_domicilio: "Postal", // Fixed value
+            tipo_domicilio: "Fiscal", // Fixed value
         }
         : {
             calle: getString("calleFiscal"),
@@ -158,7 +158,7 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
             municipio: getString("municipioFiscal"),
             id_estado: getString("estadoFiscal"),
             cp: getString("cp"),
-            Tipo_domicilio: "Fiscal", // Fixed value
+            tipo_domicilio: "Fiscal", // Fixed value
         };
 
     return {

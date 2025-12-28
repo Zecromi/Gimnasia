@@ -4,6 +4,8 @@ import * as React from "react"
 import { Plus, Save, CalendarIcon } from "lucide-react"
 import { toast } from "sonner"
 import { useCatalogStore } from "@/lib/store/catalog-store"
+import { clubSchema } from "@/lib/schemas/club/club-schema"
+import { ZodError } from "zod"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Calendar } from "@/components/ui/calendar"
@@ -147,7 +149,12 @@ export function ClubDialog() {
     )
 }
 
-function ClubForm({ className, id, onSubmit }: React.ComponentProps<"form">) {
+// Define custom props to override onSubmit signature
+interface ClubFormProps extends Omit<React.ComponentProps<"form">, "onSubmit"> {
+    onSubmit: (data: any) => void
+}
+
+function ClubForm({ className, id, onSubmit }: ClubFormProps) {
     const { Estados, fetchCatalogs } = useCatalogStore()
     const [formData, setFormData] = React.useState<any>({
         nombre: "",
@@ -224,30 +231,20 @@ function ClubForm({ className, id, onSubmit }: React.ComponentProps<"form">) {
     // Wrapped submit handler to pass state instead of event/formData
     const handleFormSubmit = (e: React.FormEvent) => {
         e.preventDefault()
-        // We need to modify the onSubmit prop of ClubDialog to accept the state object,
-        // OR we just attach the state to the element value and let onSubmit standard work? 
-        // No, current onSubmit expects FormEvent. 
-        // But the parent ClubDialog calls mapFormDataToClubPayload(formData).
-        // Since we refactored service to take an object (mapStateToClubPayload), we should change parent too.
-        // For now, let's inject the state into the form's native onSubmit call if possible, 
-        // OR better: we change the onSubmit prop signature in the parent.
-        // Since I can only edit this file here, I will emit a custom event or just let parent handle logic?
-        // Wait, I am editing the whole file chunks. I should update ClubDialog's handleSubmit too.
 
-        // However, this replacement is only for ClubForm.
-        // I will trigger the passed onSubmit, but the parent expects FormEvent and uses new FormData(e.currentTarget).
-        // If I keep input names and values in sync with state, standard FormData extraction works!
-        // So I DON'T need to change the parent's handleSubmit signature IF the DOM inputs have the values.
-        // Controlled components DO update the DOM value attribute. 
-        // So `new FormData(formElement)` will pick up the current state values.
-        // The only exception is Checkboxes not in DOM or custom components.
-        // shadcn Select uses a hidden input? No, typically. 
-        // We need to inject hidden inputs for Select values if we rely on FormData.
-        // BUT, I changed `mapFormDataToClubPayload` to `mapStateToClubPayload` accepting `data: any`.
-        // So I MUST update the parent `ClubDialog` logic to use the state from `ClubForm`.
-        // This means `ClubForm` needs to expose the state or handle the submission itself.
-        // I will change `onSubmit` prop to `onSubmit: (data: any) => void`.
-        onSubmit(formData)
+        const result = clubSchema.safeParse(formData)
+
+        if (!result.success) {
+            // Show first error message
+            const firstError = result.error.issues[0]
+            if (firstError) {
+                toast.error(firstError.message)
+            }
+            console.error("Validation error:", result.error.issues)
+            return
+        }
+
+        onSubmit(result.data)
     }
 
     return (
