@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CalendarPlus, Save, Calendar as CalendarIcon, FileText, Database, ChevronDown, Medal, Users, Hash } from "lucide-react"
+import { CalendarPlus, Save, Calendar as CalendarIcon, FileText, Database, ChevronDown, Medal, Users, Hash, AlertCircle } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -63,6 +63,7 @@ import {
     TableRow,
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { getGlobalInfo, ModalidadItem, ModalidadDetalleItem } from "@/lib/club-service"
 import { createEvento, SetEventoPayload, ConfiguracionItem, NivelItem, AdicionalItem, EventoItem } from "@/lib/evento-service"
 import { eventoSchema, EventoFormValues } from "@/lib/schemas/evento/evento-schema"
@@ -411,13 +412,13 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
         <Tabs defaultValue="general" className="h-full flex flex-col">
             <div className="px-6 pt-1">
                 <TabsList className="grid w-full grid-cols-2 h-auto p-1 bg-muted/80">
-                    <TabsTrigger value="general" className="py-2 data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 data-[state=active]:shadow-md dark:data-[state=active]:bg-teal-900/20 dark:data-[state=active]:text-teal-300">
+                    <TabsTrigger value="general" className="py-2 data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 data-[state=active]:shadow-md dark:data-[state=active]:bg-teal-950 dark:data-[state=active]:text-teal-400">
                         <div className="flex items-center gap-2">
                             <FileText className="h-4 w-4" />
                             <span>Información general</span>
                         </div>
                     </TabsTrigger>
-                    <TabsTrigger value="modalidades" className="py-2 data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 data-[state=active]:shadow-md dark:data-[state=active]:bg-teal-900/20 dark:data-[state=active]:text-teal-300">
+                    <TabsTrigger value="modalidades" className="py-2 data-[state=active]:bg-teal-50 data-[state=active]:text-teal-700 data-[state=active]:shadow-md dark:data-[state=active]:bg-teal-950 dark:data-[state=active]:text-teal-400">
                         <div className="flex items-center gap-2">
                             <Database className="h-4 w-4" />
                             <span>Modalidades</span>
@@ -727,13 +728,21 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
             </div>
 
             <div className="p-4 border-t mt-auto flex justify-between gap-2 bg-background">
-                <div className="text-xs text-red-500 flex flex-col justify-center">
-                    {!isValid && Object.keys(errors).length > 0 && <span>Complete los campos requeridos para guardar.</span>}
-                    {errors.detalles && <span>{errors.detalles[0]}</span>}
+                <div className="flex-1 mr-4">
+                    {(!isValid && Object.keys(errors).length > 0 || errors.detalles) && (
+                        <Alert variant="destructive" className="py-2">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>Información</AlertTitle>
+                            <AlertDescription>
+                                {!isValid && Object.keys(errors).length > 0 && "Complete los campos requeridos para guardar. "}
+                                {errors.detalles && errors.detalles[0]}
+                            </AlertDescription>
+                        </Alert>
+                    )}
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
-                    <Button type="submit" form={id} disabled={!isValid} className="bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-50">
+                    <Button variant="outline" type="button" onClick={onClose} className="bg-amber-600 hover:bg-amber-700 text-white dark:bg-amber-950 dark:hover:bg-amber-900 dark:text-amber-400 dark:hover:text-amber-100 disabled:opacity-50">Cancelar</Button>
+                    <Button type="submit" form={id} disabled={!isValid} className="bg-teal-600 hover:bg-teal-700 text-white dark:bg-teal-950 dark:hover:bg-teal-900 dark:text-teal-400 dark:hover:text-teal-100 disabled:opacity-50">
                         <Save className="mr-2 h-4 w-4" />
                         Guardar Evento
                     </Button>

@@ -1,30 +1,24 @@
-"use client"
-
 import { ColumnDef } from "@tanstack/react-table"
 import { Edit, ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
 
 import { EditEventoDialog } from "./edit-evento-dialog"
+import { EventoResponseItem } from "@/lib/evento-service"
 
-export type Evento = {
-    id: string
-    noEvento: string
-    nombre: string
-    lugar: string
-    sede: string
-    fechaEvento: string
-    tieneRestriccion: boolean
-    estatus: "Abierto" | "Cerrado" | "Cancelado" | "En Curso"
-}
-
-export const columns: ColumnDef<Evento>[] = [
+export const columns: ColumnDef<EventoResponseItem>[] = [
     {
         id: "detalle",
         header: "Detalle",
         cell: ({ row }) => {
+            // Mapping EventoResponseItem back to the shape expected by EditEventoDialog if necessary, 
+            // OR EditEventoDialog needs to be updated. For now, we pass the row.original.
+            // Note: EditEventoDialog likely expects the OLD shape. We might need to update that too later.
+            // For this specific step, we perform the column update.
             return (
                 <div className="flex items-center">
-                    <EditEventoDialog evento={row.original}>
+                    <EditEventoDialog evento={row.original as any}>
                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-teal-200 dark:hover:bg-teal-800">
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Editar</span>
@@ -35,7 +29,7 @@ export const columns: ColumnDef<Evento>[] = [
         },
     },
     {
-        accessorKey: "noEvento",
+        accessorKey: "id",
         header: ({ column }) => {
             return (
                 <Button
@@ -49,7 +43,7 @@ export const columns: ColumnDef<Evento>[] = [
         },
     },
     {
-        accessorKey: "nombre",
+        accessorKey: "Nombre",
         header: ({ column }) => {
             return (
                 <Button
@@ -63,7 +57,7 @@ export const columns: ColumnDef<Evento>[] = [
         },
     },
     {
-        accessorKey: "lugar",
+        accessorKey: "Lugar",
         header: ({ column }) => {
             return (
                 <Button
@@ -77,7 +71,7 @@ export const columns: ColumnDef<Evento>[] = [
         },
     },
     {
-        accessorKey: "sede",
+        accessorKey: "Sede",
         header: ({ column }) => {
             return (
                 <Button
@@ -91,7 +85,7 @@ export const columns: ColumnDef<Evento>[] = [
         },
     },
     {
-        accessorKey: "fechaEvento",
+        accessorKey: "F_ini_evento",
         header: ({ column }) => {
             return (
                 <Button
@@ -103,16 +97,20 @@ export const columns: ColumnDef<Evento>[] = [
                 </Button>
             )
         },
+        cell: ({ row }) => {
+            const date = new Date(row.getValue("F_ini_evento"))
+            return <div>{format(date, "P", { locale: es })}</div>
+        }
     },
     {
-        accessorKey: "tieneRestriccion",
+        accessorKey: "Restriccion",
         header: ({ column }) => {
             return (
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
-                    ¿Tiene restricción de inscripción?
+                    ¿Tiene restricción?
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             )
@@ -120,13 +118,13 @@ export const columns: ColumnDef<Evento>[] = [
         cell: ({ row }) => {
             return (
                 <div className="pl-4">
-                    {row.getValue("tieneRestriccion") ? "Sí" : "No"}
+                    {row.getValue("Restriccion")}
                 </div>
             )
         }
     },
     {
-        accessorKey: "estatus",
+        accessorKey: "Status",
         header: ({ column }) => {
             return (
                 <Button

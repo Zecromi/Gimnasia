@@ -18,7 +18,6 @@ import {
 
 import { columns } from "./eventos-columns"
 import { DataTable } from "../data-table"
-import eventosData from "./eventos-data.json"
 const NewEventoDialog = lazy(() => import("./new-evento-dialog").then(module => ({ default: module.NewEventoDialog })))
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -29,17 +28,28 @@ import {
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
+import { getEventos, EventoResponseItem } from "@/lib/evento-service"
 
 export function EventosView() {
     const [isLoading, setIsLoading] = useState(true)
     const [date, setDate] = useState<Date>()
+    const [eventos, setEventos] = useState<EventoResponseItem[]>([])
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsLoading(false)
-        }, 500)
+        const fetchData = async () => {
+            try {
+                const data = await getEventos()
+                if (data && data.Eventos) {
+                    setEventos(data.Eventos)
+                }
+            } catch (error) {
+                console.error("Error fetching events:", error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
 
-        return () => clearTimeout(timer)
+        fetchData()
     }, [])
 
     if (isLoading) {
@@ -200,7 +210,7 @@ export function EventosView() {
                 </CardContent>
             </Card>
 
-            <DataTable columns={columns} data={eventosData as any} />
+            <DataTable columns={columns} data={eventos} />
         </div>
     )
 }
