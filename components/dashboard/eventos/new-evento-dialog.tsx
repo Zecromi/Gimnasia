@@ -69,7 +69,7 @@ import { createEvento, SetEventoPayload, ConfiguracionItem, NivelItem, Adicional
 import { eventoSchema, EventoFormValues } from "@/lib/schemas/evento/evento-schema"
 import { toast } from "sonner"
 
-export function NewEventoDialog() {
+export function NewEventoDialog({ onEventSaved }: { onEventSaved?: () => void }) {
     const [open, setOpen] = React.useState(false)
     const isMobile = useIsMobile()
 
@@ -87,7 +87,7 @@ export function NewEventoDialog() {
                         <DrawerDescription className="sr-only">Complete el formulario para crear un nuevo evento</DrawerDescription>
                     </DrawerHeader>
                     <div className="flex-1 px-4 overflow-hidden">
-                        <NewEventoTabs id="new-evento-form-mobile" onClose={() => setOpen(false)} />
+                        <NewEventoTabs id="new-evento-form-mobile" onClose={() => setOpen(false)} onEventSaved={onEventSaved} />
                     </div>
                 </DrawerContent>
             </Drawer>
@@ -120,14 +120,14 @@ export function NewEventoDialog() {
                     <DialogDescription className="sr-only">Complete el formulario para crear un nuevo evento</DialogDescription>
                 </DialogHeader>
                 <div className="flex-1 overflow-hidden">
-                    <NewEventoTabs id="new-evento-form-desktop" onClose={() => setOpen(false)} />
+                    <NewEventoTabs id="new-evento-form-desktop" onClose={() => setOpen(false)} onEventSaved={onEventSaved} />
                 </div>
             </DialogContent>
         </Dialog>
     )
 }
 
-function NewEventoTabs({ className, id, onClose }: { className?: string, id: string, onClose: () => void }) {
+function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: string, id: string, onClose: () => void, onEventSaved?: () => void }) {
     const [modalidades, setModalidades] = React.useState<ModalidadItem[]>([])
     const [modalidadesDetalle, setModalidadesDetalle] = React.useState<ModalidadDetalleItem[]>([])
     const [isCustomModality, setIsCustomModality] = React.useState(false)
@@ -382,6 +382,7 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
             await createEvento(payload)
 
             toast.success("Evento creado exitosamente")
+            if (onEventSaved) onEventSaved()
             onClose()
         } catch (error) {
             console.error(error)

@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, lazy, useEffect, useState } from "react"
+import { Suspense, lazy, useEffect, useState, useCallback } from "react"
 import { Search, Calendar as CalendarIcon } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -35,22 +35,22 @@ export function EventosView() {
     const [date, setDate] = useState<Date>()
     const [eventos, setEventos] = useState<EventoResponseItem[]>([])
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const data = await getEventos()
-                if (data && data.Eventos) {
-                    setEventos(data.Eventos)
-                }
-            } catch (error) {
-                console.error("Error fetching events:", error)
-            } finally {
-                setIsLoading(false)
+    const fetchData = useCallback(async () => {
+        try {
+            const data = await getEventos()
+            if (data && data.Eventos) {
+                setEventos(data.Eventos)
             }
+        } catch (error) {
+            console.error("Error fetching events:", error)
+        } finally {
+            setIsLoading(false)
         }
-
-        fetchData()
     }, [])
+
+    useEffect(() => {
+        fetchData()
+    }, [fetchData])
 
     if (isLoading) {
         return (
@@ -203,7 +203,7 @@ export function EventosView() {
                         </div>
                         <div className="flex items-center justify-center xl:col-span-1 xl:border-l xl:pl-4 border-t xl:border-t-0 pt-4 xl:pt-0">
                             <Suspense fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
-                                <NewEventoDialog />
+                                <NewEventoDialog onEventSaved={fetchData} />
                             </Suspense>
                         </div>
                     </div>
@@ -214,4 +214,3 @@ export function EventosView() {
         </div>
     )
 }
-
