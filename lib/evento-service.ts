@@ -26,6 +26,7 @@ export interface ConfiguracionItem {
 export interface NivelItem {
     id_modalidad: string;
     id_nivel: string;
+    costo: string;
 }
 
 export interface AdicionalItem {

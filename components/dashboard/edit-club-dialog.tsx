@@ -404,7 +404,8 @@ function ModalidadesForm({ id, club }: { id: string, club: Club }) {
                     "Gimnasia rítmica",
                     "Gimnasia aeróbica deportiva",
                     "Parkour",
-                    "Congreso FMG"
+                    "Congreso FMG",
+                    "Gimnasia de baile"
                 ].map((modalidad, index) => (
                     <div key={index} className="flex items-start space-x-3 p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                         <Checkbox id={`modalidad-${index}`} name="modalidades[]" value={modalidad} />

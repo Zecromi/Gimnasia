@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, lazy, useEffect, useState } from "react"
 import { Search, Calendar as CalendarIcon } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -19,7 +19,7 @@ import {
 import { columns } from "./eventos-columns"
 import { DataTable } from "../data-table"
 import eventosData from "./eventos-data.json"
-import { NewEventoDialog } from "./new-evento-dialog"
+const NewEventoDialog = lazy(() => import("./new-evento-dialog").then(module => ({ default: module.NewEventoDialog })))
 import { Calendar } from "@/components/ui/calendar"
 import {
     Popover,
@@ -191,7 +191,9 @@ export function EventosView() {
                             </div>
                         </div>
                         <div className="flex items-center justify-center xl:col-span-1 xl:border-l xl:pl-4 border-t xl:border-t-0 pt-4 xl:pt-0">
-                            <NewEventoDialog />
+                            <Suspense fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
+                                <NewEventoDialog />
+                            </Suspense>
                         </div>
                     </div>
                 </CardContent>

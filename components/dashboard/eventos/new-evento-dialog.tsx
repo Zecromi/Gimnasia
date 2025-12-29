@@ -15,6 +15,7 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
+    DialogDescription,
 } from "@/components/ui/dialog"
 import {
     Accordion,
@@ -27,6 +28,7 @@ import {
     DrawerHeader,
     DrawerTitle,
     DrawerTrigger,
+    DrawerDescription,
 } from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -63,6 +65,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { getGlobalInfo, ModalidadItem, ModalidadDetalleItem } from "@/lib/club-service"
 import { createEvento, SetEventoPayload, ConfiguracionItem, NivelItem, AdicionalItem, EventoItem } from "@/lib/evento-service"
+import { eventoSchema, EventoFormValues } from "@/lib/schemas/evento/evento-schema"
 import { toast } from "sonner"
 
 export function NewEventoDialog() {
@@ -71,7 +74,7 @@ export function NewEventoDialog() {
 
     if (isMobile) {
         return (
-            <Drawer open={open} onOpenChange={setOpen}>
+            <Drawer open={open} onOpenChange={setOpen} dismissible={false}>
                 <DrawerTrigger asChild>
                     <Button size="icon" className="h-10 w-10 text-white bg-teal-600 hover:bg-teal-700 rounded-full shadow-lg">
                         <CalendarPlus className="h-6 w-6" />
@@ -80,6 +83,7 @@ export function NewEventoDialog() {
                 <DrawerContent className="h-[95vh]">
                     <DrawerHeader className="text-left">
                         <DrawerTitle>Nuevo Evento</DrawerTitle>
+                        <DrawerDescription className="sr-only">Complete el formulario para crear un nuevo evento</DrawerDescription>
                     </DrawerHeader>
                     <div className="flex-1 px-4 overflow-hidden">
                         <NewEventoTabs id="new-evento-form-mobile" onClose={() => setOpen(false)} />
@@ -105,9 +109,14 @@ export function NewEventoDialog() {
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
-            <DialogContent className="sm:max-w-[1300px] h-[96vh] flex flex-col p-0">
+            <DialogContent
+                className="sm:max-w-[1300px] h-[96vh] flex flex-col p-0"
+                onInteractOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+            >
                 <DialogHeader className="px-6 py-4 border-b">
                     <DialogTitle>Nuevo Evento</DialogTitle>
+                    <DialogDescription className="sr-only">Complete el formulario para crear un nuevo evento</DialogDescription>
                 </DialogHeader>
                 <div className="flex-1 overflow-hidden">
                     <NewEventoTabs id="new-evento-form-desktop" onClose={() => setOpen(false)} />
@@ -130,6 +139,9 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
     const [detailValues, setDetailValues] = React.useState<Record<string, { costo: string, descripcion: string }>>({})
     const [selectedModalities, setSelectedModalities] = React.useState<Record<string, boolean>>({})
 
+    const [errors, setErrors] = React.useState<Record<string, string[] | undefined>>({})
+    const [isValid, setIsValid] = React.useState(false)
+
     // State for General Tab inputs to persist across tab switches
     const [generalData, setGeneralData] = React.useState({
         tipoEvento: "",
@@ -151,14 +163,14 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
         setGeneralData(prev => ({ ...prev, [field]: value }))
     }
 
-    const toggleModality = (id: string) => {
+    const toggleModality = React.useCallback((id: string) => {
         setSelectedModalities(prev => ({
             ...prev,
             [id]: !prev[id]
         }))
-    }
+    }, [])
 
-    const toggleDetail = (key: string) => {
+    const toggleDetail = React.useCallback((key: string) => {
         setSelectedDetails(prev => {
             const newState = !prev[key]
             if (!newState) {
@@ -172,9 +184,9 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
                 [key]: newState
             }
         })
-    }
+    }, [])
 
-    const updateDetailValue = (key: string, field: 'costo' | 'descripcion', value: string) => {
+    const updateDetailValue = React.useCallback((key: string, field: 'costo' | 'descripcion', value: string) => {
         setDetailValues(prev => ({
             ...prev,
             [key]: {
@@ -182,7 +194,7 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
                 [field]: value
             }
         }))
-    }
+    }, [])
 
     const hasNewData = Object.values(newModality).some(value => value.trim() !== "")
 
@@ -210,8 +222,77 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
         return total
     }, [isCustomModality, newModality.costo, selectedDetails, detailValues])
 
+    const getFormData = React.useCallback((): EventoFormValues => {
+        const detalles: { idModalidad: string | number; idNivel: string | number; costo: string; descripcion: string }[] = []
+
+        // Custom modality
+        /* 
+           Note: The schema expects an idModalidad and idNivel. 
+           For custom modalities, we might need a strategy since they don't have IDs yet.
+           However, the schema allows string | number. We can use a placeholder or handle it.
+           If the user requirement "Select at least one modality and one level" refers to the PREDEFINED ones,
+           then we strictly check existing ones. 
+           If "Extras" counts, we add it. 
+           Assuming strictly strict selection from the table based on "Select at least one modality and one level".
+        */
+
+        Object.keys(selectedDetails).forEach(key => {
+            if (selectedDetails[key]) {
+                const parts = key.split('-')
+                if (parts.length === 3) {
+                    const modId = parts[1]
+                    const idx = parseInt(parts[2])
+                    const detail = groupedDetails[parseInt(modId)]?.[idx]
+                    const values = detailValues[key] || { costo: "", descripcion: "" }
+
+                    if (detail) {
+                        detalles.push({
+                            idModalidad: modId,
+                            idNivel: String(detail.id_nivel),
+                            costo: values.costo,
+                            descripcion: values.descripcion
+                        })
+                    }
+                }
+            }
+        })
+
+        return {
+            tipoEvento: generalData.tipoEvento,
+            organizador: generalData.organizador,
+            asociacion: generalData.asociacion,
+            nombre: generalData.nombre,
+            lugar: generalData.lugar,
+            sede: generalData.sede,
+            region: generalData.region,
+            limiteParticipantes: generalData.limiteParticipantes || "",
+            horaLimiteInscripcion: generalData.horaLimiteInscripcion,
+            fechaInicioEvento: generalData.fechaInicioEvento as Date,
+            fechaFinEvento: generalData.fechaFinEvento as Date,
+            fechaInicioInscripcion: generalData.fechaInicioInscripcion as Date,
+            fechaFinInscripcion: generalData.fechaFinInscripcion as Date,
+            detalles: detalles
+        }
+    }, [generalData, selectedDetails, detailValues, groupedDetails])
+
+    React.useEffect(() => {
+        const formData = getFormData()
+        const result = eventoSchema.safeParse(formData)
+        setIsValid(result.success)
+        if (!result.success) {
+            setErrors(result.error.flatten().fieldErrors)
+        } else {
+            setErrors({})
+        }
+    }, [getFormData])
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+
+        if (!isValid) {
+            toast.error("Por favor complete todos los campos requeridos")
+            return
+        }
 
         const formatPayloadDate = (date?: Date) => date ? format(date, "yyyy-MM-dd") : ""
 
@@ -261,7 +342,8 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
                     if (detail) {
                         nivelesData.push({
                             id_modalidad: parts[1],
-                            id_nivel: String(detail.id_nivel)
+                            id_nivel: String(detail.id_nivel),
+                            costo: detailValues[key]?.costo || "0"
                         })
                     }
                 }
@@ -297,6 +379,7 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
 
         try {
             await createEvento(payload)
+
             toast.success("Evento creado exitosamente")
             onClose()
         } catch (error) {
@@ -362,24 +445,29 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
                                                 <SelectItem value="control">Control Técnico</SelectItem>
                                             </SelectContent>
                                         </Select>
+                                        {errors.tipoEvento && <p className="text-xs text-red-500">{errors.tipoEvento[0]}</p>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="organizador">Organizador</Label>
                                         <Input id="organizador" name="organizador" placeholder="Ej. FMG" value={generalData.organizador} onChange={(e) => handleGeneralChange("organizador", e.target.value)} />
+                                        {errors.organizador && <p className="text-xs text-red-500">{errors.organizador[0]}</p>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="asociacion">Asociación</Label>
                                         <Input id="asociacion" name="asociacion" placeholder="Ej. Asociación de Jalisco" value={generalData.asociacion} onChange={(e) => handleGeneralChange("asociacion", e.target.value)} />
+                                        {errors.asociacion && <p className="text-xs text-red-500">{errors.asociacion[0]}</p>}
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <Label htmlFor="nombre">Nombre</Label>
                                         <Input id="nombre" name="nombre" placeholder="Nombre del evento" value={generalData.nombre} onChange={(e) => handleGeneralChange("nombre", e.target.value)} />
+                                        {errors.nombre && <p className="text-xs text-red-500">{errors.nombre[0]}</p>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="lugar">Lugar del evento</Label>
                                         <Input id="lugar" name="lugar" placeholder="Ciudad, Estado" value={generalData.lugar} onChange={(e) => handleGeneralChange("lugar", e.target.value)} />
+                                        {errors.lugar && <p className="text-xs text-red-500">{errors.lugar[0]}</p>}
                                     </div>
                                 </div>
 
@@ -388,10 +476,12 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
                                     <div className="space-y-2">
                                         <Label htmlFor="sede">Sede</Label>
                                         <Input id="sede" name="sede" placeholder="Instalaciones" value={generalData.sede} onChange={(e) => handleGeneralChange("sede", e.target.value)} />
+                                        {errors.sede && <p className="text-xs text-red-500">{errors.sede[0]}</p>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="region">Región</Label>
                                         <Input id="region" name="region" placeholder="Ej. 1" value={generalData.region} onChange={(e) => handleGeneralChange("region", e.target.value)} />
+                                        {errors.region && <p className="text-xs text-red-500">{errors.region[0]}</p>}
                                     </div>
                                 </div>
 
@@ -399,30 +489,16 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
                                     <div className="space-y-2">
                                         <Label htmlFor="limite-participantes">Límite de participantes</Label>
                                         <Input id="limite-participantes" name="limiteParticipantes" type="number" placeholder="0 = Ilimitado" value={generalData.limiteParticipantes} onChange={(e) => handleGeneralChange("limiteParticipantes", e.target.value)} />
+                                        {errors.limiteParticipantes && <p className="text-xs text-red-500">{errors.limiteParticipantes[0]}</p>}
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="hora-limite">Hora límite de inscripciones</Label>
                                         <Input id="hora-limite" name="horaLimiteInscripcion" type="time" value={generalData.horaLimiteInscripcion} onChange={(e) => handleGeneralChange("horaLimiteInscripcion", e.target.value)} />
+                                        {errors.horaLimiteInscripcion && <p className="text-xs text-red-500">{errors.horaLimiteInscripcion[0]}</p>}
                                     </div>
                                 </div>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-                                    <div className="space-y-3 bg-muted/30 p-3 rounded-md border border-dashed">
-                                        <Label className="font-semibold flex items-center gap-2">
-                                            <CalendarIcon className="h-4 w-4 text-teal-600" />
-                                            Fechas del Evento
-                                        </Label>
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="space-y-1">
-                                                <Label className="text-xs text-muted-foreground">Fecha Inicio</Label>
-                                                <DatePicker name="fechaInicioEvento" date={generalData.fechaInicioEvento} onSelect={(d) => handleGeneralChange("fechaInicioEvento", d)} />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label className="text-xs text-muted-foreground">Fecha Fin</Label>
-                                                <DatePicker name="fechaFinEvento" date={generalData.fechaFinEvento} onSelect={(d) => handleGeneralChange("fechaFinEvento", d)} />
-                                            </div>
-                                        </div>
-                                    </div>
 
                                     <div className="space-y-3 bg-muted/30 p-3 rounded-md border border-dashed">
                                         <Label className="font-semibold flex items-center gap-2">
@@ -433,13 +509,34 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
                                             <div className="space-y-1">
                                                 <Label className="text-xs text-muted-foreground">Fecha Inicio</Label>
                                                 <DatePicker name="fechaInicioInscripcion" date={generalData.fechaInicioInscripcion} onSelect={(d) => handleGeneralChange("fechaInicioInscripcion", d)} />
+                                                {errors.fechaInicioInscripcion && <p className="text-xs text-red-500">{errors.fechaInicioInscripcion[0]}</p>}
                                             </div>
                                             <div className="space-y-1">
                                                 <Label className="text-xs text-muted-foreground">Fecha Fin</Label>
                                                 <DatePicker name="fechaFinInscripcion" date={generalData.fechaFinInscripcion} onSelect={(d) => handleGeneralChange("fechaFinInscripcion", d)} />
+                                                {errors.fechaFinInscripcion && <p className="text-xs text-red-500">{errors.fechaFinInscripcion[0]}</p>}
                                             </div>
                                         </div>
                                     </div>
+                                    <div className="space-y-3 bg-muted/30 p-3 rounded-md border border-dashed">
+                                        <Label className="font-semibold flex items-center gap-2">
+                                            <CalendarIcon className="h-4 w-4 text-teal-600" />
+                                            Fechas del Evento
+                                        </Label>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <Label className="text-xs text-muted-foreground">Fecha Inicio</Label>
+                                                <DatePicker name="fechaInicioEvento" date={generalData.fechaInicioEvento} onSelect={(d) => handleGeneralChange("fechaInicioEvento", d)} />
+                                                {errors.fechaInicioEvento && <p className="text-xs text-red-500">{errors.fechaInicioEvento[0]}</p>}
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label className="text-xs text-muted-foreground">Fecha Fin</Label>
+                                                <DatePicker name="fechaFinEvento" date={generalData.fechaFinEvento} onSelect={(d) => handleGeneralChange("fechaFinEvento", d)} />
+                                                {errors.fechaFinEvento && <p className="text-xs text-red-500">{errors.fechaFinEvento[0]}</p>}
+                                            </div>
+                                        </div>
+                                    </div>
+
                                 </div>
                             </div>
                         </TabsContent>
@@ -588,68 +685,25 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
                                                                 </TableRow>
                                                             </TableHeader>
                                                             <TableBody>
-                                                                {modalidadesDetalle
-                                                                    .filter((detalle) => detalle.id === modalidad.id)
-                                                                    .map((detalle, idx) => {
-                                                                        const detailKey = `det-${modalidad.id}-${idx}`;
-                                                                        const isSelected = selectedDetails[detailKey] || false;
-                                                                        const currentValues = detailValues[detailKey] || { costo: "", descripcion: "" };
+                                                                {(groupedDetails[modalidad.id] || []).map((detalle, idx) => {
+                                                                    const detailKey = `det-${modalidad.id}-${idx}`;
+                                                                    const isSelected = selectedDetails[detailKey] || false;
+                                                                    const currentValues = detailValues[detailKey] || { costo: "", descripcion: "" };
 
-                                                                        return (
-                                                                            <TableRow key={idx} className="hover:bg-muted/30 transition-colors">
-                                                                                <TableCell className="text-center">
-                                                                                    <Checkbox
-                                                                                        id={detailKey}
-                                                                                        checked={isSelected}
-                                                                                        onCheckedChange={() => toggleDetail(detailKey)}
-                                                                                    />
-                                                                                </TableCell>
-                                                                                <TableCell className="font-medium">
-                                                                                    <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900 dark:text-teal-200 dark:border-teal-800 font-normal">
-                                                                                        {detalle.Nivel}
-                                                                                    </Badge>
-                                                                                </TableCell>
-                                                                                <TableCell className="text-muted-foreground text-sm">{detalle.titulo}</TableCell>
-                                                                                <TableCell className="text-center text-muted-foreground text-sm">
-                                                                                    {detalle.edad_ini === detalle.edad_fin
-                                                                                        ? `${detalle.edad_ini} años`
-                                                                                        : `${detalle.edad_ini} - ${detalle.edad_fin} años`
-                                                                                    }
-                                                                                </TableCell>
-                                                                                <TableCell>
-                                                                                    <div className="relative">
-                                                                                        <span className={cn(
-                                                                                            "absolute left-2 top-2 text-xs",
-                                                                                            !isSelected ? "text-muted-foreground/50" : "text-muted-foreground"
-                                                                                        )}>$</span>
-                                                                                        <Input
-                                                                                            className="h-8 pl-5 w-full"
-                                                                                            placeholder="0.00"
-                                                                                            type="number"
-                                                                                            disabled={!isSelected}
-                                                                                            value={currentValues.costo}
-                                                                                            onChange={(e) => updateDetailValue(detailKey, 'costo', e.target.value)}
-                                                                                        />
-                                                                                    </div>
-                                                                                </TableCell>
-                                                                                <TableCell>
-                                                                                    <div className="flex items-center h-8 px-2 text-sm font-medium text-muted-foreground bg-muted/20 rounded-md border border-transparent">
-                                                                                        ${isSelected ? grandTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
-                                                                                    </div>
-                                                                                </TableCell>
-                                                                                <TableCell>
-                                                                                    <Input
-                                                                                        className="h-8 w-full"
-                                                                                        placeholder="Descripción"
-                                                                                        disabled={!isSelected}
-                                                                                        value={currentValues.descripcion}
-                                                                                        onChange={(e) => updateDetailValue(detailKey, 'descripcion', e.target.value)}
-                                                                                    />
-                                                                                </TableCell>
-                                                                            </TableRow>
-                                                                        )
-                                                                    })}
-                                                                {modalidadesDetalle.filter((d) => d.id === modalidad.id).length === 0 && (
+                                                                    return (
+                                                                        <DetailRow
+                                                                            key={detailKey}
+                                                                            detail={detalle}
+                                                                            detailKey={detailKey}
+                                                                            isSelected={isSelected}
+                                                                            values={currentValues}
+                                                                            grandTotal={grandTotal}
+                                                                            onToggle={toggleDetail}
+                                                                            onUpdate={updateDetailValue}
+                                                                        />
+                                                                    )
+                                                                })}
+                                                                {(!groupedDetails[modalidad.id] || groupedDetails[modalidad.id].length === 0) && (
                                                                     <TableRow>
                                                                         <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                                                                             No hay detalles disponibles
@@ -672,16 +726,95 @@ function NewEventoTabs({ className, id, onClose }: { className?: string, id: str
                 </ScrollArea>
             </div>
 
-            <div className="p-4 border-t mt-auto flex justify-end gap-2 bg-background">
-                <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
-                <Button type="submit" form={id} className="bg-teal-600 hover:bg-teal-700 text-white">
-                    <Save className="mr-2 h-4 w-4" />
-                    Guardar Evento
-                </Button>
+            <div className="p-4 border-t mt-auto flex justify-between gap-2 bg-background">
+                <div className="text-xs text-red-500 flex flex-col justify-center">
+                    {!isValid && Object.keys(errors).length > 0 && <span>Complete los campos requeridos para guardar.</span>}
+                    {errors.detalles && <span>{errors.detalles[0]}</span>}
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="outline" type="button" onClick={onClose}>Cancelar</Button>
+                    <Button type="submit" form={id} disabled={!isValid} className="bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-50">
+                        <Save className="mr-2 h-4 w-4" />
+                        Guardar Evento
+                    </Button>
+                </div>
             </div>
         </Tabs>
     )
 }
+
+const DetailRow = React.memo(({
+    detail,
+    detailKey,
+    isSelected,
+    values,
+    grandTotal,
+    onToggle,
+    onUpdate
+}: {
+    detail: ModalidadDetalleItem
+    detailKey: string
+    isSelected: boolean
+    values: { costo: string; descripcion: string }
+    grandTotal: number
+    onToggle: (key: string) => void
+    onUpdate: (key: string, field: 'costo' | 'descripcion', value: string) => void
+}) => {
+    return (
+        <TableRow className="hover:bg-muted/30 transition-colors">
+            <TableCell className="text-center">
+                <Checkbox
+                    id={detailKey}
+                    checked={isSelected}
+                    onCheckedChange={() => onToggle(detailKey)}
+                />
+            </TableCell>
+            <TableCell className="font-medium">
+                <Badge variant="outline" className="bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900 dark:text-teal-200 dark:border-teal-800 font-normal">
+                    {detail.Nivel}
+                </Badge>
+            </TableCell>
+            <TableCell className="text-muted-foreground text-sm">{detail.titulo}</TableCell>
+            <TableCell className="text-center text-muted-foreground text-sm">
+                {detail.edad_ini === detail.edad_fin
+                    ? `${detail.edad_ini} años`
+                    : `${detail.edad_ini} - ${detail.edad_fin} años`
+                }
+            </TableCell>
+            <TableCell>
+                <div className="relative">
+                    <span className={cn(
+                        "absolute left-2 top-2 text-xs",
+                        !isSelected ? "text-muted-foreground/50" : "text-muted-foreground"
+                    )}>$</span>
+                    <Input
+                        className="h-8 pl-5 w-full"
+                        placeholder="0.00"
+                        type="number"
+                        disabled={!isSelected}
+                        value={values.costo}
+                        onChange={(e) => onUpdate(detailKey, 'costo', e.target.value)}
+                    />
+                </div>
+            </TableCell>
+            <TableCell>
+                <div className="flex items-center h-8 px-2 text-sm font-medium text-muted-foreground bg-muted/20 rounded-md border border-transparent">
+                    ${isSelected ? grandTotal.toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
+                </div>
+            </TableCell>
+            <TableCell>
+                <Input
+                    className="h-8 w-full"
+                    placeholder="Descripción"
+                    disabled={!isSelected}
+                    value={values.descripcion}
+                    onChange={(e) => onUpdate(detailKey, 'descripcion', e.target.value)}
+                />
+            </TableCell>
+        </TableRow>
+    )
+})
+DetailRow.displayName = "DetailRow"
 
 function DatePicker({ name, date, onSelect }: { name?: string, date?: Date, onSelect?: (date: Date | undefined) => void }) {
     return (
