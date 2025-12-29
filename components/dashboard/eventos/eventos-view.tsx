@@ -170,6 +170,7 @@ export function EventosView() {
                                             </PopoverTrigger>
                                             <PopoverContent className="w-auto p-0" align="start">
                                                 <Calendar
+                                                    locale={es}
                                                     mode="single"
                                                     selected={date}
                                                     onSelect={setDate}

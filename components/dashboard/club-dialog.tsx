@@ -292,6 +292,7 @@ function ClubForm({ className, id, onSubmit }: ClubFormProps) {
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
                                         <Calendar
+                                            locale={es}
                                             mode="single"
                                             selected={formData.fundacion ? new Date(formData.fundacion + "T12:00:00") : undefined}
                                             onSelect={(date) => {

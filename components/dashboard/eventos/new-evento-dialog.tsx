@@ -839,6 +839,7 @@ function DatePicker({ name, date, onSelect }: { name?: string, date?: Date, onSe
                         selected={date}
                         onSelect={onSelect}
                         initialFocus
+                        locale={es}
                     />
                 </PopoverContent>
             </Popover>

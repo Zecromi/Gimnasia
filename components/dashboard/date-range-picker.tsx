@@ -13,6 +13,7 @@ import {
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import { es } from "date-fns/locale"
 
 export function CalendarDateRangePicker({
     className,
@@ -57,6 +58,7 @@ export function CalendarDateRangePicker({
                         selected={date}
                         onSelect={setDate}
                         numberOfMonths={2}
+                        locale={es}
                     />
                 </PopoverContent>
             </Popover>
