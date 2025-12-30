@@ -25,6 +25,15 @@ export function ClubesView() {
     const [isLoading, setIsLoading] = useState(true)
     const [data, setData] = useState<ViewClubGral[]>([])
 
+    // Filtering states
+    const [inputClub, setInputClub] = useState("")
+    const [inputEmail, setInputEmail] = useState("")
+
+    // Active filters
+    const [searchClub, setSearchClub] = useState("")
+    const [searchEmail, setSearchEmail] = useState("")
+    const [statusFilter, setStatusFilter] = useState("todos")
+
     useEffect(() => {
         const fetchClubs = async () => {
             try {
@@ -40,9 +49,53 @@ export function ClubesView() {
         }
         fetchClubs()
     }, [])
-    // ... existing render code, replacing clubesData with data ...
+
+    const handleSearch = () => {
+        setSearchClub(inputClub)
+        setSearchEmail(inputEmail)
+    }
+
+    const filteredData = data.filter((item) => {
+        // Status Filter
+        if (statusFilter === "alta" && !item.Estatus) return false
+        if (statusFilter === "baja" && item.Estatus) return false
+
+        // Club Name Filter
+        if (searchClub && !item.Club?.toLowerCase().includes(searchClub.toLowerCase())) {
+            return false
+        }
+
+        // Email Filter
+        if (searchEmail && !item.Email?.toLowerCase().includes(searchEmail.toLowerCase())) {
+            return false
+        }
+
+        return true
+    })
+
     if (isLoading) {
-        // ...
+        return (
+            <div className="space-y-6">
+                <Card className="rounded-2xl border-none shadow-none bg-gray-50">
+                    <CardHeader className="pt-2 pb-0">
+                        <Skeleton className="h-8 w-[200px]" />
+                    </CardHeader>
+                    <CardContent className="pt-0 pb-2">
+                        <div className="grid gap-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-full" />
+                        </div>
+                    </CardContent>
+                </Card>
+                <div className="rounded-md border p-4 bg-white">
+                    <div className="space-y-4">
+                        <Skeleton className="h-10 w-full" />
+                        <Skeleton className="h-20 w-full" />
+                        <Skeleton className="h-20 w-full" />
+                    </div>
+                </div>
+            </div>
+        )
     }
 
     return (
@@ -60,14 +113,27 @@ export function ClubesView() {
                                 {/* Row 1 */}
                                 <div className="grid gap-3 md:grid-cols-12">
                                     <InputGroup label="Nombre de club :" htmlFor="club" className="md:col-span-5">
-                                        <Input id="club" placeholder="" className="h-8" />
+                                        <Input
+                                            id="club"
+                                            placeholder=""
+                                            className="h-8"
+                                            value={inputClub}
+                                            onChange={(e) => setInputClub(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") handleSearch()
+                                            }}
+                                        />
                                     </InputGroup>
                                     <InputGroup label="Asociación :" className="md:col-span-3">
                                         <Input value="ESTADO DE MÉXICO" disabled className="bg-muted/50 h-8" />
                                     </InputGroup>
 
                                     <InputGroup label="Estatus :" htmlFor="estatus" className="md:col-span-3">
-                                        <Select defaultValue="todos">
+                                        <Select
+                                            defaultValue="todos"
+                                            value={statusFilter}
+                                            onValueChange={setStatusFilter}
+                                        >
                                             <SelectTrigger id="estatus">
                                                 <SelectValue placeholder="Seleccionar" />
                                             </SelectTrigger>
@@ -83,13 +149,25 @@ export function ClubesView() {
                                 {/* Row 2 */}
                                 <div className="grid gap-3 md:grid-cols-12 items-end">
                                     <InputGroup label="Email :" htmlFor="email" className="md:col-span-5">
-                                        <Input id="email" placeholder="" className="h-8" />
+                                        <Input
+                                            id="email"
+                                            placeholder=""
+                                            className="h-8"
+                                            value={inputEmail}
+                                            onChange={(e) => setInputEmail(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === "Enter") handleSearch()
+                                            }}
+                                        />
                                     </InputGroup>
 
-                                    <div className="md:col-span-2 flex justify-end">
-                                        <Button className="w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white h-8">
+                                    <div className="md:col-span-3 md:col-start-9 flex justify-end">
+                                        <Button
+                                            className="w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white h-8"
+                                            onClick={handleSearch}
+                                        >
                                             <Search className="mr-2 h-4 w-4" />
-                                            Filtrar
+                                            Buscar
                                         </Button>
                                     </div>
                                 </div>
@@ -101,7 +179,7 @@ export function ClubesView() {
                     </div>
                 </CardContent>
             </Card>
-            <DataTable columns={columns} data={data} />
+            <DataTable columns={columns} data={filteredData} />
         </div>
     )
 }
