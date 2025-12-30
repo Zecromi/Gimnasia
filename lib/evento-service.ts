@@ -26,6 +26,7 @@ export interface ConfiguracionItem {
 export interface NivelItem {
     id_modalidad: string;
     id_nivel: string;
+    costo: string;
 }
 
 export interface AdicionalItem {
@@ -43,5 +44,33 @@ export interface SetEventoPayload {
 export const createEvento = async (payload: SetEventoPayload) => {
     console.log(payload)
     const response = await api.post("/SetEvento", payload);
+    return response.data;
+};
+
+export interface EventoResponseItem {
+    id: number;
+    id_Evento: number;
+    Organizador: string;
+    Asociacion: string;
+    Nombre: string;
+    Lugar: string;
+    Sede: string;
+    Region: string;
+    Limite_participantes: number;
+    F_ini_evento: string;
+    F_fin_evento: string;
+    F_ini_incripciones: string;
+    F_fin_incripciones: string;
+    Hora_limite_inscripciones: string;
+    Status: string;
+    Restriccion: string;
+}
+
+export interface GetEventosResponse {
+    Eventos: EventoResponseItem[];
+}
+
+export const getEventos = async () => {
+    const response = await api.get<GetEventosResponse>("/GetEvent");
     return response.data;
 };

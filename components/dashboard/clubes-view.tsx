@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { Suspense, lazy, useEffect, useState } from "react"
 import { Search } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -19,7 +19,7 @@ import {
 import { getClubs, ViewClubGral } from "@/lib/club-service"
 import { columns } from "./clubes-columns"
 import { DataTable } from "./data-table"
-import { ClubDialog } from "./club-dialog"
+const ClubDialog = lazy(() => import("./club-dialog").then(module => ({ default: module.ClubDialog })))
 
 export function ClubesView() {
     const [isLoading, setIsLoading] = useState(true)
@@ -174,7 +174,9 @@ export function ClubesView() {
                             </div>
                         </div>
                         <div className="col-span-1 flex items-center justify-center border-l pl-4">
-                            <ClubDialog />
+                            <Suspense fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
+                                <ClubDialog />
+                            </Suspense>
                         </div>
                     </div>
                 </CardContent>

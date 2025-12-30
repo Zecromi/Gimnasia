@@ -38,7 +38,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { Evento } from "./eventos-columns"
+import { EventoResponseItem as Evento } from "@/lib/evento-service"
 
 interface EditEventoDialogProps {
     evento: Evento
@@ -57,7 +57,7 @@ export function EditEventoDialog({ evento, children }: EditEventoDialogProps) {
                 </DrawerTrigger>
                 <DrawerContent className="h-[95vh]">
                     <DrawerHeader className="text-left">
-                        <DrawerTitle>Editar Evento: {evento.nombre}</DrawerTitle>
+                        <DrawerTitle>Editar Evento: {evento.Nombre}</DrawerTitle>
                     </DrawerHeader>
                     <div className="flex-1 px-4 overflow-hidden">
                         <EditEventoTabs id="edit-evento-form-mobile" evento={evento} />
@@ -74,7 +74,7 @@ export function EditEventoDialog({ evento, children }: EditEventoDialogProps) {
             </DialogTrigger>
             <DialogContent className="sm:max-w-[1000px] h-[90vh] flex flex-col p-0">
                 <DialogHeader className="px-6 py-4 border-b">
-                    <DialogTitle>Editar Evento: {evento.nombre}</DialogTitle>
+                    <DialogTitle>Editar Evento: {evento.Nombre}</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 overflow-hidden">
                     <EditEventoTabs id="edit-evento-form-desktop" evento={evento} />
@@ -203,7 +203,7 @@ function EditEventoTabs({ className, id, evento }: { className?: string, id: str
 }
 
 import { Badge } from "@/components/ui/badge"
-import { CalendarDays, MapPin, Clock } from "lucide-react"
+import { CalendarDays, MapPin, Clock, Trophy, Globe, User, Building2, Users } from "lucide-react"
 
 function GeneralInfoForm({ id, evento }: { id: string, evento: Evento }) {
     return (
@@ -213,20 +213,20 @@ function GeneralInfoForm({ id, evento }: { id: string, evento: Evento }) {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center bg-muted/50 p-4 rounded-lg border border-dashed border-teal-200 dark:border-teal-900">
                 <div className="space-y-1">
                     <h3 className="text-xl font-bold text-teal-700 dark:text-teal-400">
-                        {evento.nombre}
+                        {evento.Nombre}
                     </h3>
                     <div className="flex items-center text-sm text-muted-foreground">
                         <span className="font-semibold mr-2 text-foreground">No. Evento:</span>
-                        {evento.noEvento}
+                        {evento.id_Evento}
                     </div>
                 </div>
                 <div className="mt-4 md:mt-0 flex flex-col items-end gap-2">
-                    <Badge variant={evento.estatus === 'Abierto' ? 'default' : 'secondary'} className={`${evento.estatus === 'Abierto' ? 'bg-teal-600 hover:bg-teal-700' : ''} text-base px-4 py-1`}>
-                        {evento.estatus}
+                    <Badge variant={evento.Status === 'Abierto' ? 'default' : 'secondary'} className={`${evento.Status === 'Abierto' ? 'bg-teal-600 hover:bg-teal-700' : ''} text-base px-4 py-1`}>
+                        {evento.Status}
                     </Badge>
                     <div className="flex items-center text-sm font-medium">
                         <Clock className="w-4 h-4 mr-2 text-teal-600" />
-                        <span>Inscripción hasta: 23:59</span>
+                        <span>Inscripción hasta: {evento.Hora_limite_inscripciones}</span>
                     </div>
                 </div>
             </div>
@@ -239,29 +239,44 @@ function GeneralInfoForm({ id, evento }: { id: string, evento: Evento }) {
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Tipo</p>
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center">
+                                    <Trophy className="w-3.5 h-3.5 mr-1.5" />
+                                    Tipo
+                                </p>
                                 <p className="font-medium mt-1">Competencia</p>
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Región</p>
-                                <p className="font-medium mt-1">Nacional</p>
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center">
+                                    <Globe className="w-3.5 h-3.5 mr-1.5" />
+                                    Región
+                                </p>
+                                <p className="font-medium mt-1">{evento.Region}</p>
                             </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Organizador</p>
-                                <p className="font-medium mt-1">Asociación</p>
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center">
+                                    <User className="w-3.5 h-3.5 mr-1.5" />
+                                    Organizador
+                                </p>
+                                <p className="font-medium mt-1">{evento.Organizador}</p>
                             </div>
                             <div>
-                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Asociación</p>
-                                <p className="font-medium mt-1">PUEBLA</p>
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center">
+                                    <Building2 className="w-3.5 h-3.5 mr-1.5" />
+                                    Asociación
+                                </p>
+                                <p className="font-medium mt-1">{evento.Asociacion}</p>
                             </div>
                         </div>
                         <div>
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Límite de participantes</p>
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center">
+                                <Users className="w-3.5 h-3.5 mr-1.5" />
+                                Límite de participantes
+                            </p>
                             <Badge variant="outline" className="mt-1 border-teal-500 text-teal-600 bg-teal-50 dark:bg-teal-950/30">
-                                Ilimitado
+                                {evento.Limite_participantes === 0 ? "Ilimitado" : evento.Limite_participantes}
                             </Badge>
                         </div>
                     </div>
@@ -275,8 +290,8 @@ function GeneralInfoForm({ id, evento }: { id: string, evento: Evento }) {
                         <div className="flex items-start gap-3 bg-muted/30 p-3 rounded-md">
                             <MapPin className="w-5 h-5 text-teal-600 mt-0.5" />
                             <div>
-                                <p className="font-semibold">{evento.sede}</p>
-                                <p className="text-sm text-muted-foreground">{evento.lugar}</p>
+                                <p className="font-semibold">{evento.Sede}</p>
+                                <p className="text-sm text-muted-foreground">{evento.Lugar}</p>
                             </div>
                         </div>
                     </div>
@@ -289,21 +304,21 @@ function GeneralInfoForm({ id, evento }: { id: string, evento: Evento }) {
                                 <span className="text-sm">Fecha de Evento</span>
                                 <Badge variant="outline" className="flex gap-2 py-1">
                                     <CalendarDays className="w-3 h-3" />
-                                    {evento.fechaEvento}
+                                    {evento.F_ini_evento.split('T')[0]}
                                 </Badge>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-sm">Inicio Inscripción</span>
                                 <Badge variant="outline" className="flex gap-2 py-1">
                                     <CalendarDays className="w-3 h-3" />
-                                    2025/07/28
+                                    {evento.F_ini_incripciones.split('T')[0]}
                                 </Badge>
                             </div>
                             <div className="flex items-center justify-between">
                                 <span className="text-sm">Fin Inscripción</span>
                                 <Badge variant="outline" className="flex gap-2 py-1">
                                     <CalendarDays className="w-3 h-3" />
-                                    2025/08/12
+                                    {evento.F_fin_incripciones.split('T')[0]}
                                 </Badge>
                             </div>
 

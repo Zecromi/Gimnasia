@@ -1,6 +1,6 @@
 import { Metadata } from "next"
 import { ClubesView } from "@/components/dashboard/clubes-view"
-import { Sidebar } from "@/components/dashboard/sidebar"
+
 
 export const metadata: Metadata = {
     title: "Clubes",
