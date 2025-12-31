@@ -34,19 +34,21 @@ export function ClubesView() {
     const [searchEmail, setSearchEmail] = useState("")
     const [statusFilter, setStatusFilter] = useState("todos")
 
-    useEffect(() => {
-        const fetchClubs = async () => {
-            try {
-                const response = await getClubs()
-                if (response && response.View_Club_gral) {
-                    setData(response.View_Club_gral)
-                }
-            } catch (error) {
-                console.error("Error fetching clubs:", error)
-            } finally {
-                setIsLoading(false)
+    const fetchClubs = async () => {
+        setIsLoading(true)
+        try {
+            const response = await getClubs()
+            if (response && response.View_Club_gral) {
+                setData(response.View_Club_gral)
             }
+        } catch (error) {
+            console.error("Error fetching clubs:", error)
+        } finally {
+            setIsLoading(false)
         }
+    }
+
+    useEffect(() => {
         fetchClubs()
     }, [])
 
@@ -175,7 +177,7 @@ export function ClubesView() {
                         </div>
                         <div className="col-span-1 flex items-center justify-center border-l pl-4">
                             <Suspense fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
-                                <ClubDialog />
+                                <ClubDialog onClubCreated={fetchClubs} />
                             </Suspense>
                         </div>
                     </div>

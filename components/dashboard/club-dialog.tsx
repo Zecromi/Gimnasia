@@ -56,7 +56,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-export function ClubDialog() {
+export function ClubDialog({ onClubCreated }: { onClubCreated?: () => void }) {
     const [open, setOpen] = React.useState(false)
     const [isLoading, setIsLoading] = React.useState(false)
     const isMobile = useIsMobile()
@@ -71,6 +71,7 @@ export function ClubDialog() {
             const response = await createClub(payload)
             console.log("Response:", response)
             toast.success("Club guardado exitosamente")
+            onClubCreated?.() // Refresh parent data
             setOpen(false)
 
         } catch (error: any) {
