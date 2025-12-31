@@ -17,13 +17,14 @@ import {
 } from "@/components/ui/select"
 
 import { getClubs, ViewClubGral } from "@/lib/club-service"
+import { useClubStore } from "@/lib/store/club-store"
 import { columns } from "./clubes-columns"
 import { DataTable } from "./data-table"
 const ClubDialog = lazy(() => import("./club-dialog").then(module => ({ default: module.ClubDialog })))
 
 export function ClubesView() {
     const [isLoading, setIsLoading] = useState(true)
-    const [data, setData] = useState<ViewClubGral[]>([])
+    const { clubs, setClubs } = useClubStore()
 
     // Filtering states
     const [inputClub, setInputClub] = useState("")
@@ -39,7 +40,7 @@ export function ClubesView() {
         try {
             const response = await getClubs()
             if (response && response.View_Club_gral) {
-                setData(response.View_Club_gral)
+                setClubs(response.View_Club_gral)
             }
         } catch (error) {
             console.error("Error fetching clubs:", error)
@@ -57,7 +58,7 @@ export function ClubesView() {
         setSearchEmail(inputEmail)
     }
 
-    const filteredData = data.filter((item) => {
+    const filteredData = clubs.filter((item) => {
         // Status Filter
         if (statusFilter === "alta" && !item.Estatus) return false
         if (statusFilter === "baja" && item.Estatus) return false

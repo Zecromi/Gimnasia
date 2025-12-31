@@ -10,25 +10,17 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 
+import { ViewClubGral } from "@/lib/club-service"
 import { EditClubDialog } from "./edit-club-dialog"
 
-export type Club = {
-    Club: string
-    Alias: string
-    Email: string
-    Asociacion: string
-    membresia: boolean
-    Estatus: boolean
-}
-
-export const columns: ColumnDef<Club>[] = [
+export const columns: ColumnDef<ViewClubGral>[] = [
     {
         id: "detalle",
         header: "Detalle",
         cell: ({ row }) => {
             return (
                 <div className="flex items-center">
-                    <EditClubDialog club={row.original as any}>
+                    <EditClubDialog club={row.original}>
                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-green-200 dark:hover:bg-green-800">
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Editar</span>

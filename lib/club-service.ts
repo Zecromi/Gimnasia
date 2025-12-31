@@ -114,7 +114,7 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
     const demoClub: ClubDefinition = {
         nombre: getString("nombre"),
         alias: getString("alias"),
-        rfc: getString("rfc"),
+        rfc: getString("rfc"),   
         tipo_aparatos_nac: getBoolString("nacionales"),
         tipo_aparatos_imp: getBoolString("importados"),
         tipo_aparatos_fig: getBoolString("homologados"),
@@ -127,9 +127,9 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
         id_club_principal: "", // keeping empty string as per prompt requirement
         fundacion: getString("fundacion"),
         sector: data["sector"] === "privado" ? "1" : "0", // 1 privado, 0 publico
-        tipo_instalaciones: data["tipoInstalaciones"] === "rentadas" ? "1" : "0", // 1 rentada, 0 propia
+        tipo_instalaciones: data["tipoInstalaciones"] === "rentadas" ? "1" : "0", // 1 rentada, 0 propia             
         tel1: getString("telPrincipal"),
-        tel2: getString("telSecundario"),
+        tel2: getString("telSecundario"),       
     };
 
     const dirClub1: ClubAddress = {
@@ -169,12 +169,25 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
 };
 
 export interface ViewClubGral {
-    Club: string;
-    Alias: string;
-    Email: string;
-    Asociacion: string;
-    membresia: boolean;
-    Estatus: boolean;
+    Club: string
+    Alias: string
+    Email: string
+    Asociacion: string
+    membresia: boolean
+    Estatus: boolean
+    Web: string
+    id: number
+    rfc: string
+    Tipo_aparatos_nac: boolean
+    Tipo_aparatos_imp: boolean
+    Tipos_aparatos_fig: boolean
+    Tipos_aparatos_otros: boolean
+    id_club_principal: number
+    Fundacion: string
+    Sector: boolean
+    Tipo_instalaciones: boolean
+    Telefono1: string
+    Telefono2: string
 }
 
 export interface GetClubesResponse {
@@ -185,3 +198,9 @@ export const getClubs = async () => {
     const response = await api.get<GetClubesResponse>("/GetClubes");
     return response.data;
 };
+
+export const updateClub = async (id: number, payload: SetClubPayload) => {
+    const response = await api.put(`/PutClub?id=${id}`, payload);
+    return response.data;
+};
+
