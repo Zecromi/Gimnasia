@@ -86,8 +86,8 @@ export interface ClubAddress {
 
 export interface SetClubPayload {
     demoClub: ClubDefinition[];
-    DirClub1: ClubAddress[];
-    DirClub2: ClubAddress[];
+    dirClub1: ClubAddress[];
+    dirClub2: ClubAddress[];
 }
 
 export const createClub = async (payload: SetClubPayload) => {
@@ -163,8 +163,8 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
 
     return {
         demoClub: [demoClub],
-        DirClub1: [dirClub1],
-        DirClub2: [dirClub2],
+        dirClub1: [dirClub1],
+        dirClub2: [dirClub2],
     };
 };
 
