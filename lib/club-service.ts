@@ -114,7 +114,7 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
     const demoClub: ClubDefinition = {
         nombre: getString("nombre"),
         alias: getString("alias"),
-        rfc: getString("rfc"),   
+        rfc: getString("rfc"),
         tipo_aparatos_nac: getBoolString("nacionales"),
         tipo_aparatos_imp: getBoolString("importados"),
         tipo_aparatos_fig: getBoolString("homologados"),
@@ -129,7 +129,7 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
         sector: data["sector"] === "privado" ? "1" : "0", // 1 privado, 0 publico
         tipo_instalaciones: data["tipoInstalaciones"] === "rentadas" ? "1" : "0", // 1 rentada, 0 propia             
         tel1: getString("telPrincipal"),
-        tel2: getString("telSecundario"),       
+        tel2: getString("telSecundario"),
     };
 
     const dirClub1: ClubAddress = {
@@ -199,8 +199,60 @@ export const getClubs = async () => {
     return response.data;
 };
 
+
+
+export interface ClubDetail {
+    id: number
+    Nombre: string
+    Alias: string
+    rfc: string
+    Tipo_aparatos_nac: boolean
+    Tipo_aparatos_imp: boolean
+    Tipos_aparatos_fig: boolean
+    Tipos_aparatos_otros: boolean
+    Latitud: number
+    longitud: number
+    Asociacion: string
+    Email: string
+    Web: string
+    id_club_principal: number
+    membresia: boolean
+    Estatus: boolean
+    Fundacion: string
+    Sector: boolean
+    Tipo_instalaciones: boolean
+    Telefono1: string
+    Telefono2: string
+}
+
+export interface AddressDetail {
+    id: number
+    id_club: number
+    Calle: string
+    Exterior: string
+    Interior: string
+    Colonia: string
+    cp: string
+    Tipo_domicilio: string
+    id_estado: number
+}
+
+export interface GetClubDetailResponse {
+    Clubs: ClubDetail[]
+    DireccionPostal: AddressDetail[]
+    DireccionFiscal: AddressDetail[]
+}
+
+export const getClubDetail = async (id: number) => {
+    const response = await api.get<GetClubDetailResponse>(`/GetClubesDetalle?id=${id}`);
+    console.log(response.data);
+    return response.data;
+};
+
 export const updateClub = async (id: number, payload: SetClubPayload) => {
+    console.log("enviando datos para actualizar club",payload);
     const response = await api.put(`/PutClub?id=${id}`, payload);
     return response.data;
 };
+
 

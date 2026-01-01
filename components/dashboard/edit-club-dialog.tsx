@@ -2,9 +2,11 @@
 
 import * as React from "react"
 import { CircleFadingArrowUp, Upload, Key, Database, Building2, Lock, RefreshCw, FileText } from "lucide-react"
+
 import { useForm, FormProvider, useFormContext } from "react-hook-form"
 import { toast } from "sonner"
-import { updateClub, mapStateToClubPayload } from "@/lib/club-service"
+import { updateClub, mapStateToClubPayload, getClubDetail, getGlobalInfo, Estado } from "@/lib/club-service"
+
 
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -55,7 +57,23 @@ interface EditClubDialogProps {
 
 export function EditClubDialog({ club, children }: EditClubDialogProps) {
     const [open, setOpen] = React.useState(false)
+    const [estados, setEstados] = React.useState<Estado[]>([])
     const isMobile = useIsMobile()
+
+    React.useEffect(() => {
+        const fetchInfo = async () => {
+            try {
+                const globalInfo = await getGlobalInfo()
+                if (globalInfo && globalInfo.Estados) {
+                    setEstados(globalInfo.Estados)
+                }
+            } catch (error) {
+                console.error("Error fetching global info:", error)
+            }
+        }
+        fetchInfo()
+    }, [])
+
 
     // Map ViewClubGral to form structure expected by mapStateToClubPayload or directly to inputs
     // The inputs in GeneralInfoForm etc need to be registered
@@ -103,6 +121,67 @@ export function EditClubDialog({ club, children }: EditClubDialogProps) {
         }
     })
 
+    React.useEffect(() => {
+        const fetchDetails = async () => {
+            if (!club.id) return
+            try {
+                const details = await getClubDetail(club.id)
+                if (details && details.Clubs && details.Clubs.length > 0) {
+                    const c = details.Clubs[0]
+                    const postal = details.DireccionPostal && details.DireccionPostal.length > 0 ? details.DireccionPostal[0] : null
+                    const fiscal = details.DireccionFiscal && details.DireccionFiscal.length > 0 ? details.DireccionFiscal[0] : null
+
+                    methods.reset({
+                        nombre: c.Nombre,
+                        asociacion: c.Asociacion,
+                        alias: c.Alias,
+                        email: c.Email,
+                        web: c.Web,
+                        fundacion: c.Fundacion ? c.Fundacion.split("T")[0] : "",
+                        sector: c.Sector ? "privado" : "publico",
+                        telPrincipal: c.Telefono1,
+                        telSecundario: c.Telefono2,
+                        telMovil: "", // Still missing in API
+
+                        // Address from API
+                        calle: postal?.Calle || "",
+                        numExt: postal?.Exterior || "",
+                        numInt: postal?.Interior || "",
+                        colonia: postal?.Colonia || "",
+                        municipio: "", // Missing in API response based on user prompt? User prompt example: "Calle", "Exterior", "Interior", "Colonia", "cp", "Tipo_domicilio", "id_estado". Muncipio IS MISSING.
+                        estado: postal?.id_estado ? postal.id_estado.toString() : "", // Mapping ID to value
+                        cp: postal?.cp || "",
+
+                        // Fiscal from API
+                        rfc: c.rfc,
+                        igualDomicilio: false,
+                        calleFiscal: fiscal?.Calle || "",
+                        numExtFiscal: fiscal?.Exterior || "",
+                        numIntFiscal: fiscal?.Interior || "",
+                        coloniaFiscal: fiscal?.Colonia || "",
+                        municipioFiscal: "",
+                        estadoFiscal: fiscal?.id_estado ? fiscal.id_estado.toString() : "",
+                        cpFiscal: fiscal?.cp || "",
+
+                        // Aparatos
+                        nacionales: c.Tipo_aparatos_nac,
+                        importados: c.Tipo_aparatos_imp,
+                        homologados: c.Tipos_aparatos_fig,
+                        otros: c.Tipos_aparatos_otros,
+
+                        tipoInstalaciones: c.Tipo_instalaciones ? "rentadas" : "propias",
+                        organismos: false
+                    })
+                }
+            } catch (error) {
+                console.error("Error fetching club details:", error)
+                toast.error("Error al cargar detalles del club")
+            }
+        }
+
+        fetchDetails()
+    }, [club.id, methods])
+
     const onSubmit = async (data: any) => {
         try {
             const payload = mapStateToClubPayload(data)
@@ -132,7 +211,7 @@ export function EditClubDialog({ club, children }: EditClubDialogProps) {
                                 <DrawerTitle>Editar Club: {club.Club}</DrawerTitle>
                             </DrawerHeader>
                             <div className="flex-1 px-4 overflow-hidden">
-                                <EditClubTabs id="edit-club-form-mobile" club={club} />
+                                <EditClubTabs id="edit-club-form-mobile" club={club} estados={estados} />
                             </div>
                         </form>
                     </FormProvider>
@@ -153,7 +232,7 @@ export function EditClubDialog({ club, children }: EditClubDialogProps) {
                             <DialogTitle>Editar Club: {club.Club}</DialogTitle>
                         </DialogHeader>
                         <div className="flex-1 overflow-hidden">
-                            <EditClubTabs id="edit-club-form-desktop" club={club} />
+                            <EditClubTabs id="edit-club-form-desktop" club={club} estados={estados} />
                         </div>
                     </form>
                 </FormProvider>
@@ -162,7 +241,7 @@ export function EditClubDialog({ club, children }: EditClubDialogProps) {
     )
 }
 
-function EditClubTabs({ className, id, club }: { className?: string, id: string, club: ViewClubGral }) {
+function EditClubTabs({ className, id, club, estados }: { className?: string, id: string, club: ViewClubGral, estados: Estado[] }) {
     return (
         <Tabs defaultValue="general" className="h-full flex flex-col">
             <div className="px-6 pt-1">
@@ -241,7 +320,7 @@ function EditClubTabs({ className, id, club }: { className?: string, id: string,
                 <ScrollArea className="h-full">
                     <div className="p-6">
                         <TabsContent value="general" className="m-0 space-y-4">
-                            <GeneralInfoForm id={`${id}-general`} club={club} />
+                            <GeneralInfoForm id={`${id}-general`} club={club} estados={estados} />
                         </TabsContent>
                         <TabsContent value="modalidades" className="m-0">
                             <ModalidadesForm id={`${id}-modalidades`} club={club} />
@@ -260,7 +339,7 @@ function EditClubTabs({ className, id, club }: { className?: string, id: string,
     )
 }
 
-function GeneralInfoForm({ id, club }: { id: string, club: ViewClubGral }) {
+function GeneralInfoForm({ id, club, estados }: { id: string, club: ViewClubGral, estados: Estado[] }) {
     const { register } = useFormContext()
 
     return (
@@ -359,8 +438,9 @@ function GeneralInfoForm({ id, club }: { id: string, club: ViewClubGral }) {
                         {/* Simplified Select for RHF */}
                         <select className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" {...register("estado")}>
                             <option value="">Seleccione una opción</option>
-                            <option value="mexico">Estado de México</option>
-                            <option value="cdmx">CDMX</option>
+                            {estados?.map((estado) => (
+                                <option key={estado.id} value={estado.id.toString()}>{estado.Nombre}</option>
+                            ))}
                         </select>
                     </InputGroup>
                     <InputGroup label="C.P. *" htmlFor="cp" className="col-span-12 md:col-span-2">
@@ -397,8 +477,9 @@ function GeneralInfoForm({ id, club }: { id: string, club: ViewClubGral }) {
                     <InputGroup label="Estado *" className="col-span-12 md:col-span-4">
                         <select className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50" {...register("estadoFiscal")}>
                             <option value="">Seleccione una opción</option>
-                            <option value="mexico">Estado de México</option>
-                            <option value="cdmx">CDMX</option>
+                            {estados?.map((estado) => (
+                                <option key={estado.id} value={estado.id.toString()}>{estado.Nombre}</option>
+                            ))}
                         </select>
                     </InputGroup>
                     <InputGroup label="C.P. *" htmlFor="cp-fiscal" className="col-span-6 md:col-span-2">
