@@ -251,7 +251,7 @@ export const getClubDetail = async (id: number) => {
 
 export const updateClub = async (id: number, payload: SetClubPayload) => {
     console.log("enviando datos para actualizar club",payload);
-    const response = await api.post(`/PostClub?id=${id}`, payload);
+    const response = await api.post(`/PostClub/${id}`, payload);
     return response.data;
 };
 
