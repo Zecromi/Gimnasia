@@ -96,7 +96,7 @@ export function AfiliadosView() {
                                     </InputGroup>
                                     <InputGroup label="Club :" htmlFor="club" className="md:col-span-2">
                                         <Select>
-                                            <SelectTrigger id="club" size="sm">
+                                            <SelectTrigger id="club">
                                                 <SelectValue placeholder="Todos" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -108,7 +108,7 @@ export function AfiliadosView() {
                                     </InputGroup>
                                     <InputGroup label="Estatus :" htmlFor="estatus" className="md:col-span-2">
                                         <Select defaultValue="todos">
-                                            <SelectTrigger id="estatus" size="sm">
+                                            <SelectTrigger id="estatus">
                                                 <SelectValue placeholder="Seleccionar" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -143,7 +143,7 @@ export function AfiliadosView() {
                     </div>
                 </CardContent>
             </Card>
-            <DataTable columns={columns} data={afiliadosData as any} />
+            <DataTable columns={columns} data={[]} />
         </div>
     )
 }
