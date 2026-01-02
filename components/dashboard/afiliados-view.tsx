@@ -24,7 +24,6 @@ import {
 
 import { columns } from "./afiliados-columns"
 import { DataTable } from "./data-table"
-import afiliadosData from "./afiliados-data.json"
 import { AfiliadosDialog } from "./afiliados-dialog"
 
 export function AfiliadosView() {
@@ -97,7 +96,7 @@ export function AfiliadosView() {
                                     </InputGroup>
                                     <InputGroup label="Club :" htmlFor="club" className="md:col-span-2">
                                         <Select>
-                                            <SelectTrigger id="club" className="h-8">
+                                            <SelectTrigger id="club">
                                                 <SelectValue placeholder="Todos" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -109,7 +108,7 @@ export function AfiliadosView() {
                                     </InputGroup>
                                     <InputGroup label="Estatus :" htmlFor="estatus" className="md:col-span-2">
                                         <Select defaultValue="todos">
-                                            <SelectTrigger id="estatus" className="h-8">
+                                            <SelectTrigger id="estatus">
                                                 <SelectValue placeholder="Seleccionar" />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -144,7 +143,7 @@ export function AfiliadosView() {
                     </div>
                 </CardContent>
             </Card>
-            <DataTable columns={columns} data={afiliadosData as any} />
+            <DataTable columns={columns} data={[]} />
         </div>
     )
 }
