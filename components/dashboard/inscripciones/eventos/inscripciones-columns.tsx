@@ -30,7 +30,7 @@ export const columns: ColumnDef<EventoInscripcion>[] = [
         cell: ({ row }) => {
             return (
                 <div className="flex items-center pl-2">
-                    <RegisterEventDialog eventoId={row.original.id}>
+                    <RegisterEventDialog eventoId={row.original.id} eventoName={row.original.nombre}>
                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-teal-100 text-teal-700">
                             <TicketPlus className="h-4 w-4" />
                             <span className="sr-only">Inscribirse</span>

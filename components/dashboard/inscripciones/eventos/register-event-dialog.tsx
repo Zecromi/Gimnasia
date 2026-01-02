@@ -80,9 +80,10 @@ interface MemberConfig {
 interface RegisterEventDialogProps {
     children: React.ReactNode
     eventoId: string
+    eventoName?: string
 }
 
-export function RegisterEventDialog({ children, eventoId }: RegisterEventDialogProps) {
+export function RegisterEventDialog({ children, eventoId, eventoName }: RegisterEventDialogProps) {
     const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
 
     // Initialize config for all members with defaults
@@ -198,7 +199,7 @@ export function RegisterEventDialog({ children, eventoId }: RegisterEventDialogP
 
             <DialogContent className="max-w-[95vw] w-full lg:max-w-7xl h-[85vh] gap-0 p-0 overflow-hidden flex flex-col">
                 <DialogHeader className="p-6 pb-4">
-                    <DialogTitle>Inscripción al evento</DialogTitle>
+                    <DialogTitle>Inscripción al evento: <span className="text-teal-600">{eventoName}</span></DialogTitle>
                 </DialogHeader>
 
                 <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
