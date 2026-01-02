@@ -24,7 +24,6 @@ import {
 
 import { columns } from "./afiliados-columns"
 import { DataTable } from "./data-table"
-import afiliadosData from "./afiliados-data.json"
 import { AfiliadosDialog } from "./afiliados-dialog"
 
 export function AfiliadosView() {
