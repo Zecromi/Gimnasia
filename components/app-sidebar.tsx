@@ -3,11 +3,10 @@
 import * as React from "react"
 import {
     ShieldHalf,
-    BadgeInfo,
     Handshake,
-    Settings,
-    Search,
+    Home,
     Calendar,
+    Ticket,
 } from "lucide-react"
 
 import { ModeToggle } from "@/components/mode-toggle"
@@ -29,9 +28,9 @@ import {
 // Menu items.
 const items = [
     {
-        title: "Mi informacion",
+        title: "Inicio",
         url: "/dashboard",
-        icon: BadgeInfo,
+        icon: Home,
     },
     {
         title: "Clubes",
@@ -47,6 +46,11 @@ const items = [
         title: "Eventos",
         url: "/dashboard/eventos",
         icon: Calendar,
+    },
+    {
+        title: "Inscripciones de eventos",
+        url: "/dashboard/inscripciones/eventos",
+        icon: Ticket,
     },
 
 ]
