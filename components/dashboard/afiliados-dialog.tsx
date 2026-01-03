@@ -2,6 +2,8 @@
 
 import * as React from "react"
 import { Plus, Save } from "lucide-react"
+import { AfiliadosCatalogsResponse, getAfiliadosCatalogs } from "@/lib/afiliados-service"
+import { CatalogoItem, Estado } from "@/lib/club-service"
 
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -112,6 +114,20 @@ export function AfiliadosDialog() {
 }
 
 function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
+    const [catalogs, setCatalogs] = React.useState<AfiliadosCatalogsResponse | null>(null)
+
+    React.useEffect(() => {
+        const fetchCatalogs = async () => {
+            try {
+                const data = await getAfiliadosCatalogs()
+                setCatalogs(data)
+            } catch (error) {
+                console.error("Error fetching afiliado catalogs:", error)
+            }
+        }
+        fetchCatalogs()
+    }, [])
+
     const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         const formData = new FormData(e.currentTarget)
@@ -158,8 +174,11 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="tipo1">Tipo 1</SelectItem>
-                                        <SelectItem value="tipo2">Tipo 2</SelectItem>
+                                        {catalogs?.Catalogo_afiliaciones.map((item) => (
+                                            <SelectItem key={item.id} value={item.id.toString()}>
+                                                {item.Nombre}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </InputGroup>
@@ -172,8 +191,11 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="sec1">Secundario 1</SelectItem>
-                                        <SelectItem value="sec2">Secundario 2</SelectItem>
+                                        {catalogs?.Catalogo_afiliaciones.map((item) => (
+                                            <SelectItem key={item.id} value={item.id.toString()}>
+                                                {item.Nombre}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </InputGroup>
@@ -194,10 +216,11 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="primaria">Primaria</SelectItem>
-                                        <SelectItem value="secundaria">Secundaria</SelectItem>
-                                        <SelectItem value="preparatoria">Preparatoria</SelectItem>
-                                        <SelectItem value="universidad">Universidad</SelectItem>
+                                        {catalogs?.Escolaridad.map((item) => (
+                                            <SelectItem key={item.id} value={item.id.toString()}>
+                                                {item.Nombre}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </InputGroup>
@@ -253,8 +276,11 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="mexico">Estado de México</SelectItem>
-                                        <SelectItem value="cdmx">CDMX</SelectItem>
+                                        {catalogs?.Estados.map((item) => (
+                                            <SelectItem key={item.id} value={item.id.toString()}>
+                                                {item.Nombre}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </InputGroup>
