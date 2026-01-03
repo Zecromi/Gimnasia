@@ -15,6 +15,7 @@ export const useCatalogStore = create<CatalogStore>((set) => ({
     Escolaridad: [],
     Modalidades: [],
     View_Modalidades_detalle: [],
+    Catalogo_eventos: [],
     isLoading: false,
     error: null,
 

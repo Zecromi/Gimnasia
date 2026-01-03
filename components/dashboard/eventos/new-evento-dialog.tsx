@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CalendarPlus, Save, Calendar as CalendarIcon, FileText, Database, ChevronDown, Medal, Users, Hash, AlertCircle } from "lucide-react"
+import { CalendarPlus, Save, Calendar as CalendarIcon, FileText, Database, ChevronDown, Medal, Users, Hash, AlertCircle, Plus, X, ChevronsUpDown, Trash2 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
@@ -68,8 +68,10 @@ import { getGlobalInfo, ModalidadItem, ModalidadDetalleItem } from "@/lib/club-s
 import { createEvento, SetEventoPayload, ConfiguracionItem, NivelItem, AdicionalItem, EventoItem } from "@/lib/evento-service"
 import { eventoSchema, EventoFormValues } from "@/lib/schemas/evento/evento-schema"
 import { toast } from "sonner"
+import { useCatalogStore } from "@/lib/store/catalog-store"
 
 export function NewEventoDialog({ onEventSaved }: { onEventSaved?: () => void }) {
+    const { Catalogo_eventos } = useCatalogStore()
     const [open, setOpen] = React.useState(false)
     const isMobile = useIsMobile()
 
@@ -130,17 +132,17 @@ export function NewEventoDialog({ onEventSaved }: { onEventSaved?: () => void })
 function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: string, id: string, onClose: () => void, onEventSaved?: () => void }) {
     const [modalidades, setModalidades] = React.useState<ModalidadItem[]>([])
     const [modalidadesDetalle, setModalidadesDetalle] = React.useState<ModalidadDetalleItem[]>([])
-    const [isCustomModality, setIsCustomModality] = React.useState(false)
-    const [newModality, setNewModality] = React.useState({
-        descripcion: "",
-        costo: "",
-        configuracion: ""
-    })
+    const [Catalogo_eventos, setCatalogo_eventos] = React.useState<{ id: number; Nombre: string }[]>([])
+    // Removed isCustomModality, newModality
+    const [modalityExtras, setModalityExtras] = React.useState<Record<string, Array<{ id: string, costo: string, descripcion: string }>>>({})
+    const [isTableCollapsed, setIsTableCollapsed] = React.useState<Record<string, boolean>>({})
+
     const [selectedDetails, setSelectedDetails] = React.useState<Record<string, boolean>>({})
     const [detailValues, setDetailValues] = React.useState<Record<string, { costo: string, descripcion: string }>>({})
     const [selectedModalities, setSelectedModalities] = React.useState<Record<string, boolean>>({})
 
     const [errors, setErrors] = React.useState<Record<string, string[] | undefined>>({})
+    const [extraErrors, setExtraErrors] = React.useState<Record<string, boolean>>({}) // Tracks IDs of extras with missing fields
     const [isValid, setIsValid] = React.useState(false)
 
     // State for General Tab inputs to persist across tab switches
@@ -171,6 +173,41 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
         }))
     }, [])
 
+    const toggleTableCollapse = React.useCallback((id: string) => {
+        setIsTableCollapsed(prev => ({ ...prev, [id]: !prev[id] }))
+    }, [])
+
+    const addExtraItem = React.useCallback((modalityId: string) => {
+        const newId = Math.random().toString(36).substr(2, 9)
+        setModalityExtras(prev => ({
+            ...prev,
+            [modalityId]: [...(prev[modalityId] || []), { id: newId, costo: "", descripcion: "" }]
+        }))
+    }, [])
+
+    const removeExtraItem = React.useCallback((modalityId: string, extraId: string) => {
+        setModalityExtras(prev => ({
+            ...prev,
+            [modalityId]: (prev[modalityId] || []).filter(item => item.id !== extraId)
+        }))
+    }, [])
+
+    const updateExtraItem = React.useCallback((modalityId: string, extraId: string, field: 'costo' | 'descripcion', value: string) => {
+        setModalityExtras(prev => ({
+            ...prev,
+            [modalityId]: (prev[modalityId] || []).map(item =>
+                item.id === extraId ? { ...item, [field]: value } : item
+            )
+        }))
+        // Clear error if user types
+        setExtraErrors(prev => {
+            if (!prev[extraId]) return prev
+            const newErrors = { ...prev }
+            delete newErrors[extraId]
+            return newErrors
+        })
+    }, [])
+
     const toggleDetail = React.useCallback((key: string) => {
         setSelectedDetails(prev => {
             const newState = !prev[key]
@@ -197,8 +234,6 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
         }))
     }, [])
 
-    const hasNewData = Object.values(newModality).some(value => value.trim() !== "")
-
     const groupedDetails = React.useMemo(() => {
         const grouped: Record<number, ModalidadDetalleItem[]> = {}
         modalidadesDetalle.forEach(det => {
@@ -210,10 +245,15 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
 
     const grandTotal = React.useMemo(() => {
         let total = 0
-        if (isCustomModality) {
-            const cost = parseFloat(newModality.costo)
-            if (!isNaN(cost)) total += cost
-        }
+        // Calculate extras total
+        Object.keys(modalityExtras).forEach(key => {
+            const extras = modalityExtras[key] || []
+            extras.forEach(extra => {
+                const val = parseFloat(extra.costo || "0")
+                if (!isNaN(val)) total += val
+            })
+        })
+
         Object.keys(selectedDetails).forEach((key) => {
             if (selectedDetails[key]) {
                 const cost = parseFloat(detailValues[key]?.costo || "0")
@@ -221,7 +261,7 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
             }
         })
         return total
-    }, [isCustomModality, newModality.costo, selectedDetails, detailValues])
+    }, [modalityExtras, selectedDetails, detailValues])
 
     const getFormData = React.useCallback((): EventoFormValues => {
         const detalles: { idModalidad: string | number; idNivel: string | number; costo: string; descripcion: string }[] = []
@@ -278,14 +318,48 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
 
     React.useEffect(() => {
         const formData = getFormData()
-        const result = eventoSchema.safeParse(formData)
-        setIsValid(result.success)
-        if (!result.success) {
-            setErrors(result.error.flatten().fieldErrors)
+        const result = eventoSchema.omit({ adicionales: true }).safeParse(formData) // Omit as processed separately
+
+        let valid = result.success
+
+        // Validate modalityExtras
+        // If any extra item exists and is not complete, it's invalid.
+        // We do NOT filter empty ones here because in visual validation mode (button state),
+        // we want to force the user to either complete them or delete them.
+        let hasInvalidExtras = false
+        Object.keys(modalityExtras).forEach(key => {
+            const extras = modalityExtras[key] || []
+            extras.forEach(extra => {
+                const hasDesc = !!extra.descripcion?.trim()
+                const hasCost = !!extra.costo?.trim()
+
+                // If it exists in state, it must be complete.
+                // Exception: if it's COMPLETELY empty (newly added and untouched?), 
+                // maybe we allow it (and it gets stripped on save)?
+                // BUT user said "save button is already activated" implies they want it disabled.
+                // So if there is a row, it must be valid.
+                if (!hasDesc || !hasCost) {
+                    hasInvalidExtras = true
+                }
+            })
+        })
+
+        if (hasInvalidExtras) {
+            valid = false
+        }
+
+        setIsValid(valid)
+        if (!valid) {
+            // If schema error, show schema errors. If extras error, we handle that visually in the list.
+            if (!result.success) {
+                setErrors(result.error.flatten().fieldErrors)
+            } else {
+                setErrors({}) // Logic might need refinement if we want to show global error for extras
+            }
         } else {
             setErrors({})
         }
-    }, [getFormData])
+    }, [getFormData, modalityExtras])
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -298,7 +372,7 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
         const formatPayloadDate = (date?: Date) => date ? format(date, "yyyy-MM-dd") : ""
 
         const eventoData: EventoItem = {
-            id_evento: "0",
+            id_evento: generalData.tipoEvento || "0",
             organizador: generalData.organizador,
             asociacion: generalData.asociacion,
             nombre: generalData.nombre,
@@ -352,24 +426,20 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
         })
 
         const adicionalesData: AdicionalItem[] = []
-        if (isCustomModality) {
-            adicionalesData.push({
-                descripcion: newModality.descripcion,
-                costo_base: newModality.costo
-            })
-        }
-
-        Object.keys(selectedDetails).forEach(key => {
-            if (selectedDetails[key]) {
-                const values = detailValues[key]
-                if (values && (values.costo || values.descripcion)) {
+        // Add extras from modalityExtras
+        Object.keys(modalityExtras).forEach(key => {
+            const extras = modalityExtras[key] || []
+            extras.forEach(extra => {
+                if (extra.costo || extra.descripcion) {
                     adicionalesData.push({
-                        descripcion: values.descripcion,
-                        costo_base: values.costo
+                        descripcion: extra.descripcion,
+                        costo_base: extra.costo
                     })
                 }
-            }
+            })
         })
+
+
 
         const payload: SetEventoPayload = {
             evento: [eventoData],
@@ -401,6 +471,9 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
                 }
                 if (data.View_Modalidades_detalle) {
                     setModalidadesDetalle(data.View_Modalidades_detalle);
+                }
+                if (data.Catalogo_eventos) {
+                    setCatalogo_eventos(data.Catalogo_eventos);
                 }
             } catch (error) {
                 console.error("Error fetching modalities:", error);
@@ -441,10 +514,11 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
                                                 <SelectValue placeholder="Seleccione tipo" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                <SelectItem value="competencia">Competencia</SelectItem>
-                                                <SelectItem value="campamento">Campamento</SelectItem>
-                                                <SelectItem value="curso">Curso</SelectItem>
-                                                <SelectItem value="control">Control Técnico</SelectItem>
+                                                {Catalogo_eventos?.map((item) => (
+                                                    <SelectItem key={item.id} value={String(item.id)}>
+                                                        {item.Nombre}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                         {errors.tipoEvento && <p className="text-xs text-red-500">{errors.tipoEvento[0]}</p>}
@@ -546,70 +620,6 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
                             <div className="space-y-4">
                                 <Label className="text-base font-semibold">Seleccione las modalidades</Label>
                                 <Accordion type="single" collapsible className="w-full space-y-2 pb-6">
-                                    <AccordionItem
-                                        value="new-mode"
-                                        className={cn(
-                                            "border rounded-lg px-4",
-                                            hasNewData && "bg-teal-50 border-teal-200 dark:bg-teal-900/20 dark:border-teal-800"
-                                        )}
-                                    >
-                                        <AccordionPrimitive.Header className="flex items-center py-3">
-                                            <div className="flex items-center mr-3">
-                                                <Checkbox
-                                                    id="create-custom-modality"
-                                                    checked={isCustomModality}
-                                                    onCheckedChange={(checked) => setIsCustomModality(checked as boolean)}
-                                                />
-                                            </div>
-                                            <AccordionPrimitive.Trigger
-                                                className={cn(
-                                                    "flex flex-1 items-center justify-between py-0 text-sm font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180 cursor-pointer"
-                                                )}
-                                            >
-                                                <Label htmlFor="create-custom-modality" className="cursor-pointer pointer-events-none">
-                                                    Extras de la modalidad
-                                                </Label>
-                                                <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
-                                            </AccordionPrimitive.Trigger>
-                                        </AccordionPrimitive.Header>
-                                        <AccordionContent className="pt-2 pb-4 px-2">
-                                            <div className="space-y-4 pt-2">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="mod-descripcion">Descripción</Label>
-                                                    <Input
-                                                        id="mod-descripcion"
-                                                        placeholder="Descripción de la modalidad"
-                                                        value={newModality.descripcion}
-                                                        onChange={(e) => setNewModality(prev => ({ ...prev, descripcion: e.target.value }))}
-                                                    />
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="mod-costo">Costo</Label>
-                                                    <div className="relative">
-                                                        <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                                                        <Input
-                                                            id="mod-costo"
-                                                            type="number"
-                                                            className="pl-7"
-                                                            placeholder="0.00"
-                                                            value={newModality.costo}
-                                                            onChange={(e) => setNewModality(prev => ({ ...prev, costo: e.target.value }))}
-                                                        />
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="mod-configuracion">Configuración</Label>
-                                                    <Input
-                                                        id="mod-configuracion"
-                                                        placeholder="Detalles de configuración"
-                                                        value={newModality.configuracion}
-                                                        onChange={(e) => setNewModality(prev => ({ ...prev, configuracion: e.target.value }))}
-                                                    />
-                                                </div>
-                                            </div>
-                                        </AccordionContent>
-                                    </AccordionItem>
-
                                     {modalidades.map((modalidad) => (
                                         <AccordionItem value={`item-${modalidad.id}`} key={modalidad.id} className="border rounded-lg px-4 data-[state=open]:bg-muted/30">
                                             <AccordionPrimitive.Header className="flex items-center py-3">
@@ -645,75 +655,158 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
                                             </AccordionPrimitive.Header>
                                             <AccordionContent className="pt-2 pb-4 px-2">
                                                 <div className="space-y-3">
-                                                    {modalidad.Descripcion && (
-                                                        <div className="px-1">
+                                                    <div className="flex items-center justify-between px-1">
+                                                        {modalidad.Descripcion && (
                                                             <h4 className="text-sm font-medium text-muted-foreground">{modalidad.Descripcion}</h4>
+                                                        )}
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="sm"
+                                                            className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                                                            onClick={() => toggleTableCollapse(String(modalidad.id))}
+                                                        >
+                                                            {isTableCollapsed[String(modalidad.id)] ? "Ver Niveles" : "Ocultar Niveles"}
+                                                            <ChevronsUpDown className="ml-2 h-3 w-3" />
+                                                        </Button>
+                                                    </div>
+
+                                                    {!isTableCollapsed[String(modalidad.id)] && (
+                                                        <div className="border rounded-md overflow-hidden">
+                                                            <Table>
+                                                                <TableHeader>
+                                                                    <TableRow className="bg-muted/50 hover:bg-muted/60 transition-colors">
+                                                                        <TableHead className="w-[50px] text-center">
+                                                                            <Hash className="h-3.5 w-3.5 mx-auto text-muted-foreground" />
+                                                                        </TableHead>
+                                                                        <TableHead>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <Medal className="h-3.5 w-3.5 text-teal-600" />
+                                                                                <span>Nivel</span>
+                                                                            </div>
+                                                                        </TableHead>
+                                                                        <TableHead>
+                                                                            <div className="flex items-center gap-2">
+                                                                                <FileText className="h-3.5 w-3.5 text-teal-600" />
+                                                                                <span>Título</span>
+                                                                            </div>
+                                                                        </TableHead>
+                                                                        <TableHead className="text-center">
+                                                                            <div className="flex items-center justify-center gap-2">
+                                                                                <Users className="h-3.5 w-3.5 text-teal-600" />
+                                                                                <span>Rango de Edad</span>
+                                                                            </div>
+                                                                        </TableHead>
+                                                                        <TableHead className="w-[120px]">
+                                                                            <span>Costo</span>
+                                                                        </TableHead>
+                                                                        <TableHead className="w-[120px]">
+                                                                            <span>Total</span>
+                                                                        </TableHead>
+                                                                        <TableHead className="min-w-[150px]">
+                                                                            <span>Descripción</span>
+                                                                        </TableHead>
+                                                                    </TableRow>
+                                                                </TableHeader>
+                                                                <TableBody>
+                                                                    {(groupedDetails[modalidad.id] || []).map((detalle, idx) => {
+                                                                        const detailKey = `det-${modalidad.id}-${idx}`;
+                                                                        const isSelected = selectedDetails[detailKey] || false;
+                                                                        const currentValues = detailValues[detailKey] || { costo: "", descripcion: "" };
+
+                                                                        return (
+                                                                            <DetailRow
+                                                                                key={detailKey}
+                                                                                detail={detalle}
+                                                                                detailKey={detailKey}
+                                                                                isSelected={isSelected}
+                                                                                values={currentValues}
+                                                                                grandTotal={grandTotal}
+                                                                                onToggle={toggleDetail}
+                                                                                onUpdate={updateDetailValue}
+                                                                            />
+                                                                        )
+                                                                    })}
+                                                                    {(!groupedDetails[modalidad.id] || groupedDetails[modalidad.id].length === 0) && (
+                                                                        <TableRow>
+                                                                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                                                                                No hay detalles disponibles
+                                                                            </TableCell>
+                                                                        </TableRow>
+                                                                    )}
+                                                                </TableBody>
+                                                            </Table>
                                                         </div>
                                                     )}
-                                                    <div className="border rounded-md overflow-hidden">
-                                                        <Table>
-                                                            <TableHeader>
-                                                                <TableRow className="bg-muted/50 hover:bg-muted/60 transition-colors">
-                                                                    <TableHead className="w-[50px] text-center">
-                                                                        <Hash className="h-3.5 w-3.5 mx-auto text-muted-foreground" />
-                                                                    </TableHead>
-                                                                    <TableHead>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <Medal className="h-3.5 w-3.5 text-teal-600" />
-                                                                            <span>Nivel</span>
-                                                                        </div>
-                                                                    </TableHead>
-                                                                    <TableHead>
-                                                                        <div className="flex items-center gap-2">
-                                                                            <FileText className="h-3.5 w-3.5 text-teal-600" />
-                                                                            <span>Título</span>
-                                                                        </div>
-                                                                    </TableHead>
-                                                                    <TableHead className="text-center">
-                                                                        <div className="flex items-center justify-center gap-2">
-                                                                            <Users className="h-3.5 w-3.5 text-teal-600" />
-                                                                            <span>Rango de Edad</span>
-                                                                        </div>
-                                                                    </TableHead>
-                                                                    <TableHead className="w-[120px]">
-                                                                        <span>Costo</span>
-                                                                    </TableHead>
-                                                                    <TableHead className="w-[120px]">
-                                                                        <span>Total</span>
-                                                                    </TableHead>
-                                                                    <TableHead className="min-w-[150px]">
-                                                                        <span>Descripción</span>
-                                                                    </TableHead>
-                                                                </TableRow>
-                                                            </TableHeader>
-                                                            <TableBody>
-                                                                {(groupedDetails[modalidad.id] || []).map((detalle, idx) => {
-                                                                    const detailKey = `det-${modalidad.id}-${idx}`;
-                                                                    const isSelected = selectedDetails[detailKey] || false;
-                                                                    const currentValues = detailValues[detailKey] || { costo: "", descripcion: "" };
 
-                                                                    return (
-                                                                        <DetailRow
-                                                                            key={detailKey}
-                                                                            detail={detalle}
-                                                                            detailKey={detailKey}
-                                                                            isSelected={isSelected}
-                                                                            values={currentValues}
-                                                                            grandTotal={grandTotal}
-                                                                            onToggle={toggleDetail}
-                                                                            onUpdate={updateDetailValue}
-                                                                        />
-                                                                    )
-                                                                })}
-                                                                {(!groupedDetails[modalidad.id] || groupedDetails[modalidad.id].length === 0) && (
-                                                                    <TableRow>
-                                                                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                                                                            No hay detalles disponibles
-                                                                        </TableCell>
-                                                                    </TableRow>
-                                                                )}
-                                                            </TableBody>
-                                                        </Table>
+                                                    <div className="pt-2">
+                                                        {(modalityExtras[modalidad.id] || []).length === 0 ? (
+                                                            <Button
+                                                                type="button"
+                                                                variant="ghost"
+                                                                size="sm"
+                                                                className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+                                                                onClick={() => addExtraItem(String(modalidad.id))}
+                                                            >
+                                                                <Plus className="mr-2 h-4 w-4" />
+                                                                Agregar adicional:  costo base / descripción
+                                                            </Button>
+                                                        ) : (
+                                                            <div className="bg-muted/20 p-4 rounded-md border border-dashed space-y-3">
+                                                                {(modalityExtras[modalidad.id] || []).map((extra, idx) => (
+                                                                    <div key={extra.id} className="relative grid grid-cols-1 md:grid-cols-[1fr_1fr_40px] gap-4 items-end pb-2 border-b border-muted-foreground/10 last:border-0 last:pb-0">
+                                                                        <div className="space-y-2">
+                                                                            <Label htmlFor={`extra-desc-${extra.id}`} className={cn("text-xs font-medium", extraErrors[extra.id] && !extra.descripcion && "text-red-500")}>Descripción ({idx + 1})</Label>
+                                                                            <Input
+                                                                                id={`extra-desc-${extra.id}`}
+                                                                                placeholder="Ej. Costo administrativo"
+                                                                                value={extra.descripcion}
+                                                                                onChange={(e) => updateExtraItem(String(modalidad.id), extra.id, 'descripcion', e.target.value)}
+                                                                                className={cn("h-9 bg-background", extraErrors[extra.id] && !extra.descripcion && "border-red-500 bg-red-50")}
+                                                                            />
+                                                                        </div>
+                                                                        <div className="space-y-2">
+                                                                            <Label htmlFor={`extra-cost-${extra.id}`} className={cn("text-xs font-medium", extraErrors[extra.id] && !extra.costo && "text-red-500")}>Costo Base</Label>
+                                                                            <div className="relative">
+                                                                                <span className="absolute left-3 top-2.5 text-xs text-muted-foreground">$</span>
+                                                                                <Input
+                                                                                    id={`extra-cost-${extra.id}`}
+                                                                                    type="number"
+                                                                                    placeholder="0.00"
+                                                                                    value={extra.costo}
+                                                                                    onChange={(e) => updateExtraItem(String(modalidad.id), extra.id, 'costo', e.target.value)}
+                                                                                    className={cn("h-9 pl-7 bg-background", extraErrors[extra.id] && !extra.costo && "border-red-500 bg-red-50")}
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                        <Button
+                                                                            type="button"
+                                                                            variant="ghost"
+                                                                            size="icon"
+                                                                            className="h-9 w-9 text-muted-foreground hover:text-destructive hover:bg-destructive/10 mb-[1px]"
+                                                                            onClick={() => removeExtraItem(String(modalidad.id), extra.id)}
+                                                                        >
+                                                                            <Trash2 className="h-4 w-4" />
+                                                                        </Button>
+                                                                        {extraErrors[extra.id] && (!extra.descripcion || !extra.costo) && (
+                                                                            <p className="col-span-full text-[10px] text-red-500 -mt-1 pl-1">Por favor complete ambos campos</p>
+                                                                        )}
+                                                                    </div>
+                                                                ))}
+                                                                <div className="pt-2">
+                                                                    <Button
+                                                                        type="button"
+                                                                        variant="ghost"
+                                                                        size="sm"
+                                                                        className="text-xs text-teal-600 hover:text-teal-700 p-0 h-auto font-normal hover:bg-transparent hover:underline"
+                                                                        onClick={() => addExtraItem(String(modalidad.id))}
+                                                                    >
+                                                                        <Plus className="mr-1 h-3 w-3" />
+                                                                        Agregar otro item adicional
+                                                                    </Button>
+                                                                </div>
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </AccordionContent>

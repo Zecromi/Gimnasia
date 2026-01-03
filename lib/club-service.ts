@@ -45,6 +45,7 @@ export interface CatalogsResponse {
     Escolaridad: CatalogoItem[];
     Modalidades: ModalidadItem[];
     View_Modalidades_detalle: ModalidadDetalleItem[];
+    Catalogo_eventos: { id: number; Nombre: string }[];
 }
 
 export const getGlobalInfo = async () => {
