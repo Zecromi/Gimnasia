@@ -30,6 +30,11 @@ export const eventoSchema = z.object({
         descripcion: z.string().min(1, "La descripción es obligatoria")
     })).min(1, "Debe seleccionar al menos una modalidad y un nivel, completando costo y descripción para cada uno."),
 
+    adicionales: z.array(z.object({
+        descripcion: z.string(),
+        costo_base: z.string() // string because input is text, parsed later or kept as string? Component uses string.
+    })).optional(),
+
 }).refine((data) => {
     if (data.fechaInicioEvento && data.fechaFinEvento) {
         return data.fechaInicioEvento <= data.fechaFinEvento;

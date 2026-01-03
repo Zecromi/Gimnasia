@@ -762,6 +762,7 @@ function PlaceholderForm({ title, icon: Icon = Image }: { title: string, icon?: 
 function ActualizaEventoForm({ id, evento }: { id: string, evento: Evento }) {
     const [errors, setErrors] = React.useState<Record<string, string[] | undefined>>({})
     const [isValid, setIsValid] = React.useState(false)
+    const [Catalogo_eventos, setCatalogo_eventos] = React.useState<{ id: number; Nombre: string }[]>([])
 
     // Helper to parse date string safely
     const parseDate = (dateStr: string | undefined): Date | undefined => {
@@ -814,6 +815,20 @@ function ActualizaEventoForm({ id, evento }: { id: string, evento: Evento }) {
             fechaFinInscripcion: generalData.fechaFinInscripcion as Date
         }
     }, [generalData])
+
+    React.useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const data = await getGlobalInfo();
+                if (data.Catalogo_eventos) {
+                    setCatalogo_eventos(data.Catalogo_eventos);
+                }
+            } catch (error) {
+                console.error("Error fetching catalogs:", error);
+            }
+        };
+        fetchData();
+    }, []);
 
     React.useEffect(() => {
         const formData = getFormData()
@@ -879,10 +894,11 @@ function ActualizaEventoForm({ id, evento }: { id: string, evento: Evento }) {
                                 <SelectValue placeholder="Seleccione tipo" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="competencia">Competencia</SelectItem>
-                                <SelectItem value="campamento">Campamento</SelectItem>
-                                <SelectItem value="curso">Curso</SelectItem>
-                                <SelectItem value="control">Control Técnico</SelectItem>
+                                {Catalogo_eventos?.map((item) => (
+                                    <SelectItem key={item.id} value={String(item.id)}>
+                                        {item.Nombre}
+                                    </SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                         {errors.tipoEvento && <p className="text-xs text-red-500">{errors.tipoEvento[0]}</p>}

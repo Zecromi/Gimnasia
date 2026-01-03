@@ -45,6 +45,7 @@ export interface CatalogsResponse {
     Escolaridad: CatalogoItem[];
     Modalidades: ModalidadItem[];
     View_Modalidades_detalle: ModalidadDetalleItem[];
+    Catalogo_eventos: { id: number; Nombre: string }[];
 }
 
 export const getGlobalInfo = async () => {
@@ -250,7 +251,7 @@ export const getClubDetail = async (id: number) => {
 };
 
 export const updateClub = async (id: number, payload: SetClubPayload) => {
-    console.log("enviando datos para actualizar club",payload);
+    console.log("enviando datos para actualizar club", payload);
     const response = await api.post(`/PostClub/${id}`, payload);
     return response.data;
 };
