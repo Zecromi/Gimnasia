@@ -2,8 +2,9 @@
 
 import * as React from "react"
 import { Plus, Save } from "lucide-react"
-import { AfiliadosCatalogsResponse, getAfiliadosCatalogs } from "@/lib/afiliados-service"
-import { CatalogoItem, Estado } from "@/lib/club-service"
+import { toast } from "sonner"
+import { AfiliadosCatalogsResponse, getAfiliadosCatalogs, createAfiliado, CreateAfiliadoPayload } from "@/lib/afiliados-service"
+import { CatalogoItem, Estado, getClubs, ViewClubGral } from "@/lib/club-service"
 
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -115,24 +116,65 @@ export function AfiliadosDialog() {
 
 function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
     const [catalogs, setCatalogs] = React.useState<AfiliadosCatalogsResponse | null>(null)
+    const [clubs, setClubs] = React.useState<ViewClubGral[]>([])
 
     React.useEffect(() => {
-        const fetchCatalogs = async () => {
+        const fetchData = async () => {
             try {
-                const data = await getAfiliadosCatalogs()
-                setCatalogs(data)
+                const [catalogsData, clubsData] = await Promise.all([
+                    getAfiliadosCatalogs(),
+                    getClubs()
+                ])
+                setCatalogs(catalogsData)
+                setClubs(clubsData.View_Club_gral)
             } catch (error) {
-                console.error("Error fetching afiliado catalogs:", error)
+                console.error("Error fetching data:", error)
+                toast.error("Error al cargar la información")
             }
         }
-        fetchCatalogs()
+        fetchData()
     }, [])
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         const formData = new FormData(e.currentTarget)
-        const data = Object.fromEntries(formData.entries())
-        console.log("Form data:", data)
+        const data = Object.fromEntries(formData.entries()) as Record<string, string>
+
+        console.log("Form data raw:", data)
+
+        const payload: CreateAfiliadoPayload = {
+            nombre: data.nombre,
+            paterno: data.apellidoPaterno,
+            materno: data.apellidoMaterno,
+            id_Club: data.club, // select returns value
+            fecha_nacimiento: data.fechaNacimiento,
+            curp: data.curp,
+            genero: data.genero,
+            escolaridad: data.escolaridad,
+            calle: data.calle,
+            exterior: data.numExt,
+            interior: data.numInt,
+            colonia: data.colonia,
+            cp: data.cp,
+            ciudad: data.municipio,
+            estado: data.estado,
+            telefono_c: data.telParticular,
+            telefono_cel: data.telCelular,
+            afiliacion_p: data.tipoAfiliadoPrincipal,
+            afiliacion_s: data.tipoAfiliadoSecundario,
+            id_nivel_tec: data.nivelTecnico,
+            modalidad: "" // Field requested by API but missing in current Form design
+        }
+
+        try {
+            console.log("Sending payload:", payload)
+            await createAfiliado(payload)
+            toast.success("Afiliado creado exitosamente")
+            // Optionally close dialog or reset form
+        } catch (error) {
+            console.error("Error creating afiliado:", error)
+            toast.error("Error al crear el afiliado")
+        }
     }
 
     return (
@@ -163,8 +205,11 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                         <SelectValue placeholder="Selecciona una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="club1">Club 1</SelectItem>
-                                        <SelectItem value="club2">Club 2</SelectItem>
+                                        {clubs.map((club) => (
+                                            <SelectItem key={club.id} value={club.id.toString()}>
+                                                {club.Club}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </InputGroup>
@@ -205,8 +250,11 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="nivel1">Nivel 1</SelectItem>
-                                        <SelectItem value="nivel2">Nivel 2</SelectItem>
+                                        {catalogs?.Niveles_tecnicos.map((item) => (
+                                            <SelectItem key={item.id} value={item.id.toString()}>
+                                                {item.Descripcion}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </InputGroup>
