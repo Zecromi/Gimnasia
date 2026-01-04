@@ -25,16 +25,27 @@ import {
 import { columns } from "./afiliados-columns"
 import { DataTable } from "./data-table"
 import { AfiliadosDialog } from "./afiliados-dialog"
+import { getAfiliadosCatalogs, Afiliado } from "@/lib/afiliados-service"
 
 export function AfiliadosView() {
     const [isLoading, setIsLoading] = useState(true)
+    const [afiliados, setAfiliados] = useState<Afiliado[]>([])
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            setIsLoading(false)
-        }, 500)
+        const fetchData = async () => {
+            try {
+                const data = await getAfiliadosCatalogs()
+                if (data.Afiliados) {
+                    setAfiliados(data.Afiliados)
+                }
+            } catch (error) {
+                console.error("Error fetching afiliados:", error)
+            } finally {
+                setIsLoading(false)
+            }
+        }
 
-        return () => clearTimeout(timer)
+        fetchData()
     }, [])
 
     if (isLoading) {
@@ -75,75 +86,77 @@ export function AfiliadosView() {
     }
 
     return (
-        <div className="space-y-6">
-            <Card className="rounded-2xl border-none shadow-none bg-gray-50 dark:bg-zinc-900">
-                <CardHeader className="pt-2 pb-0">
-                    <CardTitle>
-                        <h2 className="text-lg font-bold">Afiliados</h2>
-                    </CardTitle>
-                </CardHeader>
-                <CardContent className="pt-0 pb-2">
-                    <div className="grid grid-cols-12 gap-4">
-                        <div className="col-span-11">
-                            <div className="grid gap-4">
-                                {/* Row 1 */}
-                                <div className="grid gap-3 md:grid-cols-12">
-                                    <InputGroup label="Afiliado :" htmlFor="afiliado" className="md:col-span-5">
-                                        <Input id="afiliado" placeholder="" className="h-8" />
-                                    </InputGroup>
-                                    <InputGroup label="Asociación :" className="md:col-span-3">
-                                        <Input value="ESTADO DE MÉXICO" disabled className="bg-muted/50 h-8" />
-                                    </InputGroup>
-                                    <InputGroup label="Club :" htmlFor="club" className="md:col-span-2">
-                                        <Select>
-                                            <SelectTrigger id="club">
-                                                <SelectValue placeholder="Todos" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="todos">Todos</SelectItem>
-                                                <SelectItem value="club1">Club 1</SelectItem>
-                                                <SelectItem value="club2">Club 2</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </InputGroup>
-                                    <InputGroup label="Estatus :" htmlFor="estatus" className="md:col-span-2">
-                                        <Select defaultValue="todos">
-                                            <SelectTrigger id="estatus">
-                                                <SelectValue placeholder="Seleccionar" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="todos">Todos</SelectItem>
-                                                <SelectItem value="alta">Alta</SelectItem>
-                                                <SelectItem value="baja">Baja</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </InputGroup>
-                                </div>
+        <TooltipProvider>
+            <div className="space-y-6">
+                <Card className="rounded-2xl border-none shadow-none bg-gray-50 dark:bg-zinc-900">
+                    <CardHeader className="pt-2 pb-0">
+                        <CardTitle>
+                            <h2 className="text-lg font-bold">Afiliados</h2>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0 pb-2">
+                        <div className="grid grid-cols-12 gap-4">
+                            <div className="col-span-11">
+                                <div className="grid gap-4">
+                                    {/* Row 1 */}
+                                    <div className="grid gap-3 md:grid-cols-12">
+                                        <InputGroup label="Afiliado :" htmlFor="afiliado" className="md:col-span-5">
+                                            <Input id="afiliado" placeholder="" className="h-8" />
+                                        </InputGroup>
+                                        <InputGroup label="Asociación :" className="md:col-span-3">
+                                            <Input value="ESTADO DE MÉXICO" disabled className="bg-muted/50 h-8" />
+                                        </InputGroup>
+                                        <InputGroup label="Club :" htmlFor="club" className="md:col-span-2">
+                                            <Select>
+                                                <SelectTrigger id="club">
+                                                    <SelectValue placeholder="Todos" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="todos">Todos</SelectItem>
+                                                    <SelectItem value="club1">Club 1</SelectItem>
+                                                    <SelectItem value="club2">Club 2</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </InputGroup>
+                                        <InputGroup label="Estatus :" htmlFor="estatus" className="md:col-span-2">
+                                            <Select defaultValue="todos">
+                                                <SelectTrigger id="estatus">
+                                                    <SelectValue placeholder="Seleccionar" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="todos">Todos</SelectItem>
+                                                    <SelectItem value="alta">Alta</SelectItem>
+                                                    <SelectItem value="baja">Baja</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </InputGroup>
+                                    </div>
 
-                                {/* Row 2 */}
-                                <div className="grid gap-3 md:grid-cols-12 items-end">
-                                    <InputGroup label="No. Afiliado :" htmlFor="no-afiliado" className="md:col-span-5">
-                                        <Input id="no-afiliado" placeholder="" className="h-8" />
-                                    </InputGroup>
-                                    <InputGroup label="CURP :" htmlFor="curp" className="md:col-span-5">
-                                        <Input id="curp" placeholder="" className="h-8" />
-                                    </InputGroup>
-                                    <div className="md:col-span-2 flex justify-end">
-                                        <Button className="w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white h-8">
-                                            <Search className="mr-2 h-4 w-4" />
-                                            Filtrar
-                                        </Button>
+                                    {/* Row 2 */}
+                                    <div className="grid gap-3 md:grid-cols-12 items-end">
+                                        <InputGroup label="No. Afiliado :" htmlFor="no-afiliado" className="md:col-span-5">
+                                            <Input id="no-afiliado" placeholder="" className="h-8" />
+                                        </InputGroup>
+                                        <InputGroup label="CURP :" htmlFor="curp" className="md:col-span-5">
+                                            <Input id="curp" placeholder="" className="h-8" />
+                                        </InputGroup>
+                                        <div className="md:col-span-2 flex justify-end">
+                                            <Button className="w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white h-8">
+                                                <Search className="mr-2 h-4 w-4" />
+                                                Filtrar
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+                            <div className="col-span-1 flex items-center justify-center border-l pl-4">
+                                <AfiliadosDialog />
+                            </div>
                         </div>
-                        <div className="col-span-1 flex items-center justify-center border-l pl-4">
-                            <AfiliadosDialog />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-            <DataTable columns={columns} data={[]} />
-        </div>
+                    </CardContent>
+                </Card>
+                <DataTable columns={columns} data={afiliados} />
+            </div>
+        </TooltipProvider>
     )
 }

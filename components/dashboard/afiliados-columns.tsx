@@ -9,21 +9,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-
-export type Afiliado = {
-    id: string
-    noAfiliado: string
-    afiliado: string
-    asociacion: string
-    club: string
-    curp: string
-    modalidades: string
-    segundaValidacionCurp: string
-    pagoAfiliacion: string
-    pagoSeguro: string
-    tipoAfiliado: string
-    estatus: "Alta" | "Baja"
-}
+import { Afiliado } from "@/lib/afiliados-service"
 
 export const columns: ColumnDef<Afiliado>[] = [
     {
@@ -32,7 +18,7 @@ export const columns: ColumnDef<Afiliado>[] = [
         cell: ({ row }) => {
             return (
                 <div className="flex items-center">
-                    <TooltipProvider>
+                    <div className="flex items-center">
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-green-200 dark:hover:bg-green-800">
@@ -44,13 +30,13 @@ export const columns: ColumnDef<Afiliado>[] = [
                                 <p>Editar</p>
                             </TooltipContent>
                         </Tooltip>
-                    </TooltipProvider>
+                    </div>
                 </div>
             )
         },
     },
     {
-        accessorKey: "noAfiliado",
+        accessorKey: "id",
         header: ({ column }) => {
             return (
                 <Button
@@ -64,7 +50,7 @@ export const columns: ColumnDef<Afiliado>[] = [
         },
     },
     {
-        accessorKey: "afiliado",
+        id: "nombreCompleto",
         header: ({ column }) => {
             return (
                 <Button
@@ -76,37 +62,27 @@ export const columns: ColumnDef<Afiliado>[] = [
                 </Button>
             )
         },
+        cell: ({ row }) => {
+            const affiliate = row.original
+            return `${affiliate.Nombre} ${affiliate.Paterno} ${affiliate.Materno}`.trim()
+        }
     },
     {
-        accessorKey: "asociacion",
+        accessorKey: "id_Club",
         header: ({ column }) => {
             return (
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
-                    Asociación
+                    Club (ID)
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             )
         },
     },
     {
-        accessorKey: "club",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Club
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
-        },
-    },
-    {
-        accessorKey: "curp",
+        accessorKey: "Curp",
         header: ({ column }) => {
             return (
                 <Button
@@ -120,77 +96,35 @@ export const columns: ColumnDef<Afiliado>[] = [
         },
     },
     {
-        accessorKey: "modalidades",
+        accessorKey: "Modalidad",
         header: ({ column }) => {
             return (
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
-                    Modalidades
+                    Modalidad
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             )
         },
     },
     {
-        accessorKey: "segundaValidacionCurp",
+        accessorKey: "Afiliacion_p", // Mapping to Tipo Afiliado
         header: ({ column }) => {
             return (
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
-                    Segunda validación CURP
+                    Tipo afiliado (ID)
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             )
         },
     },
     {
-        accessorKey: "pagoAfiliacion",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Pago de afiliación
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
-        },
-    },
-    {
-        accessorKey: "pagoSeguro",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Pago de seguro
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
-        },
-    },
-    {
-        accessorKey: "tipoAfiliado",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Tipo afiliado
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
-        },
-    },
-    {
-        accessorKey: "estatus",
+        id: "estatus",
         header: ({ column }) => {
             return (
                 <Button
@@ -202,5 +136,9 @@ export const columns: ColumnDef<Afiliado>[] = [
                 </Button>
             )
         },
+        cell: ({ row }) => {
+            // Logic: if Fecha_baja is null/empty -> Alta, else Baja
+            return row.original.Fecha_baja ? "Baja" : "Alta"
+        }
     },
 ]

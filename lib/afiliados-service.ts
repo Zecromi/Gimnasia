@@ -1,11 +1,39 @@
 import api from "./axios";
 import { CatalogoItem, Estado } from "./club-service";
 
+export interface Afiliado {
+    id: number;
+    Nombre: string;
+    Paterno: string;
+    Materno: string;
+    id_Club: number;
+    Fecha_nacimiento: string;
+    Curp: string;
+    Genero: string;
+    id_Escolaridad: number;
+    Fecha_afiliacion: string;
+    Fecha_baja: string | null;
+    Calle: string;
+    Exterior: string;
+    Interior: string;
+    Colonia: string;
+    CP: string;
+    Ciudad: string;
+    Estado: string;
+    Telefono_c: string;
+    Telefono_cel: string;
+    Afiliacion_p: number;
+    Afiliacion_s: number;
+    id_nivel_tec: number;
+    Modalidad: number;
+}
+
 export interface AfiliadosCatalogsResponse {
     Catalogo_afiliaciones: CatalogoItem[];
     Niveles_tecnicos: { id: number; Descripcion: string }[];
     Estados: Estado[];
     Escolaridad: CatalogoItem[];
+    Afiliados: Afiliado[];
 }
 
 export const getAfiliadosCatalogs = async () => {
