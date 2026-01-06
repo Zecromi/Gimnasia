@@ -22,8 +22,10 @@ export interface Afiliado {
     Estado: string;
     Telefono_c: string;
     Telefono_cel: string;
-    Afiliacion_p: number;
-    Afiliacion_s: number;
+    Afiliacion_1: number | null;
+    Afiliacion_2: number | null;
+    Afiliacion_3: number | null;
+    Afiliacion_4: number | null;
     id_nivel_tec: number;
     Modalidad: number;
 }
