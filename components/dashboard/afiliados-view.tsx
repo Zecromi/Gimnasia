@@ -25,19 +25,34 @@ import {
 import { columns } from "./afiliados-columns"
 import { DataTable } from "./data-table"
 import { AfiliadosDialog } from "./afiliados-dialog"
+import { getClubs, ViewClubGral } from "@/lib/club-service"
 import { getAfiliadosCatalogs, Afiliado } from "@/lib/afiliados-service"
 
 export function AfiliadosView() {
     const [isLoading, setIsLoading] = useState(true)
     const [afiliados, setAfiliados] = useState<Afiliado[]>([])
+    const [filteredAfiliados, setFilteredAfiliados] = useState<Afiliado[]>([])
+    const [clubs, setClubs] = useState<ViewClubGral[]>([])
+
+    // Filter states
+    const [filterAfiliado, setFilterAfiliado] = useState("")
+    const [filterClub, setFilterClub] = useState("todos")
+    const [filterEstatus, setFilterEstatus] = useState("todos")
+    const [filterNoAfiliado, setFilterNoAfiliado] = useState("")
+    const [filterCurp, setFilterCurp] = useState("")
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const data = await getAfiliadosCatalogs()
+                const [data, clubsData] = await Promise.all([
+                    getAfiliadosCatalogs(),
+                    getClubs()
+                ])
                 if (data.Afiliados) {
                     setAfiliados(data.Afiliados)
+                    setFilteredAfiliados(data.Afiliados)
                 }
+                setClubs(clubsData.View_Club_gral)
             } catch (error) {
                 console.error("Error fetching afiliados:", error)
             } finally {
@@ -47,6 +62,41 @@ export function AfiliadosView() {
 
         fetchData()
     }, [])
+
+    const handleFilter = () => {
+        let filtered = [...afiliados]
+
+        if (filterAfiliado) {
+            const searchLower = filterAfiliado.toLowerCase()
+            filtered = filtered.filter(a =>
+                a.Nombre.toLowerCase().includes(searchLower) ||
+                a.Paterno.toLowerCase().includes(searchLower) ||
+                a.Materno.toLowerCase().includes(searchLower)
+            )
+        }
+
+        if (filterClub && filterClub !== "todos") {
+            filtered = filtered.filter(a => a.id_Club.toString() === filterClub)
+        }
+
+        if (filterEstatus && filterEstatus !== "todos") {
+            if (filterEstatus === "alta") {
+                filtered = filtered.filter(a => !a.Fecha_baja)
+            } else {
+                filtered = filtered.filter(a => !!a.Fecha_baja)
+            }
+        }
+
+        if (filterNoAfiliado) {
+            filtered = filtered.filter(a => a.id.toString().includes(filterNoAfiliado))
+        }
+
+        if (filterCurp) {
+            filtered = filtered.filter(a => a.Curp.toLowerCase().includes(filterCurp.toLowerCase()))
+        }
+
+        setFilteredAfiliados(filtered)
+    }
 
     if (isLoading) {
         return (
@@ -101,25 +151,34 @@ export function AfiliadosView() {
                                     {/* Row 1 */}
                                     <div className="grid gap-3 md:grid-cols-12">
                                         <InputGroup label="Afiliado :" htmlFor="afiliado" className="md:col-span-5">
-                                            <Input id="afiliado" placeholder="" className="h-8" />
+                                            <Input
+                                                id="afiliado"
+                                                value={filterAfiliado}
+                                                onChange={(e) => setFilterAfiliado(e.target.value)}
+                                                placeholder="Nombre"
+                                                className="h-8"
+                                            />
                                         </InputGroup>
                                         <InputGroup label="Asociación :" className="md:col-span-3">
                                             <Input value="ESTADO DE MÉXICO" disabled className="bg-muted/50 h-8" />
                                         </InputGroup>
                                         <InputGroup label="Club :" htmlFor="club" className="md:col-span-2">
-                                            <Select>
+                                            <Select value={filterClub} onValueChange={setFilterClub}>
                                                 <SelectTrigger id="club">
                                                     <SelectValue placeholder="Todos" />
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     <SelectItem value="todos">Todos</SelectItem>
-                                                    <SelectItem value="club1">Club 1</SelectItem>
-                                                    <SelectItem value="club2">Club 2</SelectItem>
+                                                    {Array.from(new Map(clubs.map(club => [club.id, club])).values()).map((club) => (
+                                                        <SelectItem key={club.id} value={club.id.toString()}>
+                                                            {club.Club}
+                                                        </SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                         </InputGroup>
                                         <InputGroup label="Estatus :" htmlFor="estatus" className="md:col-span-2">
-                                            <Select defaultValue="todos">
+                                            <Select value={filterEstatus} onValueChange={setFilterEstatus}>
                                                 <SelectTrigger id="estatus">
                                                     <SelectValue placeholder="Seleccionar" />
                                                 </SelectTrigger>
@@ -135,13 +194,28 @@ export function AfiliadosView() {
                                     {/* Row 2 */}
                                     <div className="grid gap-3 md:grid-cols-12 items-end">
                                         <InputGroup label="No. Afiliado :" htmlFor="no-afiliado" className="md:col-span-5">
-                                            <Input id="no-afiliado" placeholder="" className="h-8" />
+                                            <Input
+                                                id="no-afiliado"
+                                                value={filterNoAfiliado}
+                                                onChange={(e) => setFilterNoAfiliado(e.target.value)}
+                                                placeholder=""
+                                                className="h-8"
+                                            />
                                         </InputGroup>
                                         <InputGroup label="CURP :" htmlFor="curp" className="md:col-span-5">
-                                            <Input id="curp" placeholder="" className="h-8" />
+                                            <Input
+                                                id="curp"
+                                                value={filterCurp}
+                                                onChange={(e) => setFilterCurp(e.target.value)}
+                                                placeholder=""
+                                                className="h-8"
+                                            />
                                         </InputGroup>
                                         <div className="md:col-span-2 flex justify-end">
-                                            <Button className="w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white h-8">
+                                            <Button
+                                                onClick={handleFilter}
+                                                className="w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white h-8"
+                                            >
                                                 <Search className="mr-2 h-4 w-4" />
                                                 Filtrar
                                             </Button>
@@ -155,7 +229,7 @@ export function AfiliadosView() {
                         </div>
                     </CardContent>
                 </Card>
-                <DataTable columns={columns} data={afiliados} />
+                <DataTable columns={columns} data={filteredAfiliados} />
             </div>
         </TooltipProvider>
     )

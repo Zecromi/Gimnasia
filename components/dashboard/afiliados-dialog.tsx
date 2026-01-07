@@ -4,8 +4,8 @@ import * as React from "react"
 import { Plus, Save } from "lucide-react"
 import { toast } from "sonner"
 import { AfiliadosCatalogsResponse, getAfiliadosCatalogs, createAfiliado, CreateAfiliadoPayload } from "@/lib/afiliados-service"
+import { useCatalogStore } from "@/lib/store/catalog-store"
 import { CatalogoItem, Estado, getClubs, ViewClubGral } from "@/lib/club-service"
-
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
@@ -80,20 +80,18 @@ export function AfiliadosDialog() {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <DialogTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
-                                <Plus className="h-6 w-6" />
-                            </Button>
-                        </DialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Nuevo Afiliado</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <DialogTrigger asChild>
+                        <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
+                            <Plus className="h-6 w-6" />
+                        </Button>
+                    </DialogTrigger>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>Nuevo Afiliado</p>
+                </TooltipContent>
+            </Tooltip>
             <DialogContent className="sm:max-w-[auto] max-h-[auto] flex flex-col p-0">
                 <DialogHeader className="px-6 py-4 border-b">
                     <DialogTitle>Nuevo Afiliado</DialogTitle>
@@ -117,6 +115,7 @@ export function AfiliadosDialog() {
 function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
     const [catalogs, setCatalogs] = React.useState<AfiliadosCatalogsResponse | null>(null)
     const [clubs, setClubs] = React.useState<ViewClubGral[]>([])
+    const { Modalidades, fetchCatalogs } = useCatalogStore()
 
     React.useEffect(() => {
         const fetchData = async () => {
@@ -127,13 +126,14 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                 ])
                 setCatalogs(catalogsData)
                 setClubs(clubsData.View_Club_gral)
+                await fetchCatalogs()
             } catch (error) {
                 console.error("Error fetching data:", error)
                 toast.error("Error al cargar la información")
             }
         }
         fetchData()
-    }, [])
+    }, [fetchCatalogs])
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -163,7 +163,7 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
             afiliacion_p: data.tipoAfiliadoPrincipal,
             afiliacion_s: data.tipoAfiliadoSecundario,
             id_nivel_tec: data.nivelTecnico,
-            modalidad: "" // Field requested by API but missing in current Form design
+            modalidad: data.modalidad
         }
 
         try {
@@ -205,7 +205,7 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                         <SelectValue placeholder="Selecciona una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {clubs.map((club) => (
+                                        {Array.from(new Map(clubs.map(club => [club.id, club])).values()).map((club) => (
                                             <SelectItem key={club.id} value={club.id.toString()}>
                                                 {club.Club}
                                             </SelectItem>
@@ -294,6 +294,20 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                     </div>
                                 </RadioGroup>
                             </div>
+                            <InputGroup label="Modalidad : *" className="col-span-12 md:col-span-4">
+                                <Select name="modalidad" required>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccione una opción" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Array.from(new Map(Modalidades.map(item => [item.id, item])).values()).map((item) => (
+                                            <SelectItem key={item.id} value={item.id.toString()}>
+                                                {item.Nombre}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </InputGroup>
                         </div>
                     </div>
 
