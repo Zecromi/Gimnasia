@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CircleFadingArrowUp, Upload, Key, Database, Building2, Lock, RefreshCw, FileText } from "lucide-react"
+import { CircleFadingArrowUp, Upload, Key, Database, Building2, Lock, RefreshCw, FileText, Copy, Check } from "lucide-react"
 
 import { useForm, FormProvider, useFormContext } from "react-hook-form"
 import { toast } from "sonner"
@@ -595,9 +595,29 @@ function AccesoForm({ id, club }: { id: string, club: ViewClubGral }) {
             <div className="grid gap-6 p-4 max-w-2xl">
                 <div className="space-y-4">
                     <InputGroup label="Nombre de usuario" htmlFor="user-name">
-                        <Input id="user-name" defaultValue={`admin.${club.Club?.toLowerCase().replace(/\s/g, '') || ''}`} />
+                        <div className="flex gap-2">
+                            <Input
+                                id="user-name"
+                                value={club.usuario || `admin.${club.Club?.toLowerCase().replace(/\s/g, '') || ''}`}
+                                readOnly
+                                className="bg-muted"
+                            />
+                            <CopyButton value={club.usuario || `admin.${club.Club?.toLowerCase().replace(/\s/g, '') || ''}`} />
+                        </div>
                     </InputGroup>
 
+                    <InputGroup label="Contraseña" htmlFor="user-password">
+                        <div className="flex gap-2">
+                            <Input
+                                id="user-password"
+                                value={club.password || "••••••••"}
+                                type="text"
+                                readOnly
+                                className="bg-muted"
+                            />
+                            <CopyButton value={club.password || ""} />
+                        </div>
+                    </InputGroup>
                 </div>
                 <div className="space-y-4 pt-4 border-t">
                     <h4 className="font-semibold text-sm">Acciones de cuenta</h4>
@@ -673,5 +693,42 @@ function CheckboxInput({ name }: { name: string }) {
             checked={!!value}
             onCheckedChange={(checked) => setValue(name, !!checked)}
         />
+    )
+}
+
+function CopyButton({ value }: { value: string }) {
+    const [copied, setCopied] = React.useState(false)
+
+    const handleCopy = () => {
+        if (!value) return
+        navigator.clipboard.writeText(value)
+        setCopied(true)
+        toast.success("Copiado al portapapeles")
+        setTimeout(() => setCopied(false), 2000)
+    }
+
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="outline"
+                        size="icon"
+                        type="button"
+                        onClick={handleCopy}
+                        disabled={!value}
+                    >
+                        {copied ? (
+                            <Check className="h-4 w-4 text-green-500" />
+                        ) : (
+                            <Copy className="h-4 w-4" />
+                        )}
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{copied ? "Copiado!" : "Copiar"}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     )
 }

@@ -20,6 +20,8 @@ export interface ViewClubGral {
     Tipo_instalaciones: boolean
     Telefono1: string
     Telefono2: string
+    usuario?: string
+    password?: string
 }
 
 interface ClubStore {

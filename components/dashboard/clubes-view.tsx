@@ -79,7 +79,7 @@ export function ClubesView() {
     if (isLoading) {
         return (
             <div className="space-y-6">
-                <Card className="rounded-2xl border-none shadow-none bg-gray-50">
+                <Card className="rounded-2xl border-none shadow-none bg-gray-50 dark:bg-zinc-900">
                     <CardHeader className="pt-2 pb-0">
                         <Skeleton className="h-8 w-[200px]" />
                     </CardHeader>
@@ -90,7 +90,7 @@ export function ClubesView() {
                         </div>
                     </CardContent>
                 </Card>
-                <div className="rounded-md border p-4 bg-white">
+                <div className="rounded-md border p-4 bg-white dark:bg-zinc-900">
                     <div className="space-y-4">
                         <Skeleton className="h-10 w-full" />
                         <Skeleton className="h-20 w-full" />
