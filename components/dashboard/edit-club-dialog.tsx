@@ -20,6 +20,16 @@ import {
     DialogFooter,
 } from "@/components/ui/dialog"
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import {
     Drawer,
     DrawerClose,
     DrawerContent,
@@ -49,6 +59,7 @@ import {
 } from "@/components/ui/tooltip"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { ViewClubGral } from "@/lib/club-service"
+import { postBlock } from "@/lib/evento-service"
 
 interface EditClubDialogProps {
     club: ViewClubGral
@@ -586,8 +597,42 @@ function ModalidadesForm({ id, club }: { id: string, club: ViewClubGral }) {
 }
 
 function AccesoForm({ id, club }: { id: string, club: ViewClubGral }) {
+    const [showDisableDialog, setShowDisableDialog] = React.useState(false)
+
+    const handleDisableAccess = async () => {
+        try {
+            const user = club.usuario || `admin.${club.Club?.toLowerCase().replace(/\s/g, '') || ''}`
+            const params = {
+                User: user,
+                tipo: "2"
+            }
+            await postBlock(params)
+            toast.success("Acceso desactivado correctamente")
+            setShowDisableDialog(false)
+        } catch (error) {
+            console.error("Error disabling access:", error)
+            toast.error("Error al desactivar el acceso")
+        }
+    }
+
     return (
         <div className="space-y-6">
+            <AlertDialog open={showDisableDialog} onOpenChange={setShowDisableDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Está seguro de desactivar el acceso?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción bloqueará el acceso al sistema para este club. Podrá reactivarlo posteriormente si es necesario.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDisableAccess} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Desactivar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
             <h3 className="text-lg font-semibold bg-muted py-2 px-4 rounded-md flex items-center mb-6">
                 <Key className="mr-2 h-5 w-5" />
                 Control de Acceso
@@ -625,7 +670,12 @@ function AccesoForm({ id, club }: { id: string, club: ViewClubGral }) {
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button variant="destructive" type="button" className="w-full sm:w-auto">
+                                    <Button
+                                        variant="destructive"
+                                        type="button"
+                                        className="w-full sm:w-auto"
+                                        onClick={() => setShowDisableDialog(true)}
+                                    >
                                         <Lock className="mr-2 h-4 w-4" />
                                         Desactivar Acceso
                                     </Button>
