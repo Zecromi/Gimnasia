@@ -9,9 +9,10 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
-import { login } from "@/lib/auth";
+import { login, getPass } from "@/lib/auth";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
+import { useAuthStore } from "@/lib/store/auth-store";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -23,6 +24,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const setAuthData = useAuthStore((state) => state.setAuthData);
 
   // Avoid hydration mismatch
   useEffect(() => {
@@ -41,6 +43,23 @@ export default function LoginPage() {
       if (data) {
         const tokenToStore = data.token ? data.token : JSON.stringify(data);
         Cookies.set('token', tokenToStore, { expires: 1 });
+
+        // Second Auth Step
+        try {
+          const passData = await getPass(usuario, password);
+          console.log("GetPass response:", passData);
+          if (passData && passData.length > 0) {
+            console.log("Saving extra auth data to store:", passData[0]);
+            setAuthData(passData[0]);
+          } else {
+            console.warn("No extra auth data found for this user.");
+          }
+        } catch (passError) {
+          console.error("Error fetching extra auth data:", passError);
+          // Optionally handle this error, effectively failing login or just logging it
+          // For now proceeding, as the main token is what matters for access
+        }
+
         router.push("/dashboard");
       } else {
         setError("Credenciales inválidas");
