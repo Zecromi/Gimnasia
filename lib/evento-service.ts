@@ -74,3 +74,16 @@ export const getEventos = async () => {
     const response = await api.get<GetEventosResponse>("/GetEvent");
     return response.data;
 };
+
+export const postBlock = async (User: string, tipo: string) => {
+    console.log(User, tipo)
+    const response = await api.post("/PostBlock", null, {
+        params: {
+            User,
+            tipo,
+        },
+    });
+    console.log(response.data)
+    return response.data;
+};
+

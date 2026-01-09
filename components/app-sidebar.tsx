@@ -55,7 +55,19 @@ const items = [
 
 ]
 
+import { useAuthStore } from "@/lib/store/auth-store"
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+    const { authData } = useAuthStore()
+
+    const filteredItems = items.filter(item => {
+        console.log(authData)
+        if (item.title === "Eventos") {
+            return authData?.tipo_registro === 1
+        }
+        return true
+    })
+
     return (
         <Sidebar collapsible="icon" {...props}>
 
@@ -64,7 +76,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarGroupLabel>Gimnasia</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {items.map((item) => (
+                            {filteredItems.map((item) => (
                                 <SidebarMenuItem key={item.title}>
                                     <SidebarMenuButton asChild tooltip={item.title}>
                                         <a href={item.url}>
