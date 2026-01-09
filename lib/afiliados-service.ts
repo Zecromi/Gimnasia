@@ -72,3 +72,19 @@ export const createAfiliado = async (payload: CreateAfiliadoPayload) => {
     const response = await api.post("/PostAfiliado", payload);
     return response.data;
 };
+
+export interface UpdateAfiliadoItem {
+    campo: string;
+    valor: string;
+}
+
+export interface UpdateAfiliadoPayload {
+    uno: UpdateAfiliadoItem[];
+}
+
+export const updateAfiliado = async (id: number, payload: UpdateAfiliadoPayload) => {
+    const response = await api.post("/PutAfiliado", payload, {
+        params: { id }
+    });
+    return response.data;
+};

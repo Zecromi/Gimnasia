@@ -10,8 +10,9 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Afiliado } from "@/lib/afiliados-service"
+import { AfiliadosDialog } from "./afiliados-dialog"
 
-export const columns: ColumnDef<Afiliado>[] = [
+export const getColumns = (onSuccess: () => void): ColumnDef<Afiliado>[] => [
     {
         id: "detalle",
         header: "Detalle",
@@ -20,10 +21,18 @@ export const columns: ColumnDef<Afiliado>[] = [
                 <div className="flex items-center">
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-green-200 dark:hover:bg-green-800">
-                                <Edit className="h-4 w-4" />
-                                <span className="sr-only">Editar</span>
-                            </Button>
+                            <div className="inline-block">
+                                <AfiliadosDialog
+                                    afiliado={row.original}
+                                    onSuccess={onSuccess}
+                                    trigger={
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-green-200 dark:hover:bg-green-800">
+                                            <Edit className="h-4 w-4" />
+                                            <span className="sr-only">Editar</span>
+                                        </Button>
+                                    }
+                                />
+                            </div>
                         </TooltipTrigger>
                         <TooltipContent side="right">
                             <p>Editar</p>

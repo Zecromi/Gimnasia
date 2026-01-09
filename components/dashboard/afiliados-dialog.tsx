@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Plus, Save } from "lucide-react"
 import { toast } from "sonner"
-import { AfiliadosCatalogsResponse, getAfiliadosCatalogs, createAfiliado, CreateAfiliadoPayload } from "@/lib/afiliados-service"
+import { AfiliadosCatalogsResponse, getAfiliadosCatalogs, createAfiliado, updateAfiliado, CreateAfiliadoPayload } from "@/lib/afiliados-service"
 import { useCatalogStore } from "@/lib/store/catalog-store"
 import { CatalogoItem, Estado, getClubs, ViewClubGral } from "@/lib/club-service"
 import { cn } from "@/lib/utils"
@@ -45,24 +45,39 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-export function AfiliadosDialog() {
+interface AfiliadosDialogProps {
+    afiliado?: Afiliado
+    trigger?: React.ReactNode
+    onSuccess?: () => void
+}
+
+export function AfiliadosDialog({ afiliado, trigger, onSuccess }: AfiliadosDialogProps) {
     const [open, setOpen] = React.useState(false)
     const isMobile = useIsMobile()
+    const title = afiliado ? "Editar Afiliado" : "Nuevo Afiliado"
+
+    const handleSuccess = () => {
+        console.log("AfiliadosDialog: handleSuccess called")
+        setOpen(false)
+        onSuccess?.()
+    }
 
     if (isMobile) {
         return (
             <Drawer open={open} onOpenChange={setOpen}>
                 <DrawerTrigger asChild>
-                    <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
-                        <Plus className="h-6 w-6" />
-                    </Button>
+                    {trigger || (
+                        <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
+                            <Plus className="h-6 w-6" />
+                        </Button>
+                    )}
                 </DrawerTrigger>
                 <DrawerContent className="h-[90vh]">
                     <DrawerHeader className="text-left">
-                        <DrawerTitle>Nuevo Afiliado</DrawerTitle>
+                        <DrawerTitle>{title}</DrawerTitle>
                     </DrawerHeader>
                     <div className="flex-1 px-4">
-                        <AfiliadosForm id="afiliados-form-mobile" />
+                        <AfiliadosForm id="afiliados-form-mobile" afiliado={afiliado} onSuccess={handleSuccess} />
                     </div>
                     <DrawerFooter className="pt-2 border-t">
                         <Button form="afiliados-form-mobile" type="submit">
@@ -80,25 +95,31 @@ export function AfiliadosDialog() {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
-                            <Plus className="h-6 w-6" />
-                        </Button>
-                    </DialogTrigger>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Nuevo Afiliado</p>
-                </TooltipContent>
-            </Tooltip>
+            {trigger ? (
+                <DialogTrigger asChild>
+                    {trigger}
+                </DialogTrigger>
+            ) : (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <DialogTrigger asChild>
+                            <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
+                                <Plus className="h-6 w-6" />
+                            </Button>
+                        </DialogTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{title}</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
             <DialogContent className="sm:max-w-[auto] max-h-[auto] flex flex-col p-0">
                 <DialogHeader className="px-6 py-4 border-b">
-                    <DialogTitle>Nuevo Afiliado</DialogTitle>
+                    <DialogTitle>{title}</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1">
                     <div className="px-6 py-6">
-                        <AfiliadosForm id="afiliados-form-desktop" />
+                        <AfiliadosForm id="afiliados-form-desktop" afiliado={afiliado} onSuccess={handleSuccess} />
                     </div>
                 </div>
                 <DialogFooter className="p-4 border-t">
@@ -112,7 +133,14 @@ export function AfiliadosDialog() {
     )
 }
 
-function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
+import { Afiliado } from "@/lib/afiliados-service"
+
+interface AfiliadosFormProps extends React.ComponentProps<"form"> {
+    afiliado?: Afiliado
+    onSuccess?: () => void
+}
+
+function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProps) {
     const [catalogs, setCatalogs] = React.useState<AfiliadosCatalogsResponse | null>(null)
     const [clubs, setClubs] = React.useState<ViewClubGral[]>([])
     const { Modalidades, fetchCatalogs } = useCatalogStore()
@@ -156,39 +184,125 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
             return
         }
 
-        const payload: CreateAfiliadoPayload = {
-            nombre: data.nombre,
-            paterno: data.apellidoPaterno,
-            materno: data.apellidoMaterno,
-            id_Club: data.club, // select returns value
-            fecha_nacimiento: data.fechaNacimiento,
-            curp: data.curp,
-            genero: data.genero,
-            escolaridad: data.escolaridad,
-            calle: data.calle,
-            exterior: data.numExt,
-            interior: data.numInt,
-            colonia: data.colonia,
-            cp: data.cp,
-            ciudad: data.municipio,
-            estado: data.estado,
-            telefono_c: data.telParticular,
-            telefono_cel: data.telCelular,
-            afiliacion_p: data.tipoAfiliadoPrincipal,
-            afiliacion_s: data.tipoAfiliadoSecundario,
-            afiliacion_t: data.tipoAfiliadoTercero,
-            afiliacion_c: data.tipoAfiliadoCuarto,
-            id_nivel_tec: data.nivelTecnico
-        }
+        if (afiliado) {
+            // Edit Mode
+            const changes: { campo: string; valor: string }[] = []
 
-        try {
-            console.log("Sending payload:", payload)
-            await createAfiliado(payload)
-            toast.success("Afiliado creado exitosamente")
-            // Optionally close dialog or reset form
-        } catch (error) {
-            console.error("Error creating afiliado:", error)
-            toast.error("Error al crear el afiliado")
+            // Field mapping: Form Name -> Backend Column Name
+            const fieldMap: Record<string, string> = {
+                nombre: "Nombre",
+                apellidoPaterno: "Paterno",
+                apellidoMaterno: "Materno",
+                club: "id_Club",
+                fechaNacimiento: "Fecha_nacimiento",
+                curp: "Curp",
+                genero: "Genero",
+                escolaridad: "id_Escolaridad",
+                calle: "Calle",
+                numExt: "Exterior",
+                numInt: "Interior",
+                colonia: "Colonia",
+                cp: "CP",
+                municipio: "Ciudad",
+                estado: "Estado",
+                telParticular: "Telefono_c",
+                telCelular: "Telefono_cel",
+                tipoAfiliadoPrincipal: "Afiliacion_1",
+                tipoAfiliadoSecundario: "Afiliacion_2",
+                tipoAfiliadoTercero: "Afiliacion_3",
+                tipoAfiliadoCuarto: "Afiliacion_4",
+                nivelTecnico: "id_nivel_tec"
+            }
+
+            // Helper to get original value safely
+            const getOriginalValue = (key: string): string => {
+                switch (key) {
+                    case "nombre": return afiliado.Nombre;
+                    case "apellidoPaterno": return afiliado.Paterno;
+                    case "apellidoMaterno": return afiliado.Materno;
+                    case "club": return afiliado.id_Club.toString();
+                    case "fechaNacimiento": return afiliado.Fecha_nacimiento ? afiliado.Fecha_nacimiento.split('T')[0] : "";
+                    case "curp": return afiliado.Curp;
+                    case "genero": return afiliado.Genero;
+                    case "escolaridad": return afiliado.id_Escolaridad.toString();
+                    case "calle": return afiliado.Calle;
+                    case "numExt": return afiliado.Exterior;
+                    case "numInt": return afiliado.Interior;
+                    case "colonia": return afiliado.Colonia;
+                    case "cp": return afiliado.CP;
+                    case "municipio": return afiliado.Ciudad;
+                    case "estado": return afiliado.Estado;
+                    case "telParticular": return afiliado.Telefono_c;
+                    case "telCelular": return afiliado.Telefono_cel;
+                    case "tipoAfiliadoPrincipal": return afiliado.Afiliacion_1?.toString() || "";
+                    case "tipoAfiliadoSecundario": return afiliado.Afiliacion_2?.toString() || "";
+                    case "tipoAfiliadoTercero": return afiliado.Afiliacion_3?.toString() || "";
+                    case "tipoAfiliadoCuarto": return afiliado.Afiliacion_4?.toString() || "";
+                    case "nivelTecnico": return afiliado.id_nivel_tec.toString();
+                    default: return "";
+                }
+            }
+
+            for (const [formKey, backendField] of Object.entries(fieldMap)) {
+                const newValue = data[formKey] || ""
+                const originalValue = getOriginalValue(formKey) || ""
+
+                if (newValue !== originalValue) {
+                    changes.push({ campo: backendField, valor: newValue })
+                }
+            }
+
+            if (changes.length === 0) {
+                toast.info("No hay cambios para guardar")
+                return
+            }
+
+            try {
+                console.log("Sending updates:", changes)
+                await updateAfiliado(afiliado.id, { uno: changes })
+                toast.success("Afiliado actualizado exitosamente")
+                onSuccess?.()
+            } catch (error) {
+                console.error("Error updating afiliado:", error)
+                toast.error("Error al actualizar el afiliado")
+            }
+
+        } else {
+            // Create Mode
+            const payload: CreateAfiliadoPayload = {
+                nombre: data.nombre,
+                paterno: data.apellidoPaterno,
+                materno: data.apellidoMaterno,
+                id_Club: data.club, // select returns value
+                fecha_nacimiento: data.fechaNacimiento,
+                curp: data.curp,
+                genero: data.genero,
+                escolaridad: data.escolaridad,
+                calle: data.calle,
+                exterior: data.numExt,
+                interior: data.numInt,
+                colonia: data.colonia,
+                cp: data.cp,
+                ciudad: data.municipio,
+                estado: data.estado,
+                telefono_c: data.telParticular,
+                telefono_cel: data.telCelular,
+                afiliacion_p: data.tipoAfiliadoPrincipal,
+                afiliacion_s: data.tipoAfiliadoSecundario,
+                afiliacion_t: data.tipoAfiliadoTercero,
+                afiliacion_c: data.tipoAfiliadoCuarto,
+                id_nivel_tec: data.nivelTecnico
+            }
+
+            try {
+                console.log("Sending payload:", payload)
+                await createAfiliado(payload)
+                toast.success("Afiliado creado exitosamente")
+                onSuccess?.()
+            } catch (error) {
+                console.error("Error creating afiliado:", error)
+                toast.error("Error al crear el afiliado")
+            }
         }
     }
 
@@ -200,13 +314,13 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                     <div className="grid gap-6">
                         <div className="grid grid-cols-12 gap-6">
                             <InputGroup label="Nombre : *" htmlFor="nombre" className="col-span-12 md:col-span-4">
-                                <Input id="nombre" name="nombre" />
+                                <Input id="nombre" name="nombre" defaultValue={afiliado?.Nombre} />
                             </InputGroup>
                             <InputGroup label="Apellido Paterno : *" htmlFor="apellidoPaterno" className="col-span-12 md:col-span-4">
-                                <Input id="apellidoPaterno" name="apellidoPaterno" />
+                                <Input id="apellidoPaterno" name="apellidoPaterno" defaultValue={afiliado?.Paterno} />
                             </InputGroup>
                             <InputGroup label="Apellido Materno :" htmlFor="apellidoMaterno" className="col-span-12 md:col-span-4">
-                                <Input id="apellidoMaterno" name="apellidoMaterno" />
+                                <Input id="apellidoMaterno" name="apellidoMaterno" defaultValue={afiliado?.Materno} />
                             </InputGroup>
                         </div>
 
@@ -215,7 +329,7 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                 <Input value="ESTADO DE MÉXICO" disabled className="bg-muted/50" name="asociacion" />
                             </InputGroup>
                             <InputGroup label="Club : *" className="col-span-12 md:col-span-6">
-                                <Select name="club">
+                                <Select name="club" defaultValue={afiliado?.id_Club?.toString()}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selecciona una opción" />
                                     </SelectTrigger>
@@ -232,7 +346,7 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
 
                         <div className="grid grid-cols-12 gap-6">
                             <InputGroup label="Tipo de Afiliado Principal : *" className="col-span-12 md:col-span-6">
-                                <Select name="tipoAfiliadoPrincipal">
+                                <Select name="tipoAfiliadoPrincipal" defaultValue={afiliado?.Afiliacion_1?.toString()}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
@@ -246,7 +360,7 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                 </Select>
                             </InputGroup>
                             <InputGroup label="Tipo de Afiliado Secundario :" className="col-span-12 md:col-span-6">
-                                <Select name="tipoAfiliadoSecundario">
+                                <Select name="tipoAfiliadoSecundario" defaultValue={afiliado?.Afiliacion_2?.toString()}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
@@ -263,7 +377,7 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
 
                         <div className="grid grid-cols-12 gap-6">
                             <InputGroup label="Tipo de Afiliado Tercero :" className="col-span-12 md:col-span-6">
-                                <Select name="tipoAfiliadoTercero">
+                                <Select name="tipoAfiliadoTercero" defaultValue={afiliado?.Afiliacion_3?.toString()}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
@@ -277,7 +391,7 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                 </Select>
                             </InputGroup>
                             <InputGroup label="Tipo de Afiliado Cuarto :" className="col-span-12 md:col-span-6">
-                                <Select name="tipoAfiliadoCuarto">
+                                <Select name="tipoAfiliadoCuarto" defaultValue={afiliado?.Afiliacion_4?.toString()}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
@@ -294,7 +408,7 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
 
                         <div className="grid grid-cols-12 gap-6">
                             <InputGroup label="Nivel Tecnico : *" className="col-span-12 md:col-span-6">
-                                <Select name="nivelTecnico">
+                                <Select name="nivelTecnico" defaultValue={afiliado?.id_nivel_tec?.toString()}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
@@ -308,7 +422,7 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                 </Select>
                             </InputGroup>
                             <InputGroup label="Escolaridad : *" className="col-span-12 md:col-span-6">
-                                <Select name="escolaridad">
+                                <Select name="escolaridad" defaultValue={afiliado?.id_Escolaridad?.toString()}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
@@ -325,14 +439,14 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
 
                         <div className="grid grid-cols-12 gap-6">
                             <InputGroup label="Fecha de Nacimiento : *" htmlFor="fechaNacimiento" className="col-span-12 md:col-span-4">
-                                <Input id="fechaNacimiento" name="fechaNacimiento" type="date" />
+                                <Input id="fechaNacimiento" name="fechaNacimiento" type="date" defaultValue={afiliado?.Fecha_nacimiento ? afiliado.Fecha_nacimiento.split('T')[0] : ''} />
                             </InputGroup>
                             <InputGroup label="CURP : *" htmlFor="curp" className="col-span-12 md:col-span-4">
-                                <Input id="curp" name="curp" />
+                                <Input id="curp" name="curp" defaultValue={afiliado?.Curp} />
                             </InputGroup>
                             <div className="col-span-12 md:col-span-4 space-y-3">
                                 <Label>Género : *</Label>
-                                <RadioGroup defaultValue="femenino" className="flex gap-4" name="genero">
+                                <RadioGroup defaultValue={afiliado?.Genero || "femenino"} className="flex gap-4" name="genero">
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="femenino" id="femenino" />
                                         <Label htmlFor="femenino">Femenino</Label>
@@ -352,24 +466,24 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                         <h3 className="text-lg font-semibold bg-muted py-2 px-4 rounded-md">Contacto :</h3>
                         <div className="grid grid-cols-12 gap-6">
                             <InputGroup label="Calle : *" htmlFor="calle" className="col-span-12 md:col-span-6">
-                                <Input id="calle" name="calle" />
+                                <Input id="calle" name="calle" defaultValue={afiliado?.Calle} />
                             </InputGroup>
                             <InputGroup label="# Exterior : *" htmlFor="num-ext" className="col-span-6 md:col-span-3">
-                                <Input id="num-ext" name="numExt" />
+                                <Input id="num-ext" name="numExt" defaultValue={afiliado?.Exterior} />
                             </InputGroup>
                             <InputGroup label="# Interior :" htmlFor="num-int" className="col-span-6 md:col-span-3">
-                                <Input id="num-int" name="numInt" />
+                                <Input id="num-int" name="numInt" defaultValue={afiliado?.Interior} />
                             </InputGroup>
                         </div>
                         <div className="grid grid-cols-12 gap-6">
                             <InputGroup label="Colonia : *" htmlFor="colonia" className="col-span-12 md:col-span-4">
-                                <Input id="colonia" name="colonia" />
+                                <Input id="colonia" name="colonia" defaultValue={afiliado?.Colonia} />
                             </InputGroup>
                             <InputGroup label="Ciudad/Delegación/Municipio : *" htmlFor="municipio" className="col-span-12 md:col-span-4">
-                                <Input id="municipio" name="municipio" />
+                                <Input id="municipio" name="municipio" defaultValue={afiliado?.Ciudad} />
                             </InputGroup>
                             <InputGroup label="Estado : *" className="col-span-12 md:col-span-2">
-                                <Select name="estado">
+                                <Select name="estado" defaultValue={afiliado?.Estado}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
@@ -383,18 +497,19 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                 </Select>
                             </InputGroup>
                             <InputGroup label="C.P. : *" htmlFor="cp" className="col-span-12 md:col-span-2">
-                                <Input id="cp" name="cp" />
+                                <Input id="cp" name="cp" defaultValue={afiliado?.CP} />
                             </InputGroup>
                         </div>
                         <div className="grid grid-cols-12 gap-6">
                             <InputGroup label="Email : *" htmlFor="email" className="col-span-12 md:col-span-4">
+                                {/* Note: Email is not in the Afiliado interface provided in the issue description, assuming it might be added or optional, skipping default for now if not present */}
                                 <Input id="email" type="email" name="email" />
                             </InputGroup>
                             <InputGroup label="Teléfono Particular : *" htmlFor="tel-particular" className="col-span-12 md:col-span-4">
-                                <Input id="tel-particular" name="telParticular" />
+                                <Input id="tel-particular" name="telParticular" defaultValue={afiliado?.Telefono_c} />
                             </InputGroup>
                             <InputGroup label="Teléfono Celular :" htmlFor="tel-celular" className="col-span-12 md:col-span-4">
-                                <Input id="tel-celular" name="telCelular" />
+                                <Input id="tel-celular" name="telCelular" defaultValue={afiliado?.Telefono_cel} />
                             </InputGroup>
                         </div>
                     </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo, useCallback } from "react"
 import { Search, Plus } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -19,10 +19,9 @@ import {
     Tooltip,
     TooltipContent,
     TooltipProvider,
-    TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-import { columns } from "./afiliados-columns"
+import { getColumns } from "./afiliados-columns"
 import { DataTable } from "./data-table"
 import { AfiliadosDialog } from "./afiliados-dialog"
 import { getClubs, ViewClubGral } from "@/lib/club-service"
@@ -41,27 +40,33 @@ export function AfiliadosView() {
     const [filterNoAfiliado, setFilterNoAfiliado] = useState("")
     const [filterCurp, setFilterCurp] = useState("")
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [data, clubsData] = await Promise.all([
-                    getAfiliadosCatalogs(),
-                    getClubs()
-                ])
-                if (data.Afiliados) {
-                    setAfiliados(data.Afiliados)
-                    setFilteredAfiliados(data.Afiliados)
-                }
-                setClubs(clubsData.View_Club_gral)
-            } catch (error) {
-                console.error("Error fetching afiliados:", error)
-            } finally {
-                setIsLoading(false)
+    const fetchData = useCallback(async () => {
+        console.log("AfiliadosView: executing fetchData") // Debug log
+        setIsLoading(true)
+        try {
+            const [data, clubsData] = await Promise.all([
+                getAfiliadosCatalogs(),
+                getClubs()
+            ])
+            console.log("AfiliadosView: data fetched", data.Afiliados?.length) // Debug log
+            if (data.Afiliados) {
+                setAfiliados(data.Afiliados)
+                // Note: This resets filters. Ideally we should re-apply filters here if they exist.
+                setFilteredAfiliados(data.Afiliados)
             }
+            setClubs(clubsData.View_Club_gral)
+        } catch (error) {
+            console.error("Error fetching afiliados:", error)
+        } finally {
+            setIsLoading(false)
         }
-
-        fetchData()
     }, [])
+
+    useEffect(() => {
+        fetchData()
+    }, [fetchData])
+
+    const columns = useMemo(() => getColumns(fetchData), [fetchData])
 
     const handleFilter = () => {
         let filtered = [...afiliados]
@@ -224,7 +229,7 @@ export function AfiliadosView() {
                                 </div>
                             </div>
                             <div className="col-span-1 flex items-center justify-center border-l pl-4">
-                                <AfiliadosDialog />
+                                <AfiliadosDialog onSuccess={fetchData} />
                             </div>
                         </div>
                     </CardContent>
