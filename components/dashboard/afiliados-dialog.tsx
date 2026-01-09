@@ -142,6 +142,20 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
 
         console.log("Form data raw:", data)
 
+        // Validate unique affiliation types
+        const affiliations = [
+            data.tipoAfiliadoPrincipal,
+            data.tipoAfiliadoSecundario,
+            data.tipoAfiliadoTercero,
+            data.tipoAfiliadoCuarto
+        ].filter(val => val && val.trim() !== "") // Filter out empty selections
+
+        const uniqueAffiliations = new Set(affiliations)
+        if (uniqueAffiliations.size !== affiliations.length) {
+            toast.error("No se pueden repetir los tipos de afiliación")
+            return
+        }
+
         const payload: CreateAfiliadoPayload = {
             nombre: data.nombre,
             paterno: data.apellidoPaterno,
@@ -162,8 +176,9 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
             telefono_cel: data.telCelular,
             afiliacion_p: data.tipoAfiliadoPrincipal,
             afiliacion_s: data.tipoAfiliadoSecundario,
-            id_nivel_tec: data.nivelTecnico,
-            modalidad: data.modalidad
+            afiliacion_t: data.tipoAfiliadoTercero,
+            afiliacion_c: data.tipoAfiliadoCuarto,
+            id_nivel_tec: data.nivelTecnico
         }
 
         try {
@@ -196,10 +211,10 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                         </div>
 
                         <div className="grid grid-cols-12 gap-6">
-                            <InputGroup label="Asociación : *" className="col-span-12 md:col-span-4">
+                            <InputGroup label="Asociación : *" className="col-span-12 md:col-span-6">
                                 <Input value="ESTADO DE MÉXICO" disabled className="bg-muted/50" name="asociacion" />
                             </InputGroup>
-                            <InputGroup label="Club : *" className="col-span-12 md:col-span-4">
+                            <InputGroup label="Club : *" className="col-span-12 md:col-span-6">
                                 <Select name="club">
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selecciona una opción" />
@@ -213,8 +228,25 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                     </SelectContent>
                                 </Select>
                             </InputGroup>
-                            <InputGroup label="Tipo de Afiliado Principal : *" className="col-span-12 md:col-span-4">
+                        </div>
+
+                        <div className="grid grid-cols-12 gap-6">
+                            <InputGroup label="Tipo de Afiliado Principal : *" className="col-span-12 md:col-span-6">
                                 <Select name="tipoAfiliadoPrincipal">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccione una opción" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {catalogs?.Catalogo_afiliaciones.map((item) => (
+                                            <SelectItem key={item.id} value={item.id.toString()}>
+                                                {item.Nombre}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </InputGroup>
+                            <InputGroup label="Tipo de Afiliado Secundario :" className="col-span-12 md:col-span-6">
+                                <Select name="tipoAfiliadoSecundario">
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
@@ -230,8 +262,8 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                         </div>
 
                         <div className="grid grid-cols-12 gap-6">
-                            <InputGroup label="Tipo de Afiliado Secundario :" className="col-span-12 md:col-span-4">
-                                <Select name="tipoAfiliadoSecundario">
+                            <InputGroup label="Tipo de Afiliado Tercero :" className="col-span-12 md:col-span-6">
+                                <Select name="tipoAfiliadoTercero">
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
@@ -244,7 +276,24 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                     </SelectContent>
                                 </Select>
                             </InputGroup>
-                            <InputGroup label="Nivel Tecnico : *" className="col-span-12 md:col-span-4">
+                            <InputGroup label="Tipo de Afiliado Cuarto :" className="col-span-12 md:col-span-6">
+                                <Select name="tipoAfiliadoCuarto">
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Seleccione una opción" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {catalogs?.Catalogo_afiliaciones.map((item) => (
+                                            <SelectItem key={item.id} value={item.id.toString()}>
+                                                {item.Nombre}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </InputGroup>
+                        </div>
+
+                        <div className="grid grid-cols-12 gap-6">
+                            <InputGroup label="Nivel Tecnico : *" className="col-span-12 md:col-span-6">
                                 <Select name="nivelTecnico">
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
@@ -258,7 +307,7 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                     </SelectContent>
                                 </Select>
                             </InputGroup>
-                            <InputGroup label="Escolaridad : *" className="col-span-12 md:col-span-4">
+                            <InputGroup label="Escolaridad : *" className="col-span-12 md:col-span-6">
                                 <Select name="escolaridad">
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
@@ -294,20 +343,7 @@ function AfiliadosForm({ className, id }: React.ComponentProps<"form">) {
                                     </div>
                                 </RadioGroup>
                             </div>
-                            <InputGroup label="Modalidad : *" className="col-span-12 md:col-span-4">
-                                <Select name="modalidad" required>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccione una opción" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {Array.from(new Map(Modalidades.map(item => [item.id, item])).values()).map((item) => (
-                                            <SelectItem key={item.id} value={item.id.toString()}>
-                                                {item.Nombre}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </InputGroup>
+
                         </div>
                     </div>
 

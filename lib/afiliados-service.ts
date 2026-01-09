@@ -63,8 +63,9 @@ export interface CreateAfiliadoPayload {
     telefono_cel: string;
     afiliacion_p: string;
     afiliacion_s: string;
+    afiliacion_t: string;
+    afiliacion_c: string;
     id_nivel_tec: string;
-    modalidad: string;
 }
 
 export const createAfiliado = async (payload: CreateAfiliadoPayload) => {
