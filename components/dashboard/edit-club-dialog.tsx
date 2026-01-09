@@ -602,11 +602,7 @@ function AccesoForm({ id, club }: { id: string, club: ViewClubGral }) {
     const handleDisableAccess = async () => {
         try {
             const user = club.usuario || `admin.${club.Club?.toLowerCase().replace(/\s/g, '') || ''}`
-            const params = {
-                User: user,
-                tipo: "2"
-            }
-            await postBlock(params)
+            await postBlock(user, "2")
             toast.success("Acceso desactivado correctamente")
             setShowDisableDialog(false)
         } catch (error) {

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Check, ChevronsUpDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 import {
@@ -43,6 +43,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import { useCatalogPayStore } from "@/lib/store/catalog-pay-store"
 
 // --- Mock Data ---
 
@@ -84,7 +85,13 @@ interface RegisterEventDialogProps {
 }
 
 export function RegisterEventDialog({ children, eventoId, eventoName }: RegisterEventDialogProps) {
+    const { Catalogo_formas_pago, fetchCatalogs } = useCatalogPayStore()
     const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
+    const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number | null>(null)
+
+    useEffect(() => {
+        fetchCatalogs()
+    }, [fetchCatalogs])
 
     // Initialize config for all members with defaults
     const [memberConfigs, setMemberConfigs] = useState<Record<string, MemberConfig>>(() => {
@@ -170,8 +177,15 @@ export function RegisterEventDialog({ children, eventoId, eventoName }: Register
     }, [selectedMembers, memberConfigs])
 
     const handleRegister = () => {
+        if (!selectedPaymentMethod) {
+            toast.error("Por favor selecciona un método de pago")
+            return
+        }
+
+        const paymentMethod = Catalogo_formas_pago.find(p => p.id === selectedPaymentMethod)
+
         toast.success("Inscripción exitosa", {
-            description: `Se han inscrito ${totals.itemsCount} miembros.`,
+            description: `Se han inscrito ${totals.itemsCount} miembros. Método de pago: ${paymentMethod?.Nombre}`,
         })
     }
 
@@ -310,7 +324,7 @@ export function RegisterEventDialog({ children, eventoId, eventoName }: Register
                             <h3 className="font-semibold text-lg">Resumen</h3>
                         </div>
 
-                        <ScrollArea className="h-[490px]">
+                        <ScrollArea className="flex-1">
                             <div className="p-6 space-y-6">
                                 {selectedMembers.size === 0 ? (
                                     <p className="text-sm text-center text-muted-foreground py-10">
@@ -356,18 +370,39 @@ export function RegisterEventDialog({ children, eventoId, eventoName }: Register
                         </ScrollArea>
 
                         <div className="p-6 bg-background border-t space-y-4 shadow-sm">
-                            <div className="space-y-2">
-                                <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">Miembros:</span>
-                                    <Badge variant="secondary" className="px-2">
-                                        {totals.itemsCount}
-                                    </Badge>
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">Método de pago</label>
+                                    <Select
+                                        value={selectedPaymentMethod?.toString() || ""}
+                                        onValueChange={(val) => setSelectedPaymentMethod(Number(val))}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Seleccionar..." />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {Catalogo_formas_pago.map((method) => (
+                                                <SelectItem key={method.id} value={method.id.toString()}>
+                                                    {method.Nombre}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="font-bold text-lg">Total:</span>
-                                    <span className="font-bold text-xl text-teal-600">
-                                        {formatCurrency(totals.totalCost)}
-                                    </span>
+
+                                <div className="space-y-2 pt-2 border-t">
+                                    <div className="flex justify-between items-center text-sm">
+                                        <span className="text-muted-foreground">Miembros:</span>
+                                        <Badge variant="secondary" className="px-2">
+                                            {totals.itemsCount}
+                                        </Badge>
+                                    </div>
+                                    <div className="flex justify-between items-center">
+                                        <span className="font-bold text-lg">Total:</span>
+                                        <span className="font-bold text-xl text-teal-600">
+                                            {formatCurrency(totals.totalCost)}
+                                        </span>
+                                    </div>
                                 </div>
                             </div>
                             <div className="space-y-2">
