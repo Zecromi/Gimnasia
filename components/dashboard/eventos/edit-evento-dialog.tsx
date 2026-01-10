@@ -38,7 +38,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { EventoResponseItem as Evento, createEvento, SetEventoPayload, ConfiguracionItem, NivelItem, AdicionalItem, EventoItem } from "@/lib/evento-service"
+import { EventoResponseItem as Evento, createEvento, putEventos, SetEventoPayload, ConfiguracionItem, NivelItem, AdicionalItem, EventoItem } from "@/lib/evento-service"
 import { CalendarPlus, Save, Calendar as CalendarIcon, Medal, Hash, AlertCircle } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -67,8 +67,14 @@ interface EditEventoDialogProps {
     children: React.ReactNode
 }
 
-export function EditEventoDialog({ evento, children }: EditEventoDialogProps) {
+export function EditEventoDialog({ evento, children, onSuccess }: EditEventoDialogProps & { onSuccess?: () => void }) {
     const [open, setOpen] = React.useState(false)
+
+    const handleSuccess = React.useCallback(() => {
+        setOpen(false)
+        if (onSuccess) onSuccess()
+    }, [onSuccess])
+
     const isMobile = useIsMobile()
 
     if (isMobile) {
@@ -82,7 +88,7 @@ export function EditEventoDialog({ evento, children }: EditEventoDialogProps) {
                         <DrawerTitle>Editar Evento: {evento.Nombre}</DrawerTitle>
                     </DrawerHeader>
                     <div className="flex-1 px-4 overflow-hidden">
-                        <EditEventoTabs id="edit-evento-form-mobile" evento={evento} />
+                        <EditEventoTabs id="edit-evento-form-mobile" evento={evento} onSuccess={handleSuccess} />
                     </div>
                 </DrawerContent>
             </Drawer>
@@ -99,14 +105,14 @@ export function EditEventoDialog({ evento, children }: EditEventoDialogProps) {
                     <DialogTitle>Editar Evento: {evento.Nombre}</DialogTitle>
                 </DialogHeader>
                 <div className="w-full overflow-hidden">
-                    <EditEventoTabs id="edit-evento-form-desktop" evento={evento} />
+                    <EditEventoTabs id="edit-evento-form-desktop" evento={evento} onSuccess={handleSuccess} />
                 </div>
             </DialogContent>
         </Dialog>
     )
 }
 
-function EditEventoTabs({ className, id, evento }: { className?: string, id: string, evento: Evento }) {
+function EditEventoTabs({ className, id, evento, onSuccess }: { className?: string, id: string, evento: Evento, onSuccess?: () => void }) {
     const tabsConfig = [
         {
             value: "general",
@@ -121,14 +127,14 @@ function EditEventoTabs({ className, id, evento }: { className?: string, id: str
             icon: Save,
             label: "Actualizar Evento",
             tooltip: "Actualizar Evento",
-            content: <ActualizaEventoForm id={`${id}-actualizar`} evento={evento} />
+            content: <ActualizaEventoForm id={`${id}-actualizar`} evento={evento} onSuccess={onSuccess} />
         },
         {
             value: "modalidades",
             icon: Database,
             label: "Modalidades",
             tooltip: "Modalidades",
-            content: <ModalidadesForm id={`${id}-modalidades`} evento={evento} />
+            content: <ModalidadesForm id={`${id}-modalidades`} evento={evento} onSuccess={onSuccess} />
         },
         {
             value: "imagen",
@@ -331,7 +337,7 @@ import * as AccordionPrimitive from "@radix-ui/react-accordion"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-function ModalidadesForm({ id, evento }: { id: string, evento: Evento }) {
+function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento, onSuccess?: () => void }) {
     const [modalidades, setModalidades] = React.useState<ModalidadItem[]>([])
     const [modalidadesDetalle, setModalidadesDetalle] = React.useState<ModalidadDetalleItem[]>([])
     const [isCustomModality, setIsCustomModality] = React.useState(false)
@@ -494,7 +500,7 @@ function ModalidadesForm({ id, evento }: { id: string, evento: Evento }) {
         // Similar to ActualizaEventoForm, we construct minimal event data to valid payload.
 
         const eventoData: EventoItem = {
-            id_evento: String(evento.id_Evento),
+            id_evento: String(evento.id),
             organizador: evento.Organizador || "",
             asociacion: evento.Asociacion || "",
             nombre: evento.Nombre || "",
@@ -517,8 +523,9 @@ function ModalidadesForm({ id, evento }: { id: string, evento: Evento }) {
         }
 
         try {
-            await createEvento(payload)
+            await putEventos(String(evento.id), payload)
             toast.success("Modalidades actualizadas exitosamente")
+            if (onSuccess) onSuccess()
         } catch (error) {
             console.error(error)
             toast.error("Error al actualizar modalidades")
@@ -759,10 +766,10 @@ function PlaceholderForm({ title, icon: Icon = Image }: { title: string, icon?: 
     )
 }
 
-function ActualizaEventoForm({ id, evento }: { id: string, evento: Evento }) {
+function ActualizaEventoForm({ id, evento, onSuccess }: { id: string, evento: Evento, onSuccess?: () => void }) {
     const [errors, setErrors] = React.useState<Record<string, string[] | undefined>>({})
     const [isValid, setIsValid] = React.useState(false)
-    const [Catalogo_eventos, setCatalogo_eventos] = React.useState<{ id: number; Nombre: string }[]>([])
+    const [Catalogo_eventos, setCatalogo_eventos] = React.useState<{ id: number; Nombre: string; id_Evento: number }[]>([])
 
     // Helper to parse date string safely
     const parseDate = (dateStr: string | undefined): Date | undefined => {
@@ -773,7 +780,7 @@ function ActualizaEventoForm({ id, evento }: { id: string, evento: Evento }) {
 
     // State for General Tab inputs
     const initialValues = React.useMemo(() => ({
-        tipoEvento: "competencia",
+        tipoEvento: evento.id_Evento ? String(evento.id_Evento) : "0",
         organizador: evento.Organizador || "",
         asociacion: evento.Asociacion || "",
         nombre: evento.Nombre || "",
@@ -851,32 +858,71 @@ function ActualizaEventoForm({ id, evento }: { id: string, evento: Evento }) {
 
         const formatPayloadDate = (date?: Date) => date ? format(date, "yyyy-MM-dd") : ""
 
-        const eventoData: EventoItem = {
-            id_evento: String(evento.id_Evento), // Include ID for update
-            organizador: generalData.organizador,
-            asociacion: generalData.asociacion,
-            nombre: generalData.nombre,
-            lugar: generalData.lugar,
-            sede: generalData.sede,
-            region: generalData.region,
-            limite_participantes: generalData.limiteParticipantes || "0",
-            f_ini_evento: formatPayloadDate(generalData.fechaInicioEvento),
-            f_fin_evento: formatPayloadDate(generalData.fechaFinEvento),
-            f_ini_incripciones: formatPayloadDate(generalData.fechaInicioInscripcion),
-            f_fin_incripciones: formatPayloadDate(generalData.fechaFinInscripcion),
-            hora_limite_inscripciones: generalData.horaLimiteInscripcion,
+        const fieldMapping: Record<string, string> = {
+            tipoEvento: "id_Evento",
+            organizador: "organizador",
+            asociacion: "asociacion",
+            nombre: "nombre",
+            lugar: "lugar",
+            sede: "sede",
+            region: "region",
+            limiteParticipantes: "limite_participantes",
+            horaLimiteInscripcion: "hora_limite_inscripciones",
+            fechaInicioEvento: "f_ini_evento",
+            fechaFinEvento: "f_fin_evento",
+            fechaInicioInscripcion: "f_ini_incripciones",
+            fechaFinInscripcion: "f_fin_incripciones"
         }
 
-        const payload: SetEventoPayload = {
-            evento: [eventoData],
-            configuracion: [], // Empty for general update
-            niveles: [],
-            adicionales: []
+        const changes: { campo: string; valor: string }[] = []
+
+        Object.keys(fieldMapping).forEach((key) => {
+            const dataKey = key as keyof typeof generalData
+            const backendField = fieldMapping[key]
+
+            const originalVal = initialValues[dataKey]
+            const currentVal = generalData[dataKey]
+
+            let isDifferent = false
+            let payloadValue = ""
+
+            if (key.startsWith("fecha")) {
+                const d1 = originalVal as Date | undefined
+                const d2 = currentVal as Date | undefined
+                if (d1?.getTime() !== d2?.getTime()) {
+                    isDifferent = true
+                    payloadValue = formatPayloadDate(d2)
+                }
+            } else {
+                if (originalVal !== currentVal) {
+                    isDifferent = true
+                    payloadValue = String(currentVal)
+                }
+            }
+
+            if (isDifferent) {
+                changes.push({
+                    campo: backendField,
+                    valor: payloadValue
+                })
+            }
+        })
+
+        if (changes.length === 0) {
+            toast.info("No hay cambios para actualizar")
+            return
+        }
+
+        const payload = {
+            uno: changes,
+            dos: [],
+            tres: []
         }
 
         try {
-            await createEvento(payload)
+            await putEventos(String(evento.id), payload)
             toast.success("Evento actualizado exitosamente")
+            if (onSuccess) onSuccess()
         } catch (error) {
             console.error(error)
             toast.error("Error al actualizar el evento")
@@ -895,7 +941,7 @@ function ActualizaEventoForm({ id, evento }: { id: string, evento: Evento }) {
                             </SelectTrigger>
                             <SelectContent>
                                 {Catalogo_eventos?.map((item) => (
-                                    <SelectItem key={item.id} value={String(item.id)}>
+                                    <SelectItem key={item.id_Evento} value={String(item.id_Evento)}>
                                         {item.Nombre}
                                     </SelectItem>
                                 ))}

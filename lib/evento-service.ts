@@ -75,6 +75,17 @@ export const getEventos = async () => {
     return response.data;
 };
 
+export const putEventos = async (id_evento: string, body: any) => {
+    console.log(id_evento)
+    console.log(body)
+    const response = await api.post("/PutEvento", body, {
+        params: {
+            id: id_evento,
+        },
+    });
+    return response.data;
+};
+
 export const postBlock = async (User: string, tipo: string) => {
     console.log(User, tipo)
     const response = await api.post("/PostBlock", null, {
@@ -86,4 +97,3 @@ export const postBlock = async (User: string, tipo: string) => {
     console.log(response.data)
     return response.data;
 };
-

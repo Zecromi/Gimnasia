@@ -7,18 +7,14 @@ import { es } from "date-fns/locale"
 import { EditEventoDialog } from "./edit-evento-dialog"
 import { EventoResponseItem } from "@/lib/evento-service"
 
-export const columns: ColumnDef<EventoResponseItem>[] = [
+export const getColumns = (onEventUpdated: () => void): ColumnDef<EventoResponseItem>[] => [
     {
         id: "detalle",
         header: "Detalle",
         cell: ({ row }) => {
-            // Mapping EventoResponseItem back to the shape expected by EditEventoDialog if necessary, 
-            // OR EditEventoDialog needs to be updated. For now, we pass the row.original.
-            // Note: EditEventoDialog likely expects the OLD shape. We might need to update that too later.
-            // For this specific step, we perform the column update.
             return (
                 <div className="flex items-center">
-                    <EditEventoDialog evento={row.original as any}>
+                    <EditEventoDialog evento={row.original as any} onSuccess={onEventUpdated}>
                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-teal-200 dark:hover:bg-teal-800">
                             <Edit className="h-4 w-4" />
                             <span className="sr-only">Editar</span>

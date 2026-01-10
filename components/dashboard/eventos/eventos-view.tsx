@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, lazy, useEffect, useState, useCallback } from "react"
+import { Suspense, lazy, useEffect, useState, useCallback, useMemo } from "react"
 import { Search, Calendar as CalendarIcon } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -16,7 +16,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-import { columns } from "./eventos-columns"
+import { getColumns } from "./eventos-columns"
 import { DataTable } from "../data-table"
 const NewEventoDialog = lazy(() => import("./new-evento-dialog").then(module => ({ default: module.NewEventoDialog })))
 import { Calendar } from "@/components/ui/calendar"
@@ -51,6 +51,8 @@ export function EventosView() {
     useEffect(() => {
         fetchData()
     }, [fetchData])
+
+    const columns = useMemo(() => getColumns(fetchData), [fetchData])
 
     if (isLoading) {
         return (
