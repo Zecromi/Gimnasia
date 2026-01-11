@@ -769,7 +769,7 @@ function PlaceholderForm({ title, icon: Icon = Image }: { title: string, icon?: 
 function ActualizaEventoForm({ id, evento, onSuccess }: { id: string, evento: Evento, onSuccess?: () => void }) {
     const [errors, setErrors] = React.useState<Record<string, string[] | undefined>>({})
     const [isValid, setIsValid] = React.useState(false)
-    const [Catalogo_eventos, setCatalogo_eventos] = React.useState<{ id: number; Nombre: string; id_Evento: number }[]>([])
+    const [Catalogo_eventos, setCatalogo_eventos] = React.useState<{ id_Evento: number; Nombre: string }[]>([])
 
     // Helper to parse date string safely
     const parseDate = (dateStr: string | undefined): Date | undefined => {

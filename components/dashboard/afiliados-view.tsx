@@ -27,11 +27,15 @@ import { AfiliadosDialog } from "./afiliados-dialog"
 import { getClubs, ViewClubGral } from "@/lib/club-service"
 import { getAfiliadosCatalogs, Afiliado } from "@/lib/afiliados-service"
 
+import { useCatalogStore } from "@/lib/store/catalog-store"
+
 export function AfiliadosView() {
     const [isLoading, setIsLoading] = useState(true)
     const [afiliados, setAfiliados] = useState<Afiliado[]>([])
     const [filteredAfiliados, setFilteredAfiliados] = useState<Afiliado[]>([])
     const [clubs, setClubs] = useState<ViewClubGral[]>([])
+
+    const { Escolaridad, Estados, Niveles_tecnicos, fetchCatalogs } = useCatalogStore()
 
     // Filter states
     const [filterAfiliado, setFilterAfiliado] = useState("")
@@ -44,14 +48,16 @@ export function AfiliadosView() {
         console.log("AfiliadosView: executing fetchData") // Debug log
         setIsLoading(true)
         try {
+            // Fetch global catalogs (via store) and local data
+            fetchCatalogs()
+
             const [data, clubsData] = await Promise.all([
                 getAfiliadosCatalogs(),
                 getClubs()
             ])
             console.log("AfiliadosView: data fetched", data.Afiliados?.length) // Debug log
-            if (data.Afiliados) {
+            if (data && data.Afiliados) {
                 setAfiliados(data.Afiliados)
-                // Note: This resets filters. Ideally we should re-apply filters here if they exist.
                 setFilteredAfiliados(data.Afiliados)
             }
             setClubs(clubsData.View_Club_gral)
@@ -60,13 +66,13 @@ export function AfiliadosView() {
         } finally {
             setIsLoading(false)
         }
-    }, [])
+    }, [fetchCatalogs])
 
     useEffect(() => {
         fetchData()
     }, [fetchData])
 
-    const columns = useMemo(() => getColumns(fetchData), [fetchData])
+    const columns = useMemo(() => getColumns(fetchData, clubs, Escolaridad, Estados, Niveles_tecnicos), [fetchData, clubs, Escolaridad, Estados, Niveles_tecnicos])
 
     const handleFilter = () => {
         let filtered = [...afiliados]

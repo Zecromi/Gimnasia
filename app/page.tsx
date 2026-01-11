@@ -25,6 +25,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const router = useRouter();
   const setAuthData = useAuthStore((state) => state.setAuthData);
+  const clearAuthData = useAuthStore((state) => state.clearAuthData);
 
   // Avoid hydration mismatch
   useEffect(() => {
@@ -36,8 +37,14 @@ export default function LoginPage() {
     setLoading(true);
     setError("");
 
+    // Clear previous session data to ensure no stale state
+    clearAuthData();
+
+    const cleanUsuario = usuario.trim();
+    const cleanPassword = password.trim();
+
     try {
-      const data = await login(usuario, password);
+      const data = await login(cleanUsuario, cleanPassword);
       console.log("Login successful:", data);
 
       if (data) {
@@ -46,18 +53,17 @@ export default function LoginPage() {
 
         // Second Auth Step
         try {
-          const passData = await getPass(usuario, password);
-          console.log("GetPass response:", passData);
+          const passData = await getPass(cleanUsuario, cleanPassword);
+
           if (passData && passData.length > 0) {
-            console.log("Saving extra auth data to store:", passData[0]);
-            setAuthData(passData[0]);
+            const permissions = passData[0];
+            setAuthData(permissions);
           } else {
-            console.warn("No extra auth data found for this user.");
+            console.warn("GetPass returned empty array or null for user:", cleanUsuario);
           }
         } catch (passError) {
-          console.error("Error fetching extra auth data:", passError);
-          // Optionally handle this error, effectively failing login or just logging it
-          // For now proceeding, as the main token is what matters for access
+          console.error("Error calling GetPass:", passError);
+          // We don't block login if this fails, but user won't have permissions
         }
 
         router.push("/dashboard");

@@ -18,6 +18,7 @@ import {
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
+import { CopyButton } from "@/components/ui/copy-button"
 import { createClub, mapStateToClubPayload } from "@/lib/club-service"
 import {
     Dialog,
@@ -26,6 +27,8 @@ import {
     DialogTitle,
     DialogTrigger,
     DialogFooter,
+    DialogDescription,
+    DialogClose,
 } from "@/components/ui/dialog"
 import {
     Drawer,
@@ -59,7 +62,10 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 export function ClubDialog({ onClubCreated }: { onClubCreated?: () => void }) {
     const [open, setOpen] = React.useState(false)
     const [isLoading, setIsLoading] = React.useState(false)
+    const [successData, setSuccessData] = React.useState<any>(null)
     const isMobile = useIsMobile()
+
+
 
     const handleSubmit = async (data: any) => {
         setIsLoading(true)
@@ -71,8 +77,8 @@ export function ClubDialog({ onClubCreated }: { onClubCreated?: () => void }) {
             const response = await createClub(payload)
             console.log("Response:", response)
             toast.success("Club guardado exitosamente")
-            onClubCreated?.() // Refresh parent data
-            setOpen(false)
+            // Don't close dialog, show success state instead. Refresh happens on close.
+            setSuccessData(response)
 
         } catch (error: any) {
             console.error("Error creating club:", error)
@@ -85,6 +91,47 @@ export function ClubDialog({ onClubCreated }: { onClubCreated?: () => void }) {
         }
     }
 
+    const getFormattedSuccessMessage = () => {
+        if (!successData) return ""
+        if (Array.isArray(successData) && successData.length > 0) {
+            const item = successData[0]
+            return `Usuario: ${item.usuario}\nPassword: ${item.password}`
+        }
+        return JSON.stringify(successData, null, 2)
+    }
+
+    const successMessage = getFormattedSuccessMessage()
+
+    const SuccessContent = () => (
+        <>
+            <DialogHeader className="px-6 py-4 border-b">
+                <DialogTitle>Club Creado Exitosamente</DialogTitle>
+                <DialogDescription>
+                    Credenciales
+                </DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 p-6">
+                <div className="grid flex-1 gap-2 h-full">
+                    <ScrollArea className="h-full max-h-[300px] w-full rounded-md border p-4 bg-muted/50">
+                        <pre className="text-sm font-mono whitespace-pre-wrap break-all">
+                            {successMessage}
+                        </pre>
+                    </ScrollArea>
+                </div>
+            </div>
+            <DialogFooter className="p-4 border-t sm:justify-start">
+                <CopyButton value={successMessage} />
+                <Button type="button" variant="secondary" onClick={() => {
+                    setSuccessData(null)
+                    setOpen(false)
+                    onClubCreated?.() // Refresh parent data when closing success modal
+                }}>
+                    Cerrar
+                </Button>
+            </DialogFooter>
+        </>
+    )
+
     if (isMobile) {
         return (
             <Drawer open={open} onOpenChange={setOpen}>
@@ -94,21 +141,27 @@ export function ClubDialog({ onClubCreated }: { onClubCreated?: () => void }) {
                     </Button>
                 </DrawerTrigger>
                 <DrawerContent className="h-[90vh]">
-                    <DrawerHeader className="text-left">
-                        <DrawerTitle>Nuevo Club</DrawerTitle>
-                    </DrawerHeader>
-                    <div className="flex-1 px-4">
-                        <ClubForm id="club-form-mobile" onSubmit={handleSubmit} />
-                    </div>
-                    <DrawerFooter className="pt-2 border-t">
-                        <Button form="club-form-mobile" type="submit" disabled={isLoading}>
-                            <Save className="mr-2 h-4 w-4" />
-                            {isLoading ? "Guardando..." : "Guardar"}
-                        </Button>
-                        <DrawerClose asChild>
-                            <Button variant="outline">Cancelar</Button>
-                        </DrawerClose>
-                    </DrawerFooter>
+                    {successData ? (
+                        <SuccessContent />
+                    ) : (
+                        <>
+                            <DrawerHeader className="text-left">
+                                <DrawerTitle>Nuevo Club</DrawerTitle>
+                            </DrawerHeader>
+                            <div className="flex-1 px-4">
+                                <ClubForm id="club-form-mobile" onSubmit={handleSubmit} />
+                            </div>
+                            <DrawerFooter className="pt-2 border-t">
+                                <Button form="club-form-mobile" type="submit" disabled={isLoading}>
+                                    <Save className="mr-2 h-4 w-4" />
+                                    {isLoading ? "Guardando..." : "Guardar"}
+                                </Button>
+                                <DrawerClose asChild>
+                                    <Button variant="outline">Cancelar</Button>
+                                </DrawerClose>
+                            </DrawerFooter>
+                        </>
+                    )}
                 </DrawerContent>
             </Drawer>
         )
@@ -130,21 +183,27 @@ export function ClubDialog({ onClubCreated }: { onClubCreated?: () => void }) {
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
-            <DialogContent className="sm:max-w-[auto] max-h-[auto] flex flex-col p-0">
-                <DialogHeader className="px-6 py-4 border-b">
-                    <DialogTitle>Nuevo Club</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1">
-                    <div className="px-6 py-6">
-                        <ClubForm id="club-form-desktop" onSubmit={handleSubmit} />
-                    </div>
-                </div>
-                <DialogFooter className="p-4 border-t">
-                    <Button form="club-form-desktop" type="submit" className="w-[100px]" disabled={isLoading}>
-                        <Save className="mr-2 h-4 w-4" />
-                        {isLoading ? "..." : "Guardar"}
-                    </Button>
-                </DialogFooter>
+            <DialogContent className={cn("flex flex-col p-0 transition-all duration-300", successData ? "sm:max-w-md" : "sm:max-w-[900px] max-h-[90vh]")}>
+                {successData ? (
+                    <SuccessContent />
+                ) : (
+                    <>
+                        <DialogHeader className="px-6 py-4 border-b">
+                            <DialogTitle>Nuevo Club</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex-1">
+                            <div className="px-6 py-6">
+                                <ClubForm id="club-form-desktop" onSubmit={handleSubmit} />
+                            </div>
+                        </div>
+                        <DialogFooter className="p-4 border-t">
+                            <Button form="club-form-desktop" type="submit" className="w-[100px]" disabled={isLoading}>
+                                <Save className="mr-2 h-4 w-4" />
+                                {isLoading ? "..." : "Guardar"}
+                            </Button>
+                        </DialogFooter>
+                    </>
+                )}
             </DialogContent>
         </Dialog>
     )
@@ -178,7 +237,7 @@ function ClubForm({ className, id, onSubmit }: ClubFormProps) {
         estado: "",
         cp: "",
         // Domicilio Fiscal
-        igualDomicilio: false,
+        igualDomicilio: true,
         calleFiscal: "",
         numExtFiscal: "",
         numIntFiscal: "",
@@ -203,31 +262,37 @@ function ClubForm({ className, id, onSubmit }: ClubFormProps) {
     }
 
     const handleCheckboxChange = (name: string, checked: boolean) => {
-        setFormData((prev: any) => {
-            let newState = { ...prev, [name]: checked }
-
-            if (name === "igualDomicilio") {
-                if (checked) {
-                    // Auto-fill Fiscal from Social
-                    newState = {
-                        ...newState,
-                        calleFiscal: prev.calle,
-                        numExtFiscal: prev.numExt,
-                        numIntFiscal: prev.numInt,
-                        coloniaFiscal: prev.colonia,
-                        municipioFiscal: prev.municipio,
-                        estadoFiscal: prev.estado,
-                        cpFiscal: prev.cp,
-                    }
-                }
-            }
-            return newState
-        })
+        setFormData((prev: any) => ({ ...prev, [name]: checked }))
     }
 
     const handleSelectChange = (name: string, value: string) => {
         setFormData((prev: any) => ({ ...prev, [name]: value }))
     }
+
+    // Sync fiscal address with social address if igualDomicilio is true
+    React.useEffect(() => {
+        if (formData.igualDomicilio) {
+            setFormData((prev: any) => ({
+                ...prev,
+                calleFiscal: prev.calle,
+                numExtFiscal: prev.numExt,
+                numIntFiscal: prev.numInt,
+                coloniaFiscal: prev.colonia,
+                municipioFiscal: prev.municipio,
+                estadoFiscal: prev.estado,
+                cpFiscal: prev.cp,
+            }))
+        }
+    }, [
+        formData.igualDomicilio,
+        formData.calle,
+        formData.numExt,
+        formData.numInt,
+        formData.colonia,
+        formData.municipio,
+        formData.estado,
+        formData.cp
+    ])
 
     // Wrapped submit handler to pass state instead of event/formData
     const handleFormSubmit = (e: React.FormEvent) => {
@@ -239,9 +304,9 @@ function ClubForm({ className, id, onSubmit }: ClubFormProps) {
             // Show first error message
             const firstError = result.error.issues[0]
             if (firstError) {
-                toast.error(firstError.message)
+                toast.error(`Error: ${firstError.path.join(".")} - ${firstError.message}`)
             }
-            console.error("Validation error:", result.error.issues)
+            console.error("Validation error details:", JSON.stringify(result.error.issues, null, 2))
             return
         }
 
