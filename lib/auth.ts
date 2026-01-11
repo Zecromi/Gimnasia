@@ -22,7 +22,7 @@ export const login = async (usuario: string, password: string) => {
 export const getPass = async (usuario: string, contra: string) => {
     try {
         const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-        console.log(`Calling GetPass with: Usuario=${usuario}, Contra=${contra}`);
+
         const response = await axios.get(`${apiUrl}/GetPass`, {
             params: {
                 Usuario: usuario,

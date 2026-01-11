@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, lazy, useEffect, useState } from "react"
+import { Suspense, lazy, useEffect, useState, useMemo } from "react"
 import { Search } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -18,13 +18,27 @@ import {
 
 import { getClubs, ViewClubGral } from "@/lib/club-service"
 import { useClubStore } from "@/lib/store/club-store"
-import { columns } from "./clubes-columns"
 import { DataTable } from "./data-table"
+
 const ClubDialog = lazy(() => import("./club-dialog").then(module => ({ default: module.ClubDialog })))
+
+import { useAuthStore } from "@/lib/store/auth-store"
+import { getColumns } from "./clubes-columns"
+
+// ... inside component
 
 export function ClubesView() {
     const [isLoading, setIsLoading] = useState(true)
     const { clubs, setClubs } = useClubStore()
+    const authData = useAuthStore((state) => state.authData)
+
+    // Use loose equality to handle potential string/number mismatches
+    // eslint-disable-next-line eqeqeq
+    const canEdit = authData?.id == 1 && authData?.tipo_registro == 1
+
+    const columns = useMemo(() => {
+        return getColumns(authData)
+    }, [authData])
 
     // Filtering states
     const [inputClub, setInputClub] = useState("")
@@ -112,6 +126,7 @@ export function ClubesView() {
                 <CardContent className="pt-0 pb-2">
                     <div className="grid grid-cols-12 gap-4">
                         <div className="col-span-11">
+                            {/* ... filters ... */}
                             <div className="grid gap-4">
                                 {/* Row 1 */}
                                 <div className="grid gap-3 md:grid-cols-12">
@@ -177,9 +192,11 @@ export function ClubesView() {
                             </div>
                         </div>
                         <div className="col-span-1 flex items-center justify-center border-l pl-4">
-                            <Suspense fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
-                                <ClubDialog onClubCreated={fetchClubs} />
-                            </Suspense>
+                            {canEdit && (
+                                <Suspense fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
+                                    <ClubDialog onClubCreated={fetchClubs} />
+                                </Suspense>
+                            )}
                         </div>
                     </div>
                 </CardContent>

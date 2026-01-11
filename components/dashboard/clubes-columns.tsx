@@ -1,8 +1,13 @@
 "use client"
 
+
+
 import { ColumnDef } from "@tanstack/react-table"
 import { Edit, ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ViewClubGral } from "@/lib/club-service"
+import { EditClubDialog } from "./edit-club-dialog"
+import { AuthData } from "@/lib/store/auth-store"
 import {
     Tooltip,
     TooltipContent,
@@ -10,14 +15,23 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 
-import { ViewClubGral } from "@/lib/club-service"
-import { EditClubDialog } from "./edit-club-dialog"
-
-export const columns: ColumnDef<ViewClubGral>[] = [
+export const getColumns = (authData: AuthData | null): ColumnDef<ViewClubGral>[] => [
     {
         id: "detalle",
         header: "Detalle",
         cell: ({ row }) => {
+            // eslint-disable-next-line eqeqeq
+            const canEdit = authData?.id == 1 && authData?.tipo_registro == 1
+
+            if (!canEdit) {
+                return (
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 cursor-not-allowed" disabled>
+                        <Edit className="h-4 w-4" />
+                        <span className="sr-only">Editar</span>
+                    </Button>
+                )
+            }
+
             return (
                 <div className="flex items-center">
                     <EditClubDialog club={row.original}>
