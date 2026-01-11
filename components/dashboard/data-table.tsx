@@ -24,11 +24,13 @@ import {
 interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
+    noResultsMessage?: string
 }
 
 export function DataTable<TData, TValue>({
     columns,
     data,
+    noResultsMessage = "No results.",
 }: DataTableProps<TData, TValue>) {
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
@@ -88,7 +90,7 @@ export function DataTable<TData, TValue>({
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                                    No results.
+                                    {noResultsMessage}
                                 </TableCell>
                             </TableRow>
                         )}

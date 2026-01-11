@@ -28,66 +28,14 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 
-// Mock data matching the image structure
-const mockData: EventoInscripcion[] = [
-    {
-        id: "617",
-        noEvento: "617",
-        nombre: "Campeonato Regional de Gimnasia Artística Femenil R3 2025 DGD",
-        lugar: "Auditorio del Pueblo",
-        sede: "Durango, DGD",
-        fechaEvento: "28/08/2025 - 31/08/2025",
-        restriccion: "no",
-        estatus: "Terminado",
-    },
-    {
-        id: "615",
-        noEvento: "615",
-        nombre: "Gimnasia Nacional de Gimnasia Artística 2025",
-        lugar: "Escuela de Gimnasia Infantil de la BUAP",
-        sede: "Puebla, PUE",
-        fechaEvento: "25/08/2025 - 28/08/2025",
-        restriccion: "sí",
-        estatus: "Terminado",
-    },
-    {
-        id: "609",
-        noEvento: "609",
-        nombre: "Curso Nacional de Jueces GAF 2025 Obligatorios USAG BCS",
-        lugar: "INSUDE",
-        sede: "La Paz, BCS",
-        fechaEvento: "22/08/2025 - 31/08/2025",
-        restriccion: "no",
-        estatus: "Terminado",
-    },
-    {
-        id: "605",
-        noEvento: "605",
-        nombre: "2o Selectivo 2025: Selección Mayor GAV",
-        lugar: "CNAR",
-        sede: "FMG, CDMX",
-        fechaEvento: "08/08/2025 - 09/08/2025",
-        restriccion: "no",
-        estatus: "Terminado",
-    },
-    {
-        id: "604",
-        noEvento: "604",
-        nombre: "Estatal de Bases de ranqueo Jalisco 2025",
-        lugar: "CODE López Mateos",
-        sede: "Guadalajara, JAL",
-        fechaEvento: "15/08/2025 - 17/08/2025",
-        restriccion: "no",
-        estatus: "Terminado",
-    },
-]
-
 export function InscripcionesEventosView() {
     const [date, setDate] = useState<Date>()
-    const [eventos] = useState<EventoInscripcion[]>(mockData)
+    const [eventos] = useState<EventoInscripcion[]>([])
+    // Estado para manejo de errores de carga (simulado por ahora)
+    const [error] = useState<string | null>(null)
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6" >
             <Card className="rounded-2xl border-none shadow-none bg-gray-50 dark:bg-zinc-900">
                 <CardHeader className="pt-2 pb-0">
                     <CardTitle>
@@ -202,7 +150,17 @@ export function InscripcionesEventosView() {
                 </CardContent>
             </Card>
 
-            <DataTable columns={columns} data={eventos} />
-        </div>
+            {error ? (
+                <div className="text-center p-10 text-red-500">
+                    <p>Error al cargar los datos. Por favor intente nuevamente.</p>
+                </div>
+            ) : (
+                <DataTable
+                    columns={columns}
+                    data={eventos}
+                    noResultsMessage="No existen registros de eventos"
+                />
+            )}
+        </div >
     )
 }
