@@ -5,6 +5,7 @@ import { Plus, Save } from "lucide-react"
 import { toast } from "sonner"
 import { AfiliadosCatalogsResponse, getAfiliadosCatalogs, createAfiliado, updateAfiliado, CreateAfiliadoPayload } from "@/lib/afiliados-service"
 import { useCatalogStore } from "@/lib/store/catalog-store"
+import { useAuthStore } from "@/lib/store/auth-store"
 import { CatalogoItem, Estado, getClubs, ViewClubGral } from "@/lib/club-service"
 import { cn } from "@/lib/utils"
 import { useIsMobile } from "@/hooks/use-mobile"
@@ -144,6 +145,11 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
     const [catalogs, setCatalogs] = React.useState<AfiliadosCatalogsResponse | null>(null)
     const [clubs, setClubs] = React.useState<ViewClubGral[]>([])
     const { Modalidades, fetchCatalogs } = useCatalogStore()
+    const authData = useAuthStore((state) => state.authData)
+    // Add controlled state for the club select
+    const [selectedClubId, setSelectedClubId] = React.useState<string>(
+        afiliado?.id_Club?.toString() || ""
+    )
 
     React.useEffect(() => {
         const fetchData = async () => {
@@ -153,7 +159,23 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                     getClubs()
                 ])
                 setCatalogs(catalogsData)
-                setClubs(clubsData.View_Club_gral)
+
+                let loadedClubs = clubsData.View_Club_gral
+
+                // Filter clubs if not admin
+                // eslint-disable-next-line eqeqeq
+                if (authData && authData.tipo_registro != 1) {
+                    // eslint-disable-next-line eqeqeq
+                    loadedClubs = loadedClubs.filter(c => c.id == authData.id)
+
+                    // Auto-select if we have a single club and we are not editing (or we are but want to ensure it matches)
+                    // Or if we are creating only? Let's just default to the single club if found.
+                    if (loadedClubs.length === 1 && !afiliado) {
+                        setSelectedClubId(loadedClubs[0].id.toString())
+                    }
+                }
+
+                setClubs(loadedClubs)
                 await fetchCatalogs()
             } catch (error) {
                 console.error("Error fetching data:", error)
@@ -161,7 +183,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
             }
         }
         fetchData()
-    }, [fetchCatalogs])
+    }, [fetchCatalogs, authData, afiliado]) // Added dependencies
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -308,6 +330,13 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
 
     return (
         <form id={id} className={cn("space-y-6", className)} onSubmit={handleSubmit}>
+            {/* hidden input to ensure club value is submitted even if disabled select doesn't submit it (though ShadCN Select usually works differently, disabled inputs typically don't send values in native forms) */}
+            {/* Safe bet: always keep the Select enabled but visually 'disabled' or just ensure we pass it.
+                Actually, controlled components in Shadcn/Radix might not pass name if disabled.
+                Let's use a hidden input just in case if it's restricted.
+            */}
+            <input type="hidden" name="club" value={selectedClubId} />
+
             <ScrollArea className="h-[60vh] pr-4">
                 <div className="space-y-6 p-1">
                     {/* General Info */}
@@ -329,7 +358,13 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                                 <Input value="ESTADO DE MÉXICO" disabled className="bg-muted/50" name="asociacion" />
                             </InputGroup>
                             <InputGroup label="Club : *" className="col-span-12 md:col-span-6">
-                                <Select name="club" defaultValue={afiliado?.id_Club?.toString()}>
+                                <Select
+                                    name="club_select" // Rename to avoid conflict with hidden input, or just rely on state
+                                    value={selectedClubId}
+                                    onValueChange={setSelectedClubId}
+                                    // eslint-disable-next-line eqeqeq
+                                    disabled={authData?.tipo_registro != 1 && !afiliado}
+                                >
                                     <SelectTrigger>
                                         <SelectValue placeholder="Selecciona una opción" />
                                     </SelectTrigger>

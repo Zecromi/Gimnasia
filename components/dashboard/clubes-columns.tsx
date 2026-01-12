@@ -21,7 +21,7 @@ export const getColumns = (authData: AuthData | null): ColumnDef<ViewClubGral>[]
         header: "Detalle",
         cell: ({ row }) => {
             // eslint-disable-next-line eqeqeq
-            const canEdit = authData?.id == 1 && authData?.tipo_registro == 1
+            const canEdit = authData?.tipo_registro == 1
 
             if (!canEdit) {
                 return (

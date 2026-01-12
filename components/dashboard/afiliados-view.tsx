@@ -28,6 +28,7 @@ import { getClubs, ViewClubGral } from "@/lib/club-service"
 import { getAfiliadosCatalogs, Afiliado } from "@/lib/afiliados-service"
 
 import { useCatalogStore } from "@/lib/store/catalog-store"
+import { useAuthStore } from "@/lib/store/auth-store"
 
 export function AfiliadosView() {
     const [isLoading, setIsLoading] = useState(true)
@@ -36,6 +37,7 @@ export function AfiliadosView() {
     const [clubs, setClubs] = useState<ViewClubGral[]>([])
 
     const { Escolaridad, Estados, Niveles_tecnicos, fetchCatalogs } = useCatalogStore()
+    const authData = useAuthStore((state) => state.authData)
 
     // Filter states
     const [filterAfiliado, setFilterAfiliado] = useState("")
@@ -43,6 +45,14 @@ export function AfiliadosView() {
     const [filterEstatus, setFilterEstatus] = useState("todos")
     const [filterNoAfiliado, setFilterNoAfiliado] = useState("")
     const [filterCurp, setFilterCurp] = useState("")
+
+    useEffect(() => {
+        // If not admin, force filterClub to user's club ID
+        // eslint-disable-next-line eqeqeq
+        if (authData && authData.tipo_registro != 1) {
+            setFilterClub(authData.id.toString())
+        }
+    }, [authData])
 
     const fetchData = useCallback(async () => {
         console.log("AfiliadosView: executing fetchData") // Debug log
@@ -57,8 +67,17 @@ export function AfiliadosView() {
             ])
             console.log("AfiliadosView: data fetched", data.Afiliados?.length) // Debug log
             if (data && data.Afiliados) {
-                setAfiliados(data.Afiliados)
-                setFilteredAfiliados(data.Afiliados)
+                let allAfiliados = data.Afiliados
+
+                // Permission Filter: If not admin (type 1), only show members of their own club
+                // eslint-disable-next-line eqeqeq
+                if (authData && authData.tipo_registro != 1) {
+                    // eslint-disable-next-line eqeqeq
+                    allAfiliados = allAfiliados.filter(a => a.id_Club == authData.id)
+                }
+
+                setAfiliados(allAfiliados)
+                setFilteredAfiliados(allAfiliados)
             }
             setClubs(clubsData.View_Club_gral)
         } catch (error) {
@@ -66,7 +85,7 @@ export function AfiliadosView() {
         } finally {
             setIsLoading(false)
         }
-    }, [fetchCatalogs])
+    }, [fetchCatalogs, authData]) // Added authData dependency
 
     useEffect(() => {
         fetchData()
@@ -174,7 +193,12 @@ export function AfiliadosView() {
                                             <Input value="ESTADO DE MÉXICO" disabled className="bg-muted/50 h-8" />
                                         </InputGroup>
                                         <InputGroup label="Club :" htmlFor="club" className="md:col-span-2">
-                                            <Select value={filterClub} onValueChange={setFilterClub}>
+                                            <Select
+                                                value={filterClub}
+                                                onValueChange={setFilterClub}
+                                                // eslint-disable-next-line eqeqeq
+                                                disabled={authData?.tipo_registro != 1}
+                                            >
                                                 <SelectTrigger id="club">
                                                     <SelectValue placeholder="Todos" />
                                                 </SelectTrigger>

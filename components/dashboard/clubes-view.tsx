@@ -34,7 +34,7 @@ export function ClubesView() {
 
     // Use loose equality to handle potential string/number mismatches
     // eslint-disable-next-line eqeqeq
-    const canEdit = authData?.id == 1 && authData?.tipo_registro == 1
+    const canEdit = authData?.tipo_registro == 1
 
     const columns = useMemo(() => {
         return getColumns(authData)
