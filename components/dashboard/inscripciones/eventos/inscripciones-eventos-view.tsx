@@ -152,7 +152,7 @@ export function InscripcionesEventosView() {
 
             {error ? (
                 <div className="text-center p-10 text-red-500">
-                    <p>Error al cargar los datos. Por favor intente nuevamente.</p>
+                    <p>Error al cargar los datos. Por favor intente nuevamente o recargue la página.</p>
                 </div>
             ) : (
                 <DataTable
