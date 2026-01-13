@@ -183,7 +183,7 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
             ...prev,
             [modalityId]: [...(prev[modalityId] || []), { id: newId, costo: "", descripcion: "" }]
         }))
-    }, [])
+    }, [])//Para commit
 
     const removeExtraItem = React.useCallback((modalityId: string, extraId: string) => {
         setModalityExtras(prev => ({
