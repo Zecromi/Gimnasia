@@ -165,12 +165,6 @@ export default function LoginPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-white dark:text-zinc-300 font-medium transition-colors duration-500">Contraseña</Label>
-                  <Link href="#" className="text-xs text-white dark:text-[#00a896] hover:text-gray-200 dark:hover:text-[#008f80] font-medium transition-colors duration-500">
-                    ¿Olvidaste tu contraseña?
-                  </Link>
-                </div>
                 <div className="relative">
                   <Input
                     id="password"
@@ -216,10 +210,6 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
-          </div>
-
-          <div className="mt-8 text-center text-xs text-gray-200 dark:text-zinc-500 transition-colors duration-500">
-            <p className=" transition-colors">Powered by Next.js</p>
           </div>
         </motion.div>
 
