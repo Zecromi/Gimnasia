@@ -37,6 +37,11 @@ export interface ModalidadDetalleItem {
     id_nivel: number;
 }
 
+export interface EventoCatalogoItem {
+    id_Evento: number;
+    Nombre: string;
+}
+
 export interface CatalogsResponse {
     Estados: Estado[];
     Catalogo_afiliaciones: CatalogoItem[];
@@ -45,7 +50,7 @@ export interface CatalogsResponse {
     Escolaridad: CatalogoItem[];
     Modalidades: ModalidadItem[];
     View_Modalidades_detalle: ModalidadDetalleItem[];
-    Catalogo_eventos: { id_Evento: number; Nombre: string }[];
+    Catalogo_eventos: EventoCatalogoItem[];
 }
 
 export const getGlobalInfo = async () => {

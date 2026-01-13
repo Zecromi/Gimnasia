@@ -64,7 +64,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { getGlobalInfo, ModalidadItem, ModalidadDetalleItem } from "@/lib/club-service"
+import { getGlobalInfo, ModalidadItem, ModalidadDetalleItem, EventoCatalogoItem } from "@/lib/club-service"
 import { createEvento, SetEventoPayload, ConfiguracionItem, NivelItem, AdicionalItem, EventoItem } from "@/lib/evento-service"
 import { eventoSchema, EventoFormValues } from "@/lib/schemas/evento/evento-schema"
 import { toast } from "sonner"
@@ -132,7 +132,7 @@ export function NewEventoDialog({ onEventSaved }: { onEventSaved?: () => void })
 function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: string, id: string, onClose: () => void, onEventSaved?: () => void }) {
     const [modalidades, setModalidades] = React.useState<ModalidadItem[]>([])
     const [modalidadesDetalle, setModalidadesDetalle] = React.useState<ModalidadDetalleItem[]>([])
-    const [Catalogo_eventos, setCatalogo_eventos] = React.useState<{ id: number; Nombre: string }[]>([])
+    const [Catalogo_eventos, setCatalogo_eventos] = React.useState<EventoCatalogoItem[]>([])
     // Removed isCustomModality, newModality
     const [modalityExtras, setModalityExtras] = React.useState<Record<string, Array<{ id: string, costo: string, descripcion: string }>>>({})
     const [isTableCollapsed, setIsTableCollapsed] = React.useState<Record<string, boolean>>({})
@@ -515,7 +515,7 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
                                             </SelectTrigger>
                                             <SelectContent>
                                                 {Catalogo_eventos?.map((item) => (
-                                                    <SelectItem key={item.id} value={String(item.id)}>
+                                                    <SelectItem key={item.id_Evento} value={String(item.id_Evento)}>
                                                         {item.Nombre}
                                                     </SelectItem>
                                                 ))}
