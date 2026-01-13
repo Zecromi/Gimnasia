@@ -45,28 +45,35 @@ export default function LoginPage() {
 
     try {
       const data = await login(cleanUsuario, cleanPassword);
-      console.log("Login successful:", data);
+      console.log("Login successful (token obtained):", data);
 
-      if (data) {
-        const tokenToStore = data.token ? data.token : JSON.stringify(data);
-        Cookies.set('token', tokenToStore, { expires: 1 });
+      if (data && (data.token || data.token == null)) {
+        // Note: API might return just { token: "..." } or similar. Adjust checks as needed based on actual API response structure.
+        // Provided code suggests data.token check.
 
-        // Second Auth Step
+        // Now validate permissions via GetPass BEFORE setting session
         try {
           const passData = await getPass(cleanUsuario, cleanPassword);
 
           if (passData && passData.length > 0) {
             const permissions = passData[0];
+
+            // BOTH calls succeeded. Now we commit the login.
+            const tokenToStore = data.token ? data.token : JSON.stringify(data);
+            Cookies.set('token', tokenToStore, { expires: 1 });
+
             setAuthData(permissions);
+            router.push("/dashboard");
           } else {
-            console.warn("GetPass returned empty array or null for user:", cleanUsuario);
+            console.warn("GetPass returned empty array for user:", cleanUsuario);
+            setError("Usuario sin permisos asignados. Contacte al administrador.");
+            // Do not set cookie, do not redirect.
           }
         } catch (passError) {
           console.error("Error calling GetPass:", passError);
-          // We don't block login if this fails, but user won't have permissions
+          setError("Error al validar permisos de usuario.");
         }
 
-        router.push("/dashboard");
       } else {
         setError("Credenciales inválidas");
       }
