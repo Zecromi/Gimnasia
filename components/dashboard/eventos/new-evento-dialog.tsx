@@ -203,7 +203,7 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
         setExtraErrors(prev => {
             if (!prev[extraId]) return prev
             const newErrors = { ...prev }
-            delete newErrors[extraId]
+            delete newErrors[extraId]//Prueba deploy
             return newErrors
         })
     }, [])
