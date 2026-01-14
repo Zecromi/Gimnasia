@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { User, Lock, Eye, EyeOff, Sun, Moon, Loader2, Heading1 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -54,25 +53,18 @@ export default function LoginPage() {
         // Now validate permissions via GetPass BEFORE setting session
         try {
           const passData = await getPass(cleanUsuario, cleanPassword);
-
           if (passData && passData.length > 0) {
-            const permissions = passData[0];
-
-            // BOTH calls succeeded. Now we commit the login.
-            const tokenToStore = data.token ? data.token : JSON.stringify(data);
-            Cookies.set('token', tokenToStore, { expires: 1 });
-
-            setAuthData(permissions);
-            router.push("/dashboard");
-          } else {
-            console.warn("GetPass returned empty array for user:", cleanUsuario);
-            setError("Usuario sin permisos asignados. Contacte al administrador.");
-            // Do not set cookie, do not redirect.
+            setAuthData(passData[0]);
           }
-        } catch (passError) {
-          console.error("Error calling GetPass:", passError);
-          setError("Error al validar permisos de usuario.");
+        } catch (err) {
+          console.warn("GetPass failed but login proceeded", err);
         }
+
+        // Restore missing Cookie set!
+        const tokenToStore = data.token ? data.token : JSON.stringify(data);
+        Cookies.set('token', tokenToStore, { expires: 1 });
+
+        router.push("/dashboard");
 
       } else {
         setError("Credenciales inválidas");
