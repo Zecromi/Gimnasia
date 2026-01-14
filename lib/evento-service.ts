@@ -64,10 +64,34 @@ export interface EventoResponseItem {
     Hora_limite_inscripciones: string;
     Status: string;
     Restriccion: string;
+
+}
+export interface EventosConfiguradosItem {
+    id: number;
+    id_Evento: number;
+    Modalidad: string;
+    Organizador: string;
+    Asociacion: string;
+    Nombre: string;
+    Lugar: string;
+    Sede: string;
+    Region: string;
+    Limite_participantes: number;
+    F_ini_evento: string;
+    F_fin_evento: string;
+    F_ini_incripciones: string;
+    F_fin_incripciones: string;
+    Hora_limite_inscripciones: string;
+    Status: string;
+    Restriccion: string;
+    Costo_base: string;
+    Costo_grupo: string;
+    es_grupo: string;
 }
 
 export interface GetEventosResponse {
     Eventos: EventoResponseItem[];
+    Eventos_configurados: EventosConfiguradosItem[];
 }
 
 export const getEventos = async () => {

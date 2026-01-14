@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useState, useCallback, useEffect } from "react"
 import { Search, Calendar as CalendarIcon, Plus } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -16,7 +16,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-import { columns, EventoInscripcion } from "./inscripciones-columns"
+import { columns } from "./inscripciones-columns"
 import { DataTable } from "@/components/dashboard/data-table"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -27,12 +27,68 @@ import {
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
+import { EventosConfiguradosItem, getEventos } from "@/lib/evento-service"
 
 export function InscripcionesEventosView() {
+    const [isLoading, setIsLoading] = useState(true)
     const [date, setDate] = useState<Date>()
-    const [eventos] = useState<EventoInscripcion[]>([])
+    const [eventos, setEventos] = useState<EventosConfiguradosItem[]>([])
     // Estado para manejo de errores de carga (simulado por ahora)
-    const [error] = useState<string | null>(null)
+    const [error, setError] = useState<string | null>(null)
+
+    const fetchData = useCallback(async () => {
+        setIsLoading(true)
+        setError(null)
+        try {
+            const data = await getEventos()
+            if (data && data.Eventos_configurados) {
+                setEventos(data.Eventos_configurados)
+            }
+        } catch (error) {
+            console.error("Error fetching events:", error)
+            setError("Error al cargar los eventos")
+        } finally {
+            setIsLoading(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        fetchData()
+    }, [fetchData])
+
+    if (isLoading) {
+        return (
+            <div className="space-y-6">
+                <Card className="rounded-2xl border-none shadow-none bg-gray-50 dark:bg-zinc-900">
+                    <CardHeader className="pt-2 pb-0">
+                        <CardTitle>
+                            <h2 className="text-lg font-bold">Inscripciones de eventos</h2>
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="pt-0 pb-2">
+                        <div className="grid grid-cols-12 gap-4">
+                            <div className="col-span-11">
+                                <div className="grid gap-4">
+                                    <div className="grid gap-3 md:grid-cols-12">
+                                        <Skeleton className="h-8 md:col-span-3" />
+                                        <Skeleton className="h-8 md:col-span-3" />
+                                        <Skeleton className="h-8 md:col-span-3" />
+                                        <Skeleton className="h-8 md:col-span-3" />
+                                    </div>
+                                    <div className="grid gap-3 md:grid-cols-12">
+                                        <Skeleton className="h-8 md:col-span-3" />
+                                        <Skeleton className="h-8 md:col-span-3" />
+                                        <Skeleton className="h-8 md:col-span-3" />
+                                        <Skeleton className="h-8 md:col-span-3" />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
+        )
+    }
 
     return (
         <div className="space-y-6" >
@@ -152,7 +208,8 @@ export function InscripcionesEventosView() {
 
             {error ? (
                 <div className="text-center p-10 text-red-500">
-                    <p>Error al cargar los datos. Por favor intente nuevamente.</p>
+                    <p>{error}</p>
+                    <Button variant="outline" onClick={fetchData} className="mt-4">Reintentar</Button>
                 </div>
             ) : (
                 <DataTable

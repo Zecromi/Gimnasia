@@ -56,11 +56,7 @@ const MOCK_MEMBERS = [
     { id: "m6", name: "Sofía Herrera" },
 ]
 
-const MOCK_MODALITIES = [
-    { id: "mod1", name: "Gimnasia Artística Femenil", cost: 500 },
-    { id: "mod2", name: "Gimnasia Artistica Varonil", cost: 800 },
-    { id: "mod3", name: "Gimansia de Trampolin", cost: 1200 },
-]
+
 
 const MOCK_ADDITIONAL_ITEMS = [
     { id: "item1", name: "Caballo con arzones", cost: 250 },
@@ -74,7 +70,6 @@ const MOCK_ADDITIONAL_ITEMS = [
 // --- Types ---
 
 interface MemberConfig {
-    modalityId: string
     additionalItemIds: string[]
 }
 
@@ -82,9 +77,11 @@ interface RegisterEventDialogProps {
     children: React.ReactNode
     eventoId: string
     eventoName?: string
+    modalidad: string
+    costo: string
 }
 
-export function RegisterEventDialog({ children, eventoId, eventoName }: RegisterEventDialogProps) {
+export function RegisterEventDialog({ children, eventoId, eventoName, modalidad, costo }: RegisterEventDialogProps) {
     const { Catalogo_formas_pago, fetchCatalogs } = useCatalogPayStore()
     const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number | null>(null)
@@ -98,7 +95,6 @@ export function RegisterEventDialog({ children, eventoId, eventoName }: Register
         const initialConfigs: Record<string, MemberConfig> = {}
         MOCK_MEMBERS.forEach(member => {
             initialConfigs[member.id] = {
-                modalityId: MOCK_MODALITIES[0].id,
                 additionalItemIds: []
             }
         })
@@ -115,15 +111,7 @@ export function RegisterEventDialog({ children, eventoId, eventoName }: Register
         setSelectedMembers(newSelected)
     }
 
-    const handleModalityChange = (memberId: string, value: string) => {
-        setMemberConfigs(prev => ({
-            ...prev,
-            [memberId]: {
-                ...prev[memberId],
-                modalityId: value
-            }
-        }))
-    }
+
 
     const handleAdditionalItemToggle = (memberId: string, itemId: string) => {
         setMemberConfigs(prev => {
@@ -155,13 +143,14 @@ export function RegisterEventDialog({ children, eventoId, eventoName }: Register
         let itemsCount = 0
         let additionalItemsCost = 0
         let totalCost = 0
+        const numericCost = parseFloat(costo) || 0
 
         selectedMembers.forEach(memberId => {
             itemsCount++
             const config = memberConfigs[memberId]
 
-            const modality = MOCK_MODALITIES.find(m => m.id === config.modalityId)
-            const modCost = modality?.cost || 0
+            // Cost is now fixed from prop
+            const modCost = numericCost
 
             let itemsCost = 0
             config.additionalItemIds.forEach(itemId => {
@@ -174,7 +163,7 @@ export function RegisterEventDialog({ children, eventoId, eventoName }: Register
         })
 
         return { itemsCount, additionalItemsCost, totalCost }
-    }, [selectedMembers, memberConfigs])
+    }, [selectedMembers, memberConfigs, costo])
 
     const handleRegister = () => {
         if (!selectedPaymentMethod) {
@@ -239,24 +228,12 @@ export function RegisterEventDialog({ children, eventoId, eventoName }: Register
                                             />
                                             <span className="text-sm font-medium">{member.name}</span>
 
-                                            <Select
-                                                value={memberConfigs[member.id].modalityId}
-                                                onValueChange={(val) => handleModalityChange(member.id, val)}
-                                            >
-                                                <SelectTrigger className="h-8">
-                                                    <SelectValue />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {MOCK_MODALITIES.map(mod => (
-                                                        <SelectItem key={mod.id} value={mod.id}>
-                                                            <div className="flex justify-between w-full gap-2">
-                                                                <span>{mod.name}</span>
-                                                                <span className="text-muted-foreground">{formatCurrency(mod.cost)}</span>
-                                                            </div>
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
+                                            <div className="flex flex-col justify-center h-8 px-3 border rounded-md bg-muted/50 text-sm">
+                                                <div className="flex justify-between w-full gap-2">
+                                                    <span>{modalidad}</span>
+                                                    <span className="text-muted-foreground">{formatCurrency(parseFloat(costo) || 0)}</span>
+                                                </div>
+                                            </div>
 
                                             <Popover>
                                                 <PopoverTrigger asChild>
@@ -334,7 +311,7 @@ export function RegisterEventDialog({ children, eventoId, eventoName }: Register
                                     Array.from(selectedMembers).map((memberId) => {
                                         const member = MOCK_MEMBERS.find((m) => m.id === memberId)
                                         const config = memberConfigs[memberId]
-                                        const modality = MOCK_MODALITIES.find((m) => m.id === config.modalityId)
+                                        // const modality = MOCK_MODALITIES.find((m) => m.id === config.modalityId)
                                         const additionalItems = config.additionalItemIds
                                             .map((id) => MOCK_ADDITIONAL_ITEMS.find((i) => i.id === id))
                                             .filter((item): item is typeof MOCK_ADDITIONAL_ITEMS[0] => !!item)
@@ -351,8 +328,8 @@ export function RegisterEventDialog({ children, eventoId, eventoName }: Register
                                                 </div>
                                                 <div className="pl-7 text-sm space-y-1">
                                                     <div className="flex justify-between text-muted-foreground">
-                                                        <span className="truncate pr-2">{modality?.name}</span>
-                                                        <span className="shrink-0">{formatCurrency(modality?.cost || 0)}</span>
+                                                        <span className="truncate pr-2">{modalidad}</span>
+                                                        <span className="shrink-0">{formatCurrency(parseFloat(costo) || 0)}</span>
                                                     </div>
                                                     {additionalItems.map((item) => (
                                                         <div key={item.id} className="flex justify-between text-muted-foreground">

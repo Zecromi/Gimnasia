@@ -1,36 +1,22 @@
 import { ColumnDef } from "@tanstack/react-table"
-import { ArrowUpDown, Plus, TicketPlus } from "lucide-react"
+import { ArrowUpDown, TicketPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip"
-
 import { RegisterEventDialog } from "./register-event-dialog"
+import { EventosConfiguradosItem } from "@/lib/evento-service"
 
-// Data structure based on the provided image (Events list)
-export type EventoInscripcion = {
-    id: string
-    noEvento: string
-    nombre: string
-    lugar: string
-    sede: string
-    fechaEvento: string
-    restriccion: "sí" | "no"
-    estatus: "Terminado" | "En curso" | "Próximo"
-}
-
-export const columns: ColumnDef<EventoInscripcion>[] = [
+export const columns: ColumnDef<EventosConfiguradosItem>[] = [
     {
         id: "inscribirse",
         header: "Inscribirse",
         cell: ({ row }) => {
             return (
                 <div className="flex items-center pl-2">
-                    <RegisterEventDialog eventoId={row.original.id} eventoName={row.original.nombre}>
+                    <RegisterEventDialog
+                        eventoId={String(row.original.id_Evento)}
+                        eventoName={row.original.Nombre}
+                        modalidad={row.original.Modalidad}
+                        costo={row.original.Costo_base}
+                    >
                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-teal-100 text-teal-700">
                             <TicketPlus className="h-4 w-4" />
                             <span className="sr-only">Inscribirse</span>
@@ -41,7 +27,7 @@ export const columns: ColumnDef<EventoInscripcion>[] = [
         },
     },
     {
-        accessorKey: "noEvento",
+        accessorKey: "id",
         header: ({ column }) => {
             return (
                 <Button
@@ -55,7 +41,7 @@ export const columns: ColumnDef<EventoInscripcion>[] = [
         },
     },
     {
-        accessorKey: "nombre",
+        accessorKey: "Nombre",
         header: ({ column }) => {
             return (
                 <Button
@@ -69,7 +55,7 @@ export const columns: ColumnDef<EventoInscripcion>[] = [
         },
     },
     {
-        accessorKey: "lugar",
+        accessorKey: "Lugar",
         header: ({ column }) => {
             return (
                 <Button
@@ -83,7 +69,7 @@ export const columns: ColumnDef<EventoInscripcion>[] = [
         },
     },
     {
-        accessorKey: "sede",
+        accessorKey: "Sede",
         header: ({ column }) => {
             return (
                 <Button
@@ -97,7 +83,7 @@ export const columns: ColumnDef<EventoInscripcion>[] = [
         },
     },
     {
-        accessorKey: "fechaEvento",
+        accessorKey: "F_ini_evento",
         header: ({ column }) => {
             return (
                 <Button
@@ -109,9 +95,13 @@ export const columns: ColumnDef<EventoInscripcion>[] = [
                 </Button>
             )
         },
+        cell: ({ row }) => {
+            // Simple date formatting if needed, or raw string
+            return <div>{row.getValue("F_ini_evento")}</div>
+        }
     },
     {
-        accessorKey: "restriccion",
+        accessorKey: "Restriccion",
         header: ({ column }) => {
             return (
                 <Button
@@ -124,11 +114,11 @@ export const columns: ColumnDef<EventoInscripcion>[] = [
             )
         },
         cell: ({ row }) => {
-            return <div className="pl-8">{row.getValue("restriccion")}</div>
+            return <div className="pl-8">{row.getValue("Restriccion")}</div>
         }
     },
     {
-        accessorKey: "estatus",
+        accessorKey: "Status",
         header: ({ column }) => {
             return (
                 <Button
@@ -141,7 +131,7 @@ export const columns: ColumnDef<EventoInscripcion>[] = [
             )
         },
         cell: ({ row }) => {
-            const status = row.getValue("estatus") as string
+            const status = row.getValue("Status") as string
             return (
                 <div className="font-medium text-gray-600">
                     {status}
