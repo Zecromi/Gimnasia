@@ -121,3 +121,32 @@ export const postBlock = async (User: string, tipo: string) => {
     console.log(response.data)
     return response.data;
 };
+
+
+
+export interface AfiliadoItem {
+    id_afiliado: number;
+    Nombre: string;
+    Paterno: string;
+    Materno: string;
+}
+
+export interface AfiliadosEventosResponse {
+    Afiliados_base: AfiliadoItem[];
+}
+
+export const getAfiliadosEventos = async (id_Club: string) => {
+    const response = await api.get<AfiliadosEventosResponse>("/GetAfiliados_base", {
+        params: {
+            id_Club,
+        },
+    });
+    return response.data;
+};
+
+
+export const postInscripcion = async (body: any) => {
+    console.log(body)
+    const response = await api.post("/SetInscripcion", body)
+    return response.data;
+};

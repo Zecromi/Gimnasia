@@ -44,19 +44,10 @@ import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { useCatalogPayStore } from "@/lib/store/catalog-pay-store"
+import { useAfiliadosEventosStore } from "@/lib/store/afiliados-eventos-store"
+import { postInscripcion } from "@/lib/evento-service"
 
 // --- Mock Data ---
-
-const MOCK_MEMBERS = [
-    { id: "m1", name: "Juan Pérez" },
-    { id: "m2", name: "María López" },
-    { id: "m3", name: "Carlos Sánchez" },
-    { id: "m4", name: "Ana Torres" },
-    { id: "m5", name: "Luis Ramírez" },
-    { id: "m6", name: "Sofía Herrera" },
-]
-
-
 
 const MOCK_ADDITIONAL_ITEMS = [
     { id: "item1", name: "Caballo con arzones", cost: 250 },
@@ -79,27 +70,40 @@ interface RegisterEventDialogProps {
     eventoName?: string
     modalidad: string
     costo: string
+    id_Club?: string
 }
 
-export function RegisterEventDialog({ children, eventoId, eventoName, modalidad, costo }: RegisterEventDialogProps) {
+export function RegisterEventDialog({ children, eventoId, eventoName, modalidad, costo, id_Club = "1002" }: RegisterEventDialogProps) {
     const { Catalogo_formas_pago, fetchCatalogs } = useCatalogPayStore()
+    const { afiliados, fetchAfiliadosEventos } = useAfiliadosEventosStore()
     const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number | null>(null)
+    const [memberConfigs, setMemberConfigs] = useState<Record<string, MemberConfig>>({})
 
     useEffect(() => {
         fetchCatalogs()
-    }, [fetchCatalogs])
+        if (id_Club) {
+            fetchAfiliadosEventos(id_Club)
+        }
+    }, [fetchCatalogs, fetchAfiliadosEventos, id_Club])
 
-    // Initialize config for all members with defaults
-    const [memberConfigs, setMemberConfigs] = useState<Record<string, MemberConfig>>(() => {
-        const initialConfigs: Record<string, MemberConfig> = {}
-        MOCK_MEMBERS.forEach(member => {
-            initialConfigs[member.id] = {
-                additionalItemIds: []
-            }
-        })
-        return initialConfigs
-    })
+    // Initialize config for new members
+    useEffect(() => {
+        if (afiliados.length > 0) {
+            setMemberConfigs(prev => {
+                const newConfigs: Record<string, MemberConfig> = { ...prev }
+                afiliados.forEach(member => {
+                    const memberId = String(member.id_afiliado)
+                    if (!newConfigs[memberId]) {
+                        newConfigs[memberId] = {
+                            additionalItemIds: []
+                        }
+                    }
+                })
+                return newConfigs
+            })
+        }
+    }, [afiliados])
 
     const handleSelectMember = (memberId: string, checked: boolean) => {
         const newSelected = new Set(selectedMembers)
@@ -111,11 +115,9 @@ export function RegisterEventDialog({ children, eventoId, eventoName, modalidad,
         setSelectedMembers(newSelected)
     }
 
-
-
     const handleAdditionalItemToggle = (memberId: string, itemId: string) => {
         setMemberConfigs(prev => {
-            const currentIds = prev[memberId].additionalItemIds
+            const currentIds = prev[memberId]?.additionalItemIds || []
             const newIds = currentIds.includes(itemId)
                 ? currentIds.filter(id => id !== itemId)
                 : [...currentIds, itemId]
@@ -132,7 +134,7 @@ export function RegisterEventDialog({ children, eventoId, eventoName, modalidad,
 
     const toggleAll = (checked: boolean) => {
         if (checked) {
-            setSelectedMembers(new Set(MOCK_MEMBERS.map(m => m.id)))
+            setSelectedMembers(new Set(afiliados.map(m => String(m.id_afiliado))))
         } else {
             setSelectedMembers(new Set())
         }
@@ -153,10 +155,12 @@ export function RegisterEventDialog({ children, eventoId, eventoName, modalidad,
             const modCost = numericCost
 
             let itemsCost = 0
-            config.additionalItemIds.forEach(itemId => {
-                const item = MOCK_ADDITIONAL_ITEMS.find(i => i.id === itemId)
-                if (item) itemsCost += item.cost
-            })
+            if (config) {
+                config.additionalItemIds.forEach(itemId => {
+                    const item = MOCK_ADDITIONAL_ITEMS.find(i => i.id === itemId)
+                    if (item) itemsCost += item.cost
+                })
+            }
 
             additionalItemsCost += itemsCost
             totalCost += (modCost + itemsCost)
@@ -165,7 +169,7 @@ export function RegisterEventDialog({ children, eventoId, eventoName, modalidad,
         return { itemsCount, additionalItemsCost, totalCost }
     }, [selectedMembers, memberConfigs, costo])
 
-    const handleRegister = () => {
+    const handleRegister = async () => {
         if (!selectedPaymentMethod) {
             toast.error("Por favor selecciona un método de pago")
             return
@@ -173,9 +177,40 @@ export function RegisterEventDialog({ children, eventoId, eventoName, modalidad,
 
         const paymentMethod = Catalogo_formas_pago.find(p => p.id === selectedPaymentMethod)
 
-        toast.success("Inscripción exitosa", {
-            description: `Se han inscrito ${totals.itemsCount} miembros. Método de pago: ${paymentMethod?.Nombre}`,
-        })
+        try {
+            const detalle_afiliados = Array.from(selectedMembers).map(memberId => {
+                const config = memberConfigs[memberId]
+                const aparatos = config?.additionalItemIds.map(itemId => ({
+                    id_aparato: itemId
+                })) || []
+
+                return {
+                    id_afiliado: memberId,
+                    aparatos
+                }
+            })
+
+            const payload = {
+                inscripcion: {
+                    id: eventoId,
+                    id_club: id_Club, // Should come from session/context or prop
+                    total: totals.totalCost.toString()
+                },
+                detalle_afiliados
+            }
+            console.log(payload)
+            await postInscripcion(payload)
+
+            toast.success("Inscripción exitosa", {
+                description: `Se han inscrito ${totals.itemsCount} miembros. Método de pago: ${paymentMethod?.Nombre}`,
+            })
+
+            // Optional: Close dialog or reset state here
+
+        } catch (error) {
+            console.error("Error registering:", error)
+            toast.error("Error al realizar la inscripción")
+        }
     }
 
     const formatCurrency = (amount: number) => {
@@ -210,7 +245,7 @@ export function RegisterEventDialog({ children, eventoId, eventoName, modalidad,
                     <div className="flex-1 border-r flex flex-col min-w-0">
                         <div className="p-4 border-b bg-muted/30 grid grid-cols-[40px_1fr_1.5fr_1.5fr] gap-4 items-center text-sm font-medium text-muted-foreground mr-4">
                             <Checkbox
-                                checked={selectedMembers.size === MOCK_MEMBERS.length && MOCK_MEMBERS.length > 0}
+                                checked={selectedMembers.size === afiliados.length && afiliados.length > 0}
                                 onCheckedChange={(checked) => toggleAll(!!checked)}
                             />
                             <span>Nombre</span>
@@ -220,76 +255,80 @@ export function RegisterEventDialog({ children, eventoId, eventoName, modalidad,
                         <ScrollArea className="flex-1">
                             <div className="p-4 min-w-[600px]"> {/* Ensure min width for table content */}
                                 <div className="space-y-4">
-                                    {MOCK_MEMBERS.map((member) => (
-                                        <div key={member.id} className="grid grid-cols-[40px_1fr_1.5fr_1.5fr] gap-4 items-center">
-                                            <Checkbox
-                                                checked={selectedMembers.has(member.id)}
-                                                onCheckedChange={(checked) => handleSelectMember(member.id, !!checked)}
-                                            />
-                                            <span className="text-sm font-medium">{member.name}</span>
+                                    {afiliados.map((member) => {
+                                        const memberId = String(member.id_afiliado);
+                                        const fullName = `${member.Nombre} ${member.Paterno} ${member.Materno || ""}`.trim();
+                                        return (
+                                            <div key={memberId} className="grid grid-cols-[40px_1fr_1.5fr_1.5fr] gap-4 items-center">
+                                                <Checkbox
+                                                    checked={selectedMembers.has(memberId)}
+                                                    onCheckedChange={(checked) => handleSelectMember(memberId, !!checked)}
+                                                />
+                                                <span className="text-sm font-medium">{fullName}</span>
 
-                                            <div className="flex flex-col justify-center h-8 px-3 border rounded-md bg-muted/50 text-sm">
-                                                <div className="flex justify-between w-full gap-2">
-                                                    <span>{modalidad}</span>
-                                                    <span className="text-muted-foreground">{formatCurrency(parseFloat(costo) || 0)}</span>
+                                                <div className="flex flex-col justify-center h-8 px-3 border rounded-md bg-muted/50 text-sm">
+                                                    <div className="flex justify-between w-full gap-2">
+                                                        <span>{modalidad}</span>
+                                                        <span className="text-muted-foreground">{formatCurrency(parseFloat(costo) || 0)}</span>
+                                                    </div>
                                                 </div>
-                                            </div>
 
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button
-                                                        variant="outline"
-                                                        role="combobox"
-                                                        className="min-h-8 h-auto w-full justify-between"
-                                                    >
-                                                        {memberConfigs[member.id].additionalItemIds.length > 0 ? (
-                                                            <span className="truncate">
-                                                                {memberConfigs[member.id].additionalItemIds.length > 2
-                                                                    ? `${memberConfigs[member.id].additionalItemIds.length} seleccionados`
-                                                                    : memberConfigs[member.id].additionalItemIds
-                                                                        .map(id => MOCK_ADDITIONAL_ITEMS.find(i => i.id === id)?.name)
-                                                                        .join(", ")
-                                                                }
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-muted-foreground font-normal">Seleccionar aparatos</span>
-                                                        )}
-                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-[300px] p-0" align="start">
-                                                    <Command>
-                                                        <CommandInput placeholder="Buscar aparato..." />
-                                                        <CommandList>
-                                                            <CommandEmpty>No se encontraron aparatos.</CommandEmpty>
-                                                            <CommandGroup>
-                                                                {MOCK_ADDITIONAL_ITEMS.map((item) => (
-                                                                    <CommandItem
-                                                                        key={item.id}
-                                                                        value={item.name}
-                                                                        onSelect={() => handleAdditionalItemToggle(member.id, item.id)}
-                                                                    >
-                                                                        <Check
-                                                                            className={cn(
-                                                                                "mr-2 h-4 w-4",
-                                                                                memberConfigs[member.id].additionalItemIds.includes(item.id)
-                                                                                    ? "opacity-100"
-                                                                                    : "opacity-0"
-                                                                            )}
-                                                                        />
-                                                                        <div className="flex justify-between w-full">
-                                                                            <span>{item.name}</span>
-                                                                            <span className="text-muted-foreground">{formatCurrency(item.cost)}</span>
-                                                                        </div>
-                                                                    </CommandItem>
-                                                                ))}
-                                                            </CommandGroup>
-                                                        </CommandList>
-                                                    </Command>
-                                                </PopoverContent>
-                                            </Popover>
-                                        </div>
-                                    ))}
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            role="combobox"
+                                                            className="min-h-8 h-auto w-full justify-between"
+                                                        >
+                                                            {memberConfigs[memberId]?.additionalItemIds?.length > 0 ? (
+                                                                <span className="truncate">
+                                                                    {memberConfigs[memberId].additionalItemIds.length > 2
+                                                                        ? `${memberConfigs[memberId].additionalItemIds.length} seleccionados`
+                                                                        : memberConfigs[memberId].additionalItemIds
+                                                                            .map(id => MOCK_ADDITIONAL_ITEMS.find(i => i.id === id)?.name)
+                                                                            .join(", ")
+                                                                    }
+                                                                </span>
+                                                            ) : (
+                                                                <span className="text-muted-foreground font-normal">Seleccionar aparatos</span>
+                                                            )}
+                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-[300px] p-0" align="start">
+                                                        <Command>
+                                                            <CommandInput placeholder="Buscar aparato..." />
+                                                            <CommandList>
+                                                                <CommandEmpty>No se encontraron aparatos.</CommandEmpty>
+                                                                <CommandGroup>
+                                                                    {MOCK_ADDITIONAL_ITEMS.map((item) => (
+                                                                        <CommandItem
+                                                                            key={item.id}
+                                                                            value={item.name}
+                                                                            onSelect={() => handleAdditionalItemToggle(memberId, item.id)}
+                                                                        >
+                                                                            <Check
+                                                                                className={cn(
+                                                                                    "mr-2 h-4 w-4",
+                                                                                    memberConfigs[memberId]?.additionalItemIds?.includes(item.id)
+                                                                                        ? "opacity-100"
+                                                                                        : "opacity-0"
+                                                                                )}
+                                                                            />
+                                                                            <div className="flex justify-between w-full">
+                                                                                <span>{item.name}</span>
+                                                                                <span className="text-muted-foreground">{formatCurrency(item.cost)}</span>
+                                                                            </div>
+                                                                        </CommandItem>
+                                                                    ))}
+                                                                </CommandGroup>
+                                                            </CommandList>
+                                                        </Command>
+                                                    </PopoverContent>
+                                                </Popover>
+                                            </div>
+                                        )
+                                    })}
                                 </div>
                             </div>
                         </ScrollArea>
@@ -309,14 +348,15 @@ export function RegisterEventDialog({ children, eventoId, eventoName, modalidad,
                                     </p>
                                 ) : (
                                     Array.from(selectedMembers).map((memberId) => {
-                                        const member = MOCK_MEMBERS.find((m) => m.id === memberId)
+                                        const member = afiliados.find((m) => String(m.id_afiliado) === memberId)
                                         const config = memberConfigs[memberId]
                                         // const modality = MOCK_MODALITIES.find((m) => m.id === config.modalityId)
-                                        const additionalItems = config.additionalItemIds
+                                        const additionalItems = config?.additionalItemIds
                                             .map((id) => MOCK_ADDITIONAL_ITEMS.find((i) => i.id === id))
-                                            .filter((item): item is typeof MOCK_ADDITIONAL_ITEMS[0] => !!item)
+                                            .filter((item): item is typeof MOCK_ADDITIONAL_ITEMS[0] => !!item) || []
 
                                         if (!member) return null
+                                        const fullName = `${member.Nombre} ${member.Paterno} ${member.Materno || ""}`.trim();
 
                                         return (
                                             <div key={memberId} className="space-y-2">
@@ -324,7 +364,7 @@ export function RegisterEventDialog({ children, eventoId, eventoName, modalidad,
                                                     <Badge variant="outline" className="h-5 w-5 p-0 flex items-center justify-center rounded-full shrink-0">
                                                         <Check className="h-3 w-3" />
                                                     </Badge>
-                                                    {member.name}
+                                                    {fullName}
                                                 </div>
                                                 <div className="pl-7 text-sm space-y-1">
                                                     <div className="flex justify-between text-muted-foreground">

@@ -12,7 +12,7 @@ export const columns: ColumnDef<EventosConfiguradosItem>[] = [
             return (
                 <div className="flex items-center pl-2">
                     <RegisterEventDialog
-                        eventoId={String(row.original.id_Evento)}
+                        eventoId={String(row.original.id)}
                         eventoName={row.original.Nombre}
                         modalidad={row.original.Modalidad}
                         costo={row.original.Costo_base}
