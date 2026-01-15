@@ -64,7 +64,7 @@ import {
 } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { getGlobalInfo, ModalidadItem, ModalidadDetalleItem } from "@/lib/club-service"
+import { getGlobalInfo, ModalidadItem, ModalidadDetalleItem, EventoCatalogoItem } from "@/lib/club-service"
 import { createEvento, SetEventoPayload, ConfiguracionItem, NivelItem, AdicionalItem, EventoItem } from "@/lib/evento-service"
 import { eventoSchema, EventoFormValues } from "@/lib/schemas/evento/evento-schema"
 import { toast } from "sonner"
