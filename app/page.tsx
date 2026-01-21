@@ -108,7 +108,7 @@ export default function LoginPage() {
           className="w-full md:w-1/2 flex flex-col items-center justify-center bg-transparent dark:bg-transparent border-none dark:border-zinc-800 transition-colors duration-500"
         >
           <div className="flex flex-col items-center gap-6 text-center">
-            <div className="relative w-110 h-74 -mt-3">
+            <div className="relative w-110 h-74">
               <Image
                 src="/logo-gimnasios.png"
                 alt="Gimnasios Unidos del Estado de México Logo"
