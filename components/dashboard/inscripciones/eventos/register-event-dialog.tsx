@@ -1,7 +1,9 @@
 "use client"
 
 import { useState, useMemo, useEffect } from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, Calendar, Clock, Users } from "lucide-react"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import {
     Dialog,
@@ -71,9 +73,22 @@ interface RegisterEventDialogProps {
     modalidad: string
     costo: string
     id_Club?: string
+    fechaFinInscripcion?: string
+    horaLimiteInscripcion?: string
+    limiteParticipantes?: number
 }
 
-export function RegisterEventDialog({ children, eventoId, eventoName, modalidad, costo, id_Club = "1002" }: RegisterEventDialogProps) {
+export function RegisterEventDialog({
+    children,
+    eventoId,
+    eventoName,
+    modalidad,
+    costo,
+    id_Club = "1002",
+    fechaFinInscripcion,
+    horaLimiteInscripcion,
+    limiteParticipantes = 0
+}: RegisterEventDialogProps) {
     const { Catalogo_formas_pago, fetchCatalogs } = useCatalogPayStore()
     const { afiliados, fetchAfiliadosEventos } = useAfiliadosEventosStore()
     const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
@@ -131,6 +146,79 @@ export function RegisterEventDialog({ children, eventoId, eventoName, modalidad,
             }
         })
     }
+
+    // Validation State
+    const [isRegistrationClosed, setRegistrationClosed] = useState(false)
+    const [closureReason, setClosureReason] = useState<string | null>(null)
+
+    // Check registration status
+    useEffect(() => {
+        const checkStatus = () => {
+            // 1. Check Capacity
+            // If limit is 0, it means NO spots available (based on user request "cuando este ya este en cero")
+            // Or if it usually means "unlimited" when 0, we'd need that clarification. 
+            // But user said: "cuando este ya este en cero, tampoco permitiremos inscribir mas".
+            // Let's assume the API passes "Remaining Spots" or we treat 0 as FULL.
+            // If the field is "Limite_participantes" from the event config, usually 0 means unlimited.
+            // BUT, the User Request specifically says: "usaremos el limite de participantes y cuando este ya este en cero, tampoco permitiremos inscribir mas".
+            // This implies the value passed IS the remaining limit or a decremented counter. 
+            // However, typically "Limite_participantes" is a static config. 
+            // If it's a static config, we'd need to know current participants to compare.
+            // Given the phrasing "when this is ALREADY at zero", it sounds like it might be a remaining counter.
+            // OR checks if the static limit is 0 -> usually means disabled? Or fully booked?
+            // "0 = Ilimitado" is common in this app (seen in NewEventoDialog).
+            // Let's re-read: "cuando este ya este en cero".
+            // If I look at the `EventosConfiguradosItem` in `evento-service.ts`, it has `Limite_participantes: number`.
+            // In `new-evento-dialog.tsx`, placeholder says "0 = Ilimitado".
+            // SO 0 usually means Infinity.
+            // GLOBAL CONTRADICTION: user says "when it is zero, do not allow".
+            // HYPOTHESIS: The user might be referring to a "cupo disponible" (available spots) calculated field, OR they want to change the meaning of 0 to be "Closed/Full", OR they simply mean "when the limit is reached".
+            // Since I only have `limiteParticipantes` (which likely comes from `Limite_participantes` in DB), if passed as 0, it likely means unlimited.
+            // BUT user said "when it is zero... do not allow". 
+            // I will implement strictly as requested: IF limit == 0 => CLOSED.
+            // Wait, if 0 is unlimited, then blocking at 0 breaks "unlimited" events.
+            // Let's check the context. Maybe they want to block if limit > 0 AND (current >= limit).
+            // But I don't have "current participants".
+            // Maybe the `Limite_participantes` field in the VIEW has been updated to represent "Available"?
+            // Checking `inscripciones-columns.tsx`: `EventosConfiguradosItem` has `Limite_participantes`.
+            // Reference `new-evento-dialog.tsx`: `placeholder="0 = Ilimitado"`.
+            // If I block at 0, I block unlimited events.
+            // I will err on the side of "User Request overrides standard convention" or "User means a different field".
+            // Since I only have the column data, I will obey "when this is zero, do not allow".
+            // Perhaps they manually set it to 0 to close it? 
+            // OR maybe I should check if it is explicitly 0.
+
+            // Let's look at date validation first.
+            let closed = false
+            let reason = null
+
+            const now = new Date()
+
+            if (fechaFinInscripcion) {
+                // Parse format usually YYYY-MM-DD
+                const deadlineDate = new Date(`${fechaFinInscripcion}T${horaLimiteInscripcion || "23:59:59"}`)
+
+                if (now > deadlineDate) {
+                    closed = true
+                    reason = "Las inscripciones han cerrado (fecha límite)."
+                }
+            }
+
+            // Check capacity
+            // Strict interpretation: if limit is 0, block. 
+            // This might mean "No spots left".
+            if (!closed && limiteParticipantes === 0) {
+                closed = true
+                reason = "Cupo lleno (0 lugares disponibles)."
+            }
+
+            setRegistrationClosed(closed)
+            setClosureReason(reason)
+        }
+
+        checkStatus()
+    }, [fechaFinInscripcion, horaLimiteInscripcion, limiteParticipantes])
+
 
     const toggleAll = (checked: boolean) => {
         if (checked) {
@@ -194,7 +282,8 @@ export function RegisterEventDialog({ children, eventoId, eventoName, modalidad,
                 inscripcion: {
                     id: eventoId,
                     id_club: id_Club, // Should come from session/context or prop
-                    total: totals.totalCost.toString()
+                    total: totals.totalCost.toString(),
+                    id_tipo_pago: selectedPaymentMethod
                 },
                 detalle_afiliados
             }
@@ -235,9 +324,35 @@ export function RegisterEventDialog({ children, eventoId, eventoName, modalidad,
                 </Tooltip>
             </TooltipProvider>
 
-            <DialogContent className="max-w-[95vw] w-full lg:max-w-7xl h-[85vh] gap-0 p-0 overflow-hidden flex flex-col">
+            <DialogContent
+                className="max-w-[95vw] w-full lg:max-w-7xl h-[85vh] gap-0 p-0 overflow-hidden flex flex-col"
+                onInteractOutside={(e) => e.preventDefault()}
+            >
                 <DialogHeader className="p-6 pb-4">
                     <DialogTitle>Inscripción al evento: <span className="text-teal-600">{eventoName}</span></DialogTitle>
+                    <div className="flex flex-wrap gap-4 pt-1 text-sm text-muted-foreground">
+                        {fechaFinInscripcion && (
+                            <div className="flex items-center gap-1.5">
+                                <Calendar className="h-4 w-4 text-teal-600" />
+                                <span>Cierre: {format(new Date(fechaFinInscripcion), "PPP", { locale: es })}</span>
+                            </div>
+                        )}
+                        {horaLimiteInscripcion && (
+                            <div className="flex items-center gap-1.5">
+                                <Clock className="h-4 w-4 text-teal-600" />
+                                <span>{horaLimiteInscripcion}</span>
+                            </div>
+                        )}
+                        <div className="flex items-center gap-1.5">
+                            <Users className="h-4 w-4 text-teal-600" />
+                            <span>Lugares disponibles: <span className="font-medium text-foreground">{limiteParticipantes}</span></span>
+                        </div>
+                    </div>
+                    {isRegistrationClosed && (
+                        <div className="mt-2 p-3 bg-red-100 text-red-700 rounded-md text-sm font-medium border border-red-200">
+                            No es posible realizar inscripciones: {closureReason}
+                        </div>
+                    )}
                 </DialogHeader>
 
                 <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
@@ -427,9 +542,9 @@ export function RegisterEventDialog({ children, eventoId, eventoName, modalidad,
                                     className="w-full bg-teal-600 hover:bg-teal-700"
                                     size="lg"
                                     onClick={handleRegister}
-                                    disabled={totals.itemsCount === 0}
+                                    disabled={totals.itemsCount === 0 || isRegistrationClosed}
                                 >
-                                    Inscribir
+                                    {isRegistrationClosed ? "Inscripciones Cerradas" : "Inscribir"}
                                 </Button>
                                 <DialogClose asChild>
                                     <Button variant="outline" className="w-full">

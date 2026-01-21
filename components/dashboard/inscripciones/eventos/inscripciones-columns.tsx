@@ -16,6 +16,9 @@ export const columns: ColumnDef<EventosConfiguradosItem>[] = [
                         eventoName={row.original.Nombre}
                         modalidad={row.original.Modalidad}
                         costo={row.original.Costo_base}
+                        fechaFinInscripcion={row.original.F_fin_incripciones}
+                        horaLimiteInscripcion={row.original.Hora_limite_inscripciones}
+                        limiteParticipantes={row.original.Limite_participantes}
                     >
                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-teal-100 text-teal-700">
                             <TicketPlus className="h-4 w-4" />
