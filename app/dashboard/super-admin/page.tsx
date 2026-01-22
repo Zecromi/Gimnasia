@@ -95,7 +95,7 @@ export default function SuperUsuarioPage() {
                             />
                         </div>
                         <div className="flex items-end">
-                            <Button onClick={handleSearch} className="w-full md:w-auto">
+                            <Button onClick={handleSearch} className="w-full md:w-auto bg-[#0EA5E9] hover:bg-[#0284C7] text-white">
                                 <Search className="mr-2 h-4 w-4" />
                                 Buscar
                             </Button>
@@ -130,8 +130,8 @@ export default function SuperUsuarioPage() {
                                             <TableCell>{user.club || "-"}</TableCell>
                                             <TableCell>
                                                 <span className={`px-2 py-1 rounded-full text-xs font-semibold ${user.estado === 'Activo'
-                                                        ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                                        : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                    ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                                    : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
                                                     }`}>
                                                     {user.estado}
                                                 </span>
