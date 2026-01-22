@@ -53,14 +53,17 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className="rounded-md border">
-            <div className="relative w-full overflow-auto">
-                <Table>
-                    <TableHeader>
+            <div className="relative w-full overflow-auto h-[41.75rem]">
+                <table className="w-full caption-bottom text-sm">
+                    <TableHeader className="bg-white dark:bg-teal-950">
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => {
                                     return (
-                                        <TableHead key={header.id}>
+                                        <TableHead
+                                            key={header.id}
+                                            className="sticky top-0 z-10 bg-white dark:bg-teal-950 shadow-sm"
+                                        >
                                             {header.isPlaceholder
                                                 ? null
                                                 : flexRender(
@@ -95,7 +98,7 @@ export function DataTable<TData, TValue>({
                             </TableRow>
                         )}
                     </TableBody>
-                </Table>
+                </table>
             </div>
         </div>
     )
