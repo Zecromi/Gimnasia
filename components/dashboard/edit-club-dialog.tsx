@@ -351,7 +351,7 @@ function EditClubTabs({ className, id, club, estados }: { className?: string, id
 }
 
 function GeneralInfoForm({ id, club, estados }: { id: string, club: ViewClubGral, estados: Estado[] }) {
-    const { register } = useFormContext()
+    const { register, setValue } = useFormContext()
 
     return (
         <div className="space-y-6">

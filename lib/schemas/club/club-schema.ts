@@ -6,7 +6,7 @@ export const clubSchema = z.object({
     asociacion: z.string().default("ESTADO DE MÉXICO"),
     email: z.string().email("Email inválido"),
     web: z.string().optional().or(z.literal("")),
-    fundacion: z.string().min(1, "La fecha de fundación es obligatoria"),
+    fundacion: z.string().optional().or(z.literal("")),
     sector: z.enum(["privado", "publico"]),
     telPrincipal: z.string().min(1, "El teléfono principal es obligatorio"),
     telSecundario: z.string().optional(),

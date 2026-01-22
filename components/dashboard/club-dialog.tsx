@@ -331,49 +331,22 @@ function ClubForm({ className, id, onSubmit }: ClubFormProps) {
                             </InputGroup>
                         </div>
                         <div className="grid grid-cols-12 gap-6">
-                            <InputGroup label="E-mail *" htmlFor="email" className="col-span-12 md:col-span-4">
+                            <InputGroup label="E-mail *" htmlFor="email" className="col-span-12 md:col-span-6">
                                 <Input id="email" type="email" name="email" value={formData.email} onChange={handleInputChange} />
                             </InputGroup>
-                            <InputGroup label="Pagina web" htmlFor="web" className="col-span-12 md:col-span-4">
+                            <InputGroup label="Pagina web" htmlFor="web" className="col-span-12 md:col-span-6">
                                 <Input id="web" name="web" value={formData.web} onChange={handleInputChange} />
                             </InputGroup>
-                            <div className="col-span-12 md:col-span-2 flex flex-col space-y-2">
-                                <Label>Fundación</Label>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                        <Button
-                                            variant={"outline"}
-                                            className={cn(
-                                                "w-full pl-3 text-left font-normal",
-                                                !formData.fundacion && "text-muted-foreground"
-                                            )}
-                                        >
-                                            {formData.fundacion ? (
-                                                format(new Date(formData.fundacion + "T12:00:00"), "P", { locale: es })
-                                            ) : (
-                                                <span>Seleccione</span>
-                                            )}
-                                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                        <Calendar
-                                            locale={es}
-                                            mode="single"
-                                            selected={formData.fundacion ? new Date(formData.fundacion + "T12:00:00") : undefined}
-                                            onSelect={(date) => {
-                                                const dateString = date ? format(date, "yyyy-MM-dd") : ""
-                                                setFormData((prev: any) => ({ ...prev, fundacion: dateString }))
-                                            }}
-                                            disabled={(date) =>
-                                                date > new Date() || date < new Date("1900-01-01")
-                                            }
-                                            initialFocus
-                                        />
-                                    </PopoverContent>
-                                </Popover>
-                            </div>
-                            <div className="col-span-12 md:col-span-2 space-y-3">
+                            <InputGroup label="Fundación" htmlFor="fundacion" className="col-span-12 md:col-span-6">
+                                <Input
+                                    id="fundacion"
+                                    name="fundacion"
+                                    type="date"
+                                    value={formData.fundacion}
+                                    onChange={handleInputChange}
+                                />
+                            </InputGroup>
+                            <div className="col-span-12 md:col-span-6 space-y-3">
                                 <Label>Sector</Label>
                                 <RadioGroup value={formData.sector} onValueChange={(v) => setFormData({ ...formData, sector: v })} className="flex gap-4" name="sector">
                                     <div className="flex items-center space-x-2">

@@ -60,9 +60,17 @@ import { useAuthStore } from "@/lib/store/auth-store"
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { authData } = useAuthStore()
 
+    const [isMounted, setIsMounted] = React.useState(false)
+
+    React.useEffect(() => {
+        setIsMounted(true)
+    }, [])
+
     const filteredItems = items.filter(item => {
         console.log(authData)
         if (item.title === "Eventos") {
+            // During SSR and hydration, emulate the server state (authData is undefined/null)
+            if (!isMounted) return false
             return authData?.tipo_registro === 1
         }
         return true
