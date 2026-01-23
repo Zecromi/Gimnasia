@@ -76,7 +76,7 @@ export interface EventosConfiguradosItem {
     Lugar: string;
     Sede: string;
     Region: string;
-    Limite_participantes: number;
+    Limite_participantes: number | string;
     F_ini_evento: string;
     F_fin_evento: string;
     F_ini_incripciones: string;
@@ -147,7 +147,29 @@ export const getAfiliadosEventos = async (id_Club: string) => {
 
 export const postInscripcion = async (body: any) => {
     console.log(body)
-    //const response = await api.post("/SetInscripcion", body)
-    //return response.data;
-    return true;
+    const response = await api.post("/SetInscripcion", body)
+    return response.data;
+    //return true;
+};
+
+
+export interface AdicionalEventoItem {
+    id_aparato: number;
+    Descripcion: string;
+    Costo: number;
+}
+
+export interface GetAdicionalesResponse {
+    Adicionales: AdicionalEventoItem[];
+}
+
+export const getAdicionales = async (id: string): Promise<GetAdicionalesResponse> => {
+    console.log(id)
+    const response = await api.get<GetAdicionalesResponse>(`/GetEventAdd`, {
+        params: {
+            evento: id
+        }
+    });
+    console.log(response.data);
+    return response.data;
 };

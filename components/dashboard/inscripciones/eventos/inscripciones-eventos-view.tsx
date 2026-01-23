@@ -16,7 +16,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-import { columns } from "./inscripciones-columns"
+import { getColumns } from "./inscripciones-columns"
 import { DataTable } from "@/components/dashboard/data-table"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -336,7 +336,7 @@ export function InscripcionesEventosView() {
                 </div>
             ) : (
                 <DataTable
-                    columns={columns}
+                    columns={getColumns(fetchData)}
                     data={filteredEventos}
                     noResultsMessage="No existen registros de eventos"
                 />

@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
+import Image from "next/image"
 
 export function DashboardHeader() {
     return (
@@ -56,9 +57,15 @@ export function DashboardHeader() {
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.5, type: "spring" }}
-                    className="absolute top-8 right-8 w-24 h-24 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center border border-white/30 hidden md:flex"
+                    className="absolute top-8 right-8 w-24 h-24 rounded-full bg-white flex items-center justify-center border border-white/30 hidden md:flex shadow-xl p-2 overflow-hidden"
                 >
-                    <span className="text-sm font-bold text-white/80">Logo</span>
+                    <Image
+                        src="/logo-gimnasios.png"
+                        alt="Logo"
+                        width={80}
+                        height={80}
+                        className="object-contain"
+                    />
                 </motion.div>
             </div>
         </motion.div>

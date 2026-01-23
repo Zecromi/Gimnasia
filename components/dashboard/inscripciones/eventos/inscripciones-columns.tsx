@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { RegisterEventDialog } from "./register-event-dialog"
 import { EventosConfiguradosItem } from "@/lib/evento-service"
 
-export const columns: ColumnDef<EventosConfiguradosItem>[] = [
+export const getColumns = (onSuccess?: () => void): ColumnDef<EventosConfiguradosItem>[] => [
     {
         id: "inscribirse",
         header: "Inscribirse",
@@ -19,6 +19,7 @@ export const columns: ColumnDef<EventosConfiguradosItem>[] = [
                         fechaFinInscripcion={row.original.F_fin_incripciones}
                         horaLimiteInscripcion={row.original.Hora_limite_inscripciones}
                         limiteParticipantes={row.original.Limite_participantes}
+                        onSuccess={onSuccess}
                     >
                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-teal-100 text-teal-700">
                             <TicketPlus className="h-4 w-4" />

@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { Check, ChevronsUpDown, Calendar, Clock, Users } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -47,18 +47,9 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { useCatalogPayStore } from "@/lib/store/catalog-pay-store"
 import { useAfiliadosEventosStore } from "@/lib/store/afiliados-eventos-store"
-import { postInscripcion } from "@/lib/evento-service"
+import { postInscripcion, getAdicionales, AdicionalEventoItem } from "@/lib/evento-service"
 
-// --- Mock Data ---
-
-const MOCK_ADDITIONAL_ITEMS = [
-    { id: "item1", name: "Caballo con arzones", cost: 250 },
-    { id: "item2", name: "Barras Paralelas", cost: 150 },
-    { id: "item3", name: "Anillos", cost: 400 },
-    { id: "item4", name: "Piso", cost: 200 },
-    { id: "item5", name: "Salto de caballo", cost: 500 },
-    { id: "item6", name: "Viga de equilibrio", cost: 500 },
-]
+// Mock data removed for additional items as they are now dynamic
 
 // --- Types ---
 
@@ -75,7 +66,8 @@ interface RegisterEventDialogProps {
     id_Club?: string
     fechaFinInscripcion?: string
     horaLimiteInscripcion?: string
-    limiteParticipantes?: number
+    limiteParticipantes?: number | string
+    onSuccess?: () => void
 }
 
 export function RegisterEventDialog({
@@ -87,24 +79,45 @@ export function RegisterEventDialog({
     id_Club = "1002",
     fechaFinInscripcion,
     horaLimiteInscripcion,
-    limiteParticipantes = 0
+    limiteParticipantes = 0,
+    onSuccess
 }: RegisterEventDialogProps) {
     const { Catalogo_formas_pago, fetchCatalogs } = useCatalogPayStore()
     const { afiliados, fetchAfiliadosEventos } = useAfiliadosEventosStore()
+    const [open, setOpen] = useState(false)
     const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number | null>(null)
     const [memberConfigs, setMemberConfigs] = useState<Record<string, MemberConfig>>({})
+    const [adicionales, setAdicionales] = useState<AdicionalEventoItem[]>([])
+    const [loadingAdicionales, setLoadingAdicionales] = useState(true)
 
     useEffect(() => {
+        if (!open) return
+
         fetchCatalogs()
         if (id_Club) {
             fetchAfiliadosEventos(id_Club)
         }
-    }, [fetchCatalogs, fetchAfiliadosEventos, id_Club])
+
+        const fetchAdicionales = async () => {
+            if (!eventoId) return
+            try {
+                setLoadingAdicionales(true)
+                const data = await getAdicionales(eventoId)
+                setAdicionales(data.Adicionales || [])
+            } catch (error) {
+                console.error("Error fetching adicionales:", error)
+            } finally {
+                setLoadingAdicionales(false)
+            }
+        }
+
+        fetchAdicionales()
+    }, [open, fetchCatalogs, fetchAfiliadosEventos, id_Club, eventoId])
 
     // Initialize config for new members
     useEffect(() => {
-        if (afiliados.length > 0) {
+        if (open && afiliados.length > 0) {
             setMemberConfigs(prev => {
                 const newConfigs: Record<string, MemberConfig> = { ...prev }
                 afiliados.forEach(member => {
@@ -118,7 +131,7 @@ export function RegisterEventDialog({
                 return newConfigs
             })
         }
-    }, [afiliados])
+    }, [open, afiliados])
 
     const handleSelectMember = (memberId: string, checked: boolean) => {
         const newSelected = new Set(selectedMembers)
@@ -129,6 +142,18 @@ export function RegisterEventDialog({
         }
         setSelectedMembers(newSelected)
     }
+
+    const resetForm = useCallback(() => {
+        setSelectedMembers(new Set())
+        setSelectedPaymentMethod(null)
+        setMemberConfigs(prev => {
+            const resetConfigs: Record<string, MemberConfig> = {}
+            Object.keys(prev).forEach(key => {
+                resetConfigs[key] = { additionalItemIds: [] }
+            })
+            return resetConfigs
+        })
+    }, [])
 
     const handleAdditionalItemToggle = (memberId: string, itemId: string) => {
         setMemberConfigs(prev => {
@@ -154,39 +179,6 @@ export function RegisterEventDialog({
     // Check registration status
     useEffect(() => {
         const checkStatus = () => {
-            // 1. Check Capacity
-            // If limit is 0, it means NO spots available (based on user request "cuando este ya este en cero")
-            // Or if it usually means "unlimited" when 0, we'd need that clarification. 
-            // But user said: "cuando este ya este en cero, tampoco permitiremos inscribir mas".
-            // Let's assume the API passes "Remaining Spots" or we treat 0 as FULL.
-            // If the field is "Limite_participantes" from the event config, usually 0 means unlimited.
-            // BUT, the User Request specifically says: "usaremos el limite de participantes y cuando este ya este en cero, tampoco permitiremos inscribir mas".
-            // This implies the value passed IS the remaining limit or a decremented counter. 
-            // However, typically "Limite_participantes" is a static config. 
-            // If it's a static config, we'd need to know current participants to compare.
-            // Given the phrasing "when this is ALREADY at zero", it sounds like it might be a remaining counter.
-            // OR checks if the static limit is 0 -> usually means disabled? Or fully booked?
-            // "0 = Ilimitado" is common in this app (seen in NewEventoDialog).
-            // Let's re-read: "cuando este ya este en cero".
-            // If I look at the `EventosConfiguradosItem` in `evento-service.ts`, it has `Limite_participantes: number`.
-            // In `new-evento-dialog.tsx`, placeholder says "0 = Ilimitado".
-            // SO 0 usually means Infinity.
-            // GLOBAL CONTRADICTION: user says "when it is zero, do not allow".
-            // HYPOTHESIS: The user might be referring to a "cupo disponible" (available spots) calculated field, OR they want to change the meaning of 0 to be "Closed/Full", OR they simply mean "when the limit is reached".
-            // Since I only have `limiteParticipantes` (which likely comes from `Limite_participantes` in DB), if passed as 0, it likely means unlimited.
-            // BUT user said "when it is zero... do not allow". 
-            // I will implement strictly as requested: IF limit == 0 => CLOSED.
-            // Wait, if 0 is unlimited, then blocking at 0 breaks "unlimited" events.
-            // Let's check the context. Maybe they want to block if limit > 0 AND (current >= limit).
-            // But I don't have "current participants".
-            // Maybe the `Limite_participantes` field in the VIEW has been updated to represent "Available"?
-            // Checking `inscripciones-columns.tsx`: `EventosConfiguradosItem` has `Limite_participantes`.
-            // Reference `new-evento-dialog.tsx`: `placeholder="0 = Ilimitado"`.
-            // If I block at 0, I block unlimited events.
-            // I will err on the side of "User Request overrides standard convention" or "User means a different field".
-            // Since I only have the column data, I will obey "when this is zero, do not allow".
-            // Perhaps they manually set it to 0 to close it? 
-            // OR maybe I should check if it is explicitly 0.
 
             // Let's look at date validation first.
             let closed = false
@@ -206,7 +198,7 @@ export function RegisterEventDialog({
 
             // Check capacity
             // Strict interpretation: if limit is 0, block. 
-            // This might mean "No spots left".
+            // If it is "Ilimitado", it does NOT block.
             if (!closed && limiteParticipantes === 0) {
                 closed = true
                 reason = "Cupo lleno (0 lugares disponibles)."
@@ -245,8 +237,8 @@ export function RegisterEventDialog({
             let itemsCost = 0
             if (config) {
                 config.additionalItemIds.forEach(itemId => {
-                    const item = MOCK_ADDITIONAL_ITEMS.find(i => i.id === itemId)
-                    if (item) itemsCost += item.cost
+                    const item = adicionales.find(i => String(i.id_aparato) === itemId)
+                    if (item) itemsCost += item.Costo
                 })
             }
 
@@ -283,7 +275,7 @@ export function RegisterEventDialog({
                     id: eventoId,
                     id_club: id_Club, // Should come from session/context or prop
                     total: totals.totalCost.toString(),
-                    id_tipo_pago: selectedPaymentMethod
+                    id_tipo_pago: String(selectedPaymentMethod)
                 },
                 detalle_afiliados
             }
@@ -294,7 +286,10 @@ export function RegisterEventDialog({
                 description: `Se han inscrito ${totals.itemsCount} miembros. Método de pago: ${paymentMethod?.Nombre}`,
             })
 
-            // Optional: Close dialog or reset state here
+            // Reset form, trigger refresh, and close dialog
+            resetForm()
+            if (onSuccess) onSuccess()
+            setOpen(false)
 
         } catch (error) {
             console.error("Error registering:", error)
@@ -310,7 +305,7 @@ export function RegisterEventDialog({
     }
 
     return (
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -325,7 +320,7 @@ export function RegisterEventDialog({
             </TooltipProvider>
 
             <DialogContent
-                className="max-w-[95vw] w-full lg:max-w-7xl h-[85vh] gap-0 p-0 overflow-hidden flex flex-col"
+                className="max-w-[95vw] w-full lg:max-w-7xl max-h-[95vh] h-fit gap-0 p-0 flex flex-col overflow-hidden"
                 onInteractOutside={(e) => e.preventDefault()}
             >
                 <DialogHeader className="p-6 pb-4">
@@ -358,28 +353,28 @@ export function RegisterEventDialog({
                 <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
                     {/* Left Column: Member Table */}
                     <div className="flex-1 border-r flex flex-col min-w-0">
-                        <div className="p-4 border-b bg-muted/30 grid grid-cols-[40px_1fr_1.5fr_1.5fr] gap-4 items-center text-sm font-medium text-muted-foreground mr-4">
+                        <div className="p-4 border-b bg-muted/30 grid grid-cols-[40px_minmax(100px,1.2fr)_minmax(150px,1.5fr)_minmax(150px,1.5fr)] gap-4 items-center text-sm font-medium text-muted-foreground">
                             <Checkbox
                                 checked={selectedMembers.size === afiliados.length && afiliados.length > 0}
                                 onCheckedChange={(checked) => toggleAll(!!checked)}
                             />
-                            <span>Nombre</span>
-                            <span>Costo (Modalidad)</span>
-                            <span>Aparatos Adicionales</span>
+                            <span className="truncate">Nombre</span>
+                            <span className="truncate">Costo (Modalidad)</span>
+                            <span className="truncate">Aparatos Adicionales</span>
                         </div>
-                        <ScrollArea className="flex-1">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
                             <div className="p-4 min-w-[600px]"> {/* Ensure min width for table content */}
                                 <div className="space-y-4">
                                     {afiliados.map((member) => {
                                         const memberId = String(member.id_afiliado);
                                         const fullName = `${member.Nombre} ${member.Paterno} ${member.Materno || ""}`.trim();
                                         return (
-                                            <div key={memberId} className="grid grid-cols-[40px_1fr_1.5fr_1.5fr] gap-4 items-center">
+                                            <div key={memberId} className="grid grid-cols-[40px_minmax(100px,1.2fr)_minmax(150px,1.5fr)_minmax(150px,1.5fr)] gap-4 items-center py-1">
                                                 <Checkbox
                                                     checked={selectedMembers.has(memberId)}
                                                     onCheckedChange={(checked) => handleSelectMember(memberId, !!checked)}
                                                 />
-                                                <span className="text-sm font-medium">{fullName}</span>
+                                                <span className="text-sm font-medium truncate" title={fullName}>{fullName}</span>
 
                                                 <div className="flex flex-col justify-center h-8 px-3 border rounded-md bg-muted/50 text-sm">
                                                     <div className="flex justify-between w-full gap-2">
@@ -394,13 +389,16 @@ export function RegisterEventDialog({
                                                             variant="outline"
                                                             role="combobox"
                                                             className="min-h-8 h-auto w-full justify-between"
+                                                            disabled={adicionales.length === 0 || loadingAdicionales}
                                                         >
-                                                            {memberConfigs[memberId]?.additionalItemIds?.length > 0 ? (
+                                                            {adicionales.length === 0 ? (
+                                                                <span className="text-muted-foreground font-normal">Sin adicionales</span>
+                                                            ) : memberConfigs[memberId]?.additionalItemIds?.length > 0 ? (
                                                                 <span className="truncate">
                                                                     {memberConfigs[memberId].additionalItemIds.length > 2
                                                                         ? `${memberConfigs[memberId].additionalItemIds.length} seleccionados`
                                                                         : memberConfigs[memberId].additionalItemIds
-                                                                            .map(id => MOCK_ADDITIONAL_ITEMS.find(i => i.id === id)?.name)
+                                                                            .map(id => adicionales.find(i => String(i.id_aparato) === id)?.Descripcion)
                                                                             .join(", ")
                                                                     }
                                                                 </span>
@@ -416,23 +414,23 @@ export function RegisterEventDialog({
                                                             <CommandList>
                                                                 <CommandEmpty>No se encontraron aparatos.</CommandEmpty>
                                                                 <CommandGroup>
-                                                                    {MOCK_ADDITIONAL_ITEMS.map((item) => (
+                                                                    {adicionales.map((item) => (
                                                                         <CommandItem
-                                                                            key={item.id}
-                                                                            value={item.name}
-                                                                            onSelect={() => handleAdditionalItemToggle(memberId, item.id)}
+                                                                            key={String(item.id_aparato)}
+                                                                            value={item.Descripcion}
+                                                                            onSelect={() => handleAdditionalItemToggle(memberId, String(item.id_aparato))}
                                                                         >
                                                                             <Check
                                                                                 className={cn(
                                                                                     "mr-2 h-4 w-4",
-                                                                                    memberConfigs[memberId]?.additionalItemIds?.includes(item.id)
+                                                                                    memberConfigs[memberId]?.additionalItemIds?.includes(String(item.id_aparato))
                                                                                         ? "opacity-100"
                                                                                         : "opacity-0"
                                                                                 )}
                                                                             />
                                                                             <div className="flex justify-between w-full">
-                                                                                <span>{item.name}</span>
-                                                                                <span className="text-muted-foreground">{formatCurrency(item.cost)}</span>
+                                                                                <span>{item.Descripcion}</span>
+                                                                                <span className="text-muted-foreground">{formatCurrency(item.Costo)}</span>
                                                                             </div>
                                                                         </CommandItem>
                                                                     ))}
@@ -446,16 +444,16 @@ export function RegisterEventDialog({
                                     })}
                                 </div>
                             </div>
-                        </ScrollArea>
+                        </div>
                     </div>
 
                     {/* Right Column: Summary */}
-                    <div className="w-[350px] bg-muted/10 flex flex-col border-l">
-                        <div className="p-2 border-b bg-muted/20">
+                    <div className="w-full lg:w-[400px] bg-muted/10 flex flex-col border-t lg:border-t-0 lg:border-l">
+                        <div className="p-4 border-b bg-muted/20">
                             <h3 className="font-semibold text-lg">Resumen</h3>
                         </div>
 
-                        <ScrollArea className="flex-1">
+                        <div className="flex-1 overflow-y-auto custom-scrollbar">
                             <div className="p-6 space-y-6">
                                 {selectedMembers.size === 0 ? (
                                     <p className="text-sm text-center text-muted-foreground py-10">
@@ -467,8 +465,8 @@ export function RegisterEventDialog({
                                         const config = memberConfigs[memberId]
                                         // const modality = MOCK_MODALITIES.find((m) => m.id === config.modalityId)
                                         const additionalItems = config?.additionalItemIds
-                                            .map((id) => MOCK_ADDITIONAL_ITEMS.find((i) => i.id === id))
-                                            .filter((item): item is typeof MOCK_ADDITIONAL_ITEMS[0] => !!item) || []
+                                            .map((id) => adicionales.find((i) => String(i.id_aparato) === id))
+                                            .filter((item): item is AdicionalEventoItem => !!item) || []
 
                                         if (!member) return null
                                         const fullName = `${member.Nombre} ${member.Paterno} ${member.Materno || ""}`.trim();
@@ -487,9 +485,9 @@ export function RegisterEventDialog({
                                                         <span className="shrink-0">{formatCurrency(parseFloat(costo) || 0)}</span>
                                                     </div>
                                                     {additionalItems.map((item) => (
-                                                        <div key={item.id} className="flex justify-between text-muted-foreground">
-                                                            <span className="truncate pr-2">+ {item.name}</span>
-                                                            <span className="shrink-0">{formatCurrency(item.cost)}</span>
+                                                        <div key={String(item.id_aparato)} className="flex justify-between text-muted-foreground">
+                                                            <span className="truncate pr-2">+ {item.Descripcion}</span>
+                                                            <span className="shrink-0">{formatCurrency(item.Costo)}</span>
                                                         </div>
                                                     ))}
                                                 </div>
@@ -499,7 +497,7 @@ export function RegisterEventDialog({
                                     })
                                 )}
                             </div>
-                        </ScrollArea>
+                        </div>
 
                         <div className="p-6 bg-background border-t space-y-4 shadow-sm">
                             <div className="space-y-4">
