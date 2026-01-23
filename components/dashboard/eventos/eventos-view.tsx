@@ -1,7 +1,7 @@
 "use client"
 
 import { Suspense, lazy, useEffect, useState, useCallback, useMemo } from "react"
-import { Search, Calendar as CalendarIcon } from "lucide-react"
+import { BrushCleaning, Calendar as CalendarIcon } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -29,11 +29,23 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { getEventos, EventoResponseItem } from "@/lib/evento-service"
+import { useCatalogStore } from "@/lib/store/catalog-store"
 
 export function EventosView() {
+    const { Catalogo_eventos, fetchCatalogs } = useCatalogStore()
     const [isLoading, setIsLoading] = useState(true)
-    const [date, setDate] = useState<Date>()
     const [eventos, setEventos] = useState<EventoResponseItem[]>([])
+
+    // Filters
+    const [filterId, setFilterId] = useState("")
+    const [filterOrganizador, setFilterOrganizador] = useState("todos")
+    const [filterTipo, setFilterTipo] = useState("todos")
+    const [filterRegion, setFilterRegion] = useState("todas")
+    const [date, setDate] = useState<Date>()
+
+    // Modalidad & Pirámide placeholders (no data in model yet)
+    // const [filterModalidad, setFilterModalidad] = useState("todas")
+    // const [filterPiramide, setFilterPiramide] = useState("todas")
 
     const fetchData = useCallback(async () => {
         try {
@@ -50,9 +62,61 @@ export function EventosView() {
 
     useEffect(() => {
         fetchData()
-    }, [fetchData])
+        fetchCatalogs()
+    }, [fetchData, fetchCatalogs])
 
     const columns = useMemo(() => getColumns(fetchData), [fetchData])
+
+    // Derived unique options
+    const uniqueOrganizadores = useMemo(() => {
+        const orgs = new Set(eventos.map(e => e.Organizador).filter(Boolean))
+        return Array.from(orgs).sort()
+    }, [eventos])
+
+    const uniqueRegions = useMemo(() => {
+        const regs = new Set(eventos.map(e => e.Region).filter(Boolean))
+        return Array.from(regs).sort()
+    }, [eventos])
+
+    // Filtering Logic
+    const filteredEventos = useMemo(() => {
+        return eventos.filter(evento => {
+            // Filter by ID
+            if (filterId && !String(evento.id).includes(filterId)) return false
+
+            // Filter by Organizador
+            if (filterOrganizador !== "todos" && evento.Organizador !== filterOrganizador) return false
+
+            // Filter by Tipo de Evento (using id_Evento)
+            if (filterTipo !== "todos" && String(evento.id_Evento) !== filterTipo) return false
+
+            // Filter by Region
+            if (filterRegion !== "todas" && evento.Region !== filterRegion) return false
+
+            // Filter by Date
+            if (date) {
+                const eventDate = new Date(evento.F_ini_evento)
+                // Compare Year-Month-Day
+                if (
+                    eventDate.getFullYear() !== date.getFullYear() ||
+                    eventDate.getMonth() !== date.getMonth() ||
+                    eventDate.getDate() !== date.getDate()
+                ) {
+                    return false
+                }
+            }
+
+            return true
+        })
+    }, [eventos, filterId, filterOrganizador, filterTipo, filterRegion, date])
+
+    const handleClearFilters = () => {
+        setFilterId("")
+        setFilterOrganizador("todos")
+        setFilterTipo("todos")
+        setFilterRegion("todas")
+        setDate(undefined)
+    }
 
     if (isLoading) {
         return (
@@ -67,12 +131,6 @@ export function EventosView() {
                         <div className="grid grid-cols-12 gap-4">
                             <div className="col-span-11">
                                 <div className="grid gap-4">
-                                    <div className="grid gap-3 md:grid-cols-12">
-                                        <Skeleton className="h-8 md:col-span-3" />
-                                        <Skeleton className="h-8 md:col-span-3" />
-                                        <Skeleton className="h-8 md:col-span-3" />
-                                        <Skeleton className="h-8 md:col-span-3" />
-                                    </div>
                                     <div className="grid gap-3 md:grid-cols-12">
                                         <Skeleton className="h-8 md:col-span-3" />
                                         <Skeleton className="h-8 md:col-span-3" />
@@ -106,12 +164,18 @@ export function EventosView() {
                                 {/* Row 1 */}
                                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                                     <InputGroup label="No. Evento :" htmlFor="no-evento">
-                                        <Input id="no-evento" className="h-8" />
+                                        <Input
+                                            id="no-evento"
+                                            className="h-8"
+                                            placeholder="Buscar por ID..."
+                                            value={filterId}
+                                            onChange={(e) => setFilterId(e.target.value)}
+                                        />
                                     </InputGroup>
                                     <InputGroup label="Modalidad :">
-                                        <Select>
+                                        <Select disabled>
                                             <SelectTrigger className="h-8">
-                                                <SelectValue placeholder="Seleccionar" />
+                                                <SelectValue placeholder="Todas" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="todas">Todas</SelectItem>
@@ -119,9 +183,9 @@ export function EventosView() {
                                         </Select>
                                     </InputGroup>
                                     <InputGroup label="Pirámide :">
-                                        <Select>
+                                        <Select disabled>
                                             <SelectTrigger className="h-8">
-                                                <SelectValue placeholder="Seleccionar" />
+                                                <SelectValue placeholder="Todas" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="todas">Todas</SelectItem>
@@ -129,12 +193,15 @@ export function EventosView() {
                                         </Select>
                                     </InputGroup>
                                     <InputGroup label="Organizador :">
-                                        <Select>
+                                        <Select value={filterOrganizador} onValueChange={setFilterOrganizador}>
                                             <SelectTrigger className="h-8">
                                                 <SelectValue placeholder="Seleccionar" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="todos">Todos</SelectItem>
+                                                {uniqueOrganizadores.map(org => (
+                                                    <SelectItem key={org} value={org}>{org}</SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </InputGroup>
@@ -143,22 +210,30 @@ export function EventosView() {
                                 {/* Row 2 */}
                                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-end">
                                     <InputGroup label="Tipo de evento :">
-                                        <Select>
+                                        <Select value={filterTipo} onValueChange={setFilterTipo}>
                                             <SelectTrigger className="h-8">
                                                 <SelectValue placeholder="Seleccionar" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="todos">Todos</SelectItem>
+                                                {Catalogo_eventos.map(tipo => (
+                                                    <SelectItem key={tipo.id_Evento} value={String(tipo.id_Evento)}>
+                                                        {tipo.Nombre}
+                                                    </SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </InputGroup>
                                     <InputGroup label="Región de evento :">
-                                        <Select>
+                                        <Select value={filterRegion} onValueChange={setFilterRegion}>
                                             <SelectTrigger className="h-8">
                                                 <SelectValue placeholder="Seleccionar" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="todas">Todas</SelectItem>
+                                                {uniqueRegions.map(reg => (
+                                                    <SelectItem key={reg} value={reg}>{reg}</SelectItem>
+                                                ))}
                                             </SelectContent>
                                         </Select>
                                     </InputGroup>
@@ -186,18 +261,18 @@ export function EventosView() {
                                                     mode="single"
                                                     selected={date}
                                                     onSelect={setDate}
-                                                    disabled={(date) =>
-                                                        date > new Date() || date < new Date("1900-01-01")
-                                                    }
                                                     initialFocus
                                                 />
                                             </PopoverContent>
                                         </Popover>
                                     </InputGroup>
                                     <div>
-                                        <Button className="w-full bg-teal-600 hover:bg-teal-700 text-white h-8">
-                                            <Search className="mr-2 h-4 w-4" />
-                                            Filtrar
+                                        <Button
+                                            className="w-full bg-teal-600 hover:bg-teal-700 text-white h-8"
+                                            onClick={handleClearFilters}
+                                        >
+                                            <BrushCleaning className="mr-2 h-4 w-4" />
+                                            Limpiar Filtros
                                         </Button>
                                     </div>
                                 </div>
@@ -212,7 +287,7 @@ export function EventosView() {
                 </CardContent>
             </Card>
 
-            <DataTable columns={columns} data={eventos} />
+            <DataTable columns={columns} data={filteredEventos} />
         </div>
     )
 }
