@@ -47,6 +47,7 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { useCatalogPayStore } from "@/lib/store/catalog-pay-store"
 import { useAfiliadosEventosStore } from "@/lib/store/afiliados-eventos-store"
+import { useAuthStore } from "@/lib/store/auth-store"
 import { postInscripcion, getAdicionales, AdicionalEventoItem } from "@/lib/evento-service"
 
 // Mock data removed for additional items as they are now dynamic
@@ -76,12 +77,15 @@ export function RegisterEventDialog({
     eventoName,
     modalidad,
     costo,
-    id_Club = "1002",
+    id_Club,
     fechaFinInscripcion,
     horaLimiteInscripcion,
     limiteParticipantes = 0,
     onSuccess
 }: RegisterEventDialogProps) {
+    const { authData } = useAuthStore()
+    const clubIdToUse = id_Club || authData?.id?.toString()
+
     const { Catalogo_formas_pago, fetchCatalogs } = useCatalogPayStore()
     const { afiliados, fetchAfiliadosEventos } = useAfiliadosEventosStore()
     const [open, setOpen] = useState(false)
@@ -95,8 +99,8 @@ export function RegisterEventDialog({
         if (!open) return
 
         fetchCatalogs()
-        if (id_Club) {
-            fetchAfiliadosEventos(id_Club)
+        if (clubIdToUse) {
+            fetchAfiliadosEventos(clubIdToUse)
         }
 
         const fetchAdicionales = async () => {
@@ -113,7 +117,7 @@ export function RegisterEventDialog({
         }
 
         fetchAdicionales()
-    }, [open, fetchCatalogs, fetchAfiliadosEventos, id_Club, eventoId])
+    }, [open, fetchCatalogs, fetchAfiliadosEventos, clubIdToUse, eventoId])
 
     // Initialize config for new members
     useEffect(() => {
@@ -273,7 +277,7 @@ export function RegisterEventDialog({
             const payload = {
                 inscripcion: {
                     id: eventoId,
-                    id_club: id_Club, // Should come from session/context or prop
+                    id_club: clubIdToUse || "",
                     total: totals.totalCost.toString(),
                     id_tipo_pago: String(selectedPaymentMethod)
                 },
