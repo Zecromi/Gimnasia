@@ -30,6 +30,8 @@ import { getAfiliadosCatalogs, Afiliado } from "@/lib/afiliados-service"
 import { useCatalogStore } from "@/lib/store/catalog-store"
 import { useAuthStore } from "@/lib/store/auth-store"
 
+import Cookies from "js-cookie"
+
 export function AfiliadosView() {
     const [isLoading, setIsLoading] = useState(true)
     const [afiliados, setAfiliados] = useState<Afiliado[]>([])
@@ -45,6 +47,7 @@ export function AfiliadosView() {
     const [filterEstatus, setFilterEstatus] = useState("todos")
     const [filterNoAfiliado, setFilterNoAfiliado] = useState("")
     const [filterCurp, setFilterCurp] = useState("")
+    const [debugStr, setDebugStr] = useState("Waiting...")
 
     useEffect(() => {
         // If not admin, force filterClub to user's club ID
@@ -62,19 +65,40 @@ export function AfiliadosView() {
             fetchCatalogs()
 
             const [data, clubsData] = await Promise.all([
-                getAfiliadosCatalogs(),
+                getAfiliadosCatalogs(authData?.id, authData?.tipo_registro),
                 getClubs()
             ])
-            console.log("AfiliadosView: data fetched", data.Afiliados?.length) // Debug log
+
+            // Capture debug info
+            const t = Cookies.get("token");
+            const debugInfo = {
+                type: typeof data,
+                keys: data && typeof data === 'object' ? Object.keys(data) : 'not-object',
+                hasAfiliados: !!(data as any)?.Afiliados,
+                afiliadosLen: (data as any)?.Afiliados?.length,
+                token: t ? t.substring(0, 15) + "..." : "NONE"
+            }
+            setDebugStr(JSON.stringify(debugInfo))
+
+            console.log("AfiliadosView: data fetched", data.Afiliados?.length)
             if (data && data.Afiliados) {
                 let allAfiliados = data.Afiliados
 
+                console.log("AuthData:", authData)
+
                 // Permission Filter: If not admin (type 1), only show members of their own club
                 // eslint-disable-next-line eqeqeq
+                /*
                 if (authData && authData.tipo_registro != 1) {
+                    console.log(`Filtering for Club ID: ${authData.id}`)
                     // eslint-disable-next-line eqeqeq
                     allAfiliados = allAfiliados.filter(a => a.id_Club == authData.id)
+                    console.log("Filtered count (Permission):", allAfiliados.length)
+                } else {
+                    console.log("Showing all (Admin or No Auth)")
                 }
+                */
+                console.log("Showing all (Permission Filter Disabled for Debug)")
 
                 setAfiliados(allAfiliados)
                 setFilteredAfiliados(allAfiliados)
@@ -168,6 +192,10 @@ export function AfiliadosView() {
     return (
         <TooltipProvider>
             <div className="space-y-6">
+                {/* DEBUG BANNER */}
+                <div className="bg-yellow-100 p-2 text-xs border border-yellow-300 text-black font-mono break-all">
+                    RAW: {debugStr} <br /> STATE: {afiliados.length} | AUTH: {authData?.id}
+                </div>
                 <Card className="rounded-2xl border-none shadow-none bg-gray-50 dark:bg-zinc-900">
                     <CardHeader className="pt-2 pb-0">
                         <CardTitle>

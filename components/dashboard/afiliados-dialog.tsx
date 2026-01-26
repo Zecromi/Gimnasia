@@ -206,6 +206,42 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
             return
         }
 
+        console.log("handleSubmit processing data:", data);
+
+        // Validate required fields
+        const requiredFields: Record<string, string> = {
+            club: "Club",
+            nombre: "Nombre",
+            apellidoPaterno: "Apellido Paterno",
+            fechaNacimiento: "Fecha de Nacimiento",
+            curp: "CURP",
+            escolaridad: "Escolaridad",
+            calle: "Calle",
+            numExt: "Número Exterior",
+            colonia: "Colonia",
+            municipio: "Municipio",
+            estado: "Estado",
+            cp: "Código Postal",
+            telParticular: "Teléfono Particular",
+            tipoAfiliadoPrincipal: "Afiliación Principal",
+            nivelTecnico: "Nivel Técnico"
+        }
+
+        for (const [key, label] of Object.entries(requiredFields)) {
+            if (!data[key] || data[key].trim() === "") {
+                console.warn(`Validation failed: ${label} is missing.`);
+                toast.error(`El campo ${label} es obligatorio`)
+                return
+            }
+        }
+
+        if (data.curp && data.curp.trim().length !== 18) {
+            toast.error("El CURP debe tener exactamente 18 caracteres")
+            return
+        }
+
+        const defaultModalidad = afiliado?.Modalidad?.toString() || Modalidades?.[0]?.id?.toString() || "1"
+
         if (afiliado) {
             // Edit Mode
             const changes: { campo: string; valor: string }[] = []
@@ -266,8 +302,12 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
             }
 
             for (const [formKey, backendField] of Object.entries(fieldMap)) {
-                const newValue = data[formKey] || ""
+                let newValue = data[formKey] || ""
                 const originalValue = getOriginalValue(formKey) || ""
+
+                if (formKey === 'curp') {
+                    newValue = newValue.toUpperCase();
+                }
 
                 if (newValue !== originalValue) {
                     changes.push({ campo: backendField, valor: newValue })
@@ -295,10 +335,10 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                 nombre: data.nombre,
                 paterno: data.apellidoPaterno,
                 materno: data.apellidoMaterno,
-                id_Club: data.club, // select returns value
+                id_Club: data.club,
                 fecha_nacimiento: data.fechaNacimiento,
-                curp: data.curp,
-                genero: data.genero,
+                curp: data.curp.toUpperCase(),
+                genero: data.genero === "masculino" ? "M" : "F",
                 escolaridad: data.escolaridad,
                 calle: data.calle,
                 exterior: data.numExt,
@@ -310,17 +350,24 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                 telefono_c: data.telParticular,
                 telefono_cel: data.telCelular,
                 afiliacion_p: data.tipoAfiliadoPrincipal,
-                afiliacion_s: data.tipoAfiliadoSecundario,
-                afiliacion_t: data.tipoAfiliadoTercero,
-                afiliacion_c: data.tipoAfiliadoCuarto,
-                id_nivel_tec: data.nivelTecnico
+                afiliacion_s: data.tipoAfiliadoSecundario || "",
+                afiliacion_3: data.tipoAfiliadoTercero || "",
+                afiliacion_4: data.tipoAfiliadoCuarto || "",
+                id_nivel_tec: data.nivelTecnico,
+                modalidad: defaultModalidad
             }
 
+            console.log("Final Payload to API:", payload);
+
             try {
-                console.log("Sending payload:", payload)
+                console.log("Calling createAfiliado...");
                 await createAfiliado(payload)
                 toast.success("Afiliado creado exitosamente")
-                onSuccess?.()
+
+                // Small delay to ensure backend consistency before refetching
+                setTimeout(() => {
+                    onSuccess?.()
+                }, 500)
             } catch (error) {
                 console.error("Error creating afiliado:", error)
                 toast.error("Error al crear el afiliado")
