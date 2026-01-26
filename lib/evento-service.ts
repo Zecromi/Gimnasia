@@ -64,10 +64,34 @@ export interface EventoResponseItem {
     Hora_limite_inscripciones: string;
     Status: string;
     Restriccion: string;
+
+}
+export interface EventosConfiguradosItem {
+    id: number;
+    id_Evento: number;
+    Modalidad: string;
+    Organizador: string;
+    Asociacion: string;
+    Nombre: string;
+    Lugar: string;
+    Sede: string;
+    Region: string;
+    Limite_participantes: number | string;
+    F_ini_evento: string;
+    F_fin_evento: string;
+    F_ini_incripciones: string;
+    F_fin_incripciones: string;
+    Hora_limite_inscripciones: string;
+    Status: string;
+    Restriccion: string;
+    Costo_base: string;
+    Costo_grupo: string;
+    es_grupo: string;
 }
 
 export interface GetEventosResponse {
     Eventos: EventoResponseItem[];
+    Eventos_configurados: EventosConfiguradosItem[];
 }
 
 export const getEventos = async () => {
@@ -95,5 +119,57 @@ export const postBlock = async (User: string, tipo: string) => {
         },
     });
     console.log(response.data)
+    return response.data;
+};
+
+
+
+export interface AfiliadoItem {
+    id_afiliado: number;
+    Nombre: string;
+    Paterno: string;
+    Materno: string;
+}
+
+export interface AfiliadosEventosResponse {
+    Afiliados_base: AfiliadoItem[];
+}
+
+export const getAfiliadosEventos = async (id_Club: string) => {
+    const response = await api.get<AfiliadosEventosResponse>("/GetAfiliados_base", {
+        params: {
+            id_Club,
+        },
+    });
+    return response.data;
+};
+
+
+export const postInscripcion = async (body: any) => {
+    console.log(body)
+    const response = await api.post("/SetInscripcion", body)
+    return response.data;
+    //return true;
+};
+
+
+export interface AdicionalEventoItem {
+    id_aparato: number;
+    Descripcion: string;
+    Costo: number;
+}
+
+export interface GetAdicionalesResponse {
+    Adicionales: AdicionalEventoItem[];
+}
+
+export const getAdicionales = async (id: string): Promise<GetAdicionalesResponse> => {
+    console.log(id)
+    const response = await api.get<GetAdicionalesResponse>(`/GetEventAdd`, {
+        params: {
+            evento: id
+        }
+    });
+    console.log(response.data);
     return response.data;
 };

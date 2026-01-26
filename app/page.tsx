@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { User, Lock, Eye, EyeOff, Sun, Moon, Loader2, Heading1 } from "lucide-react";
-import Link from "next/link";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
@@ -45,28 +44,28 @@ export default function LoginPage() {
 
     try {
       const data = await login(cleanUsuario, cleanPassword);
-      console.log("Login successful:", data);
+      console.log("Login successful (token obtained):", data);
 
-      if (data) {
+      if (data && (data.token || data.token == null)) {
+        // Note: API might return just { token: "..." } or similar. Adjust checks as needed based on actual API response structure.
+        // Provided code suggests data.token check.
+
+        // Now validate permissions via GetPass BEFORE setting session
+        try {
+          const passData = await getPass(cleanUsuario, cleanPassword);
+          if (passData && passData.length > 0) {
+            setAuthData(passData[0]);
+          }
+        } catch (err) {
+          console.warn("GetPass failed but login proceeded", err);
+        }
+
+        // Restore missing Cookie set!
         const tokenToStore = data.token ? data.token : JSON.stringify(data);
         Cookies.set('token', tokenToStore, { expires: 1 });
 
-        // Second Auth Step
-        try {
-          const passData = await getPass(cleanUsuario, cleanPassword);
-
-          if (passData && passData.length > 0) {
-            const permissions = passData[0];
-            setAuthData(permissions);
-          } else {
-            console.warn("GetPass returned empty array or null for user:", cleanUsuario);
-          }
-        } catch (passError) {
-          console.error("Error calling GetPass:", passError);
-          // We don't block login if this fails, but user won't have permissions
-        }
-
         router.push("/dashboard");
+
       } else {
         setError("Credenciales inválidas");
       }
@@ -158,12 +157,6 @@ export default function LoginPage() {
                 </div>
               </div>
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-white dark:text-zinc-300 font-medium transition-colors duration-500">Contraseña</Label>
-                  <Link href="#" className="text-xs text-white dark:text-[#00a896] hover:text-gray-200 dark:hover:text-[#008f80] font-medium transition-colors duration-500">
-                    ¿Olvidaste tu contraseña?
-                  </Link>
-                </div>
                 <div className="relative">
                   <Input
                     id="password"
@@ -209,10 +202,6 @@ export default function LoginPage() {
                 )}
               </Button>
             </form>
-          </div>
-
-          <div className="mt-8 text-center text-xs text-gray-200 dark:text-zinc-500 transition-colors duration-500">
-            <p className=" transition-colors">Powered by Next.js</p>
           </div>
         </motion.div>
 

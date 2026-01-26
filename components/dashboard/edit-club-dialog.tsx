@@ -1,11 +1,12 @@
 "use client"
 
 import * as React from "react"
-import { CircleFadingArrowUp, Upload, Key, Database, Building2, Lock, RefreshCw, FileText, Copy, Check } from "lucide-react"
+import { CircleFadingArrowUp, Upload, Key, Database, Building2, Lock, RefreshCw, FileText, Copy, Check, Save, Eye, EyeOff } from "lucide-react"
 
 import { useForm, FormProvider, useFormContext } from "react-hook-form"
 import { toast } from "sonner"
-import { updateClub, mapStateToClubPayload, getClubDetail, getGlobalInfo, Estado } from "@/lib/club-service"
+import { updateClub, mapStateToClubPayload, getClubDetail, getGlobalInfo, Estado, setSeg, SetSegPayload } from "@/lib/club-service"
+import { useAuthStore } from "@/lib/store/auth-store"
 
 
 import { cn } from "@/lib/utils"
@@ -128,7 +129,11 @@ export function EditClubDialog({ club, children }: EditClubDialogProps) {
             otros: club.Tipos_aparatos_otros,
 
             tipoInstalaciones: club.Tipo_instalaciones ? "rentadas" : "propias", // Check logic: 1 rentada (true), 0 propia (false)
-            organismos: false // Not in ViewClubGral
+            organismos: false, // Not in ViewClubGral
+
+            // Access Control
+            usuarioAccess: club.usuario || `admin.${club.Club?.toLowerCase().replace(/\s/g, '') || ''}`,
+            passwordAccess: club.password || ""
         }
     })
 
@@ -598,6 +603,10 @@ function ModalidadesForm({ id, club }: { id: string, club: ViewClubGral }) {
 
 function AccesoForm({ id, club }: { id: string, club: ViewClubGral }) {
     const [showDisableDialog, setShowDisableDialog] = React.useState(false)
+    const [showPassword, setShowPassword] = React.useState(false)
+    const [debugPayload, setDebugPayload] = React.useState<string>("")
+    const { register, getValues } = useFormContext()
+    const authData = useAuthStore((state) => state.authData)
 
     const handleDisableAccess = async () => {
         try {
@@ -608,6 +617,38 @@ function AccesoForm({ id, club }: { id: string, club: ViewClubGral }) {
         } catch (error) {
             console.error("Error disabling access:", error)
             toast.error("Error al desactivar el acceso")
+        }
+    }
+
+    const handleUpdateAccess = async () => {
+        const values = getValues()
+
+        // Calculate the default username again as fallback if form state is somehow empty but it should be handled by defaultValues now
+        const defaultUser = club.usuario || `admin.${club.Club?.toLowerCase().replace(/\s/g, '') || ''}`
+
+        const payload: SetSegPayload = {
+            id: String(club.id),
+            tipo_registro: "2",
+            usuario: values.usuarioAccess || defaultUser,
+            password: values.passwordAccess || club.password || "",
+            intentos: "0",
+            bloqueo: "0"
+        }
+
+        try {
+            const jsonString = JSON.stringify(payload, null, 2);
+            setDebugPayload(jsonString);
+            console.log("JSON ENVIADO A /SetSeg (String Strict):", jsonString);
+            await setSeg(payload)
+            toast.success("Credenciales actualizadas correctamente")
+        } catch (error: any) {
+            console.error("Error updating credentials:", error)
+            if (error.response?.data) {
+                console.error("SERVER ERROR DETAIL:", JSON.stringify(error.response.data, null, 2));
+                toast.error(`Error servidor: ${JSON.stringify(error.response.data).substring(0, 50)}...`);
+            } else {
+                toast.error("Error al actualizar credenciales")
+            }
         }
     }
 
@@ -639,30 +680,63 @@ function AccesoForm({ id, club }: { id: string, club: ViewClubGral }) {
                         <div className="flex gap-2">
                             <Input
                                 id="user-name"
-                                value={club.usuario || `admin.${club.Club?.toLowerCase().replace(/\s/g, '') || ''}`}
-                                readOnly
-                                className="bg-muted"
+                                defaultValue={club.usuario || `admin.${club.Club?.toLowerCase().replace(/\s/g, '') || ''}`}
+                                {...register("usuarioAccess")}
+                                className="bg-background"
                             />
                             <CopyButton value={club.usuario || `admin.${club.Club?.toLowerCase().replace(/\s/g, '') || ''}`} />
                         </div>
                     </InputGroup>
 
                     <InputGroup label="Contraseña" htmlFor="user-password">
-                        <div className="flex gap-2">
-                            <Input
-                                id="user-password"
-                                value={club.password || "••••••••"}
-                                type="text"
-                                readOnly
-                                className="bg-muted"
-                            />
+                        <div className="flex gap-2 relative">
+                            <div className="relative flex-1">
+                                <Input
+                                    id="user-password"
+                                    defaultValue={club.password || ""}
+                                    type={showPassword ? "text" : "password"}
+                                    {...register("passwordAccess")}
+                                    className="bg-background pr-10"
+                                    placeholder="Ingrese contraseña"
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                >
+                                    {showPassword ? (
+                                        <EyeOff className="h-4 w-4 text-muted-foreground" />
+                                    ) : (
+                                        <Eye className="h-4 w-4 text-muted-foreground" />
+                                    )}
+                                </Button>
+                            </div>
                             <CopyButton value={club.password || ""} />
                         </div>
                     </InputGroup>
                 </div>
+                {debugPayload && (
+                    <div className="mt-4 p-4 bg-muted rounded-md overflow-auto">
+                        <h4 className="text-sm font-semibold mb-2">Debug Payload Output:</h4>
+                        <pre className="text-xs">{debugPayload}</pre>
+                    </div>
+                )}
                 <div className="space-y-4 pt-4 border-t">
                     <h4 className="font-semibold text-sm">Acciones de cuenta</h4>
-                    <div className="flex flex-col sm:flex-row gap-4">
+                    <div className="flex flex-col sm:flex-row gap-4 items-center">
+                        <Button
+                            type="button"
+                            onClick={handleUpdateAccess}
+                            className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                            <Save className="mr-2 h-4 w-4" />
+                            Actualizar Credenciales
+                        </Button>
+
+                        <div className="flex-1"></div>
+
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>

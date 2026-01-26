@@ -100,11 +100,11 @@ export function EditEventoDialog({ evento, children, onSuccess }: EditEventoDial
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[1000px] max-h-[90vh] h-[calc(90vh-150px)] flex flex-col p-0">
-                <DialogHeader className="px-6 py-4 border-b">
+            <DialogContent className="sm:max-w-[1000px] max-h-[95vh] h-fit flex flex-col p-0">
+                <DialogHeader className="px-6 py-4 border-b shrink-0">
                     <DialogTitle>Editar Evento: {evento.Nombre}</DialogTitle>
                 </DialogHeader>
-                <div className="w-full overflow-hidden">
+                <div className="flex-1">
                     <EditEventoTabs id="edit-evento-form-desktop" evento={evento} onSuccess={handleSuccess} />
                 </div>
             </DialogContent>
@@ -160,7 +160,7 @@ function EditEventoTabs({ className, id, evento, onSuccess }: { className?: stri
     ]
 
     return (
-        <Tabs defaultValue="general" className="h-auto flex flex-col">
+        <Tabs defaultValue="general" className="flex-1 h-full flex flex-col overflow-visible">
             <div className="px-6 pt-1">
                 <TabsList className="flex w-full sm:w-auto h-auto p-1 bg-muted/80 gap-1">
                     {tabsConfig.map((tab) => (
@@ -184,18 +184,15 @@ function EditEventoTabs({ className, id, evento, onSuccess }: { className?: stri
                 </TabsList>
             </div>
 
-            <div className="flex-1 overflow-hidden">
-                <ScrollArea className="h-auto max-h-[calc(90vh-150px)]">
-                    <div className="p-6">
-                        {tabsConfig.map((tab) => (
-                            <TabsContent key={tab.value} value={tab.value} className={cn("m-0", tab.className)}>
-                                {tab.content}
-                            </TabsContent>
-                        ))}
-                    </div>
-                </ScrollArea>
+            <div className="flex-1 w-full overflow-y-auto overflow-x-visible custom-scrollbar">
+                <div className="p-6 h-full">
+                    {tabsConfig.map((tab) => (
+                        <TabsContent key={tab.value} value={tab.value} className={cn("m-0 focus-visible:outline-none", tab.className)}>
+                            {tab.content}
+                        </TabsContent>
+                    ))}
+                </div>
             </div>
-
         </Tabs>
     )
 }
@@ -787,7 +784,7 @@ function ActualizaEventoForm({ id, evento, onSuccess }: { id: string, evento: Ev
         lugar: evento.Lugar || "",
         sede: evento.Sede || "",
         region: evento.Region || "",
-        limiteParticipantes: evento.Limite_participantes ? String(evento.Limite_participantes) : "",
+        limiteParticipantes: String(evento.Limite_participantes ?? "0"),
         horaLimiteInscripcion: evento.Hora_limite_inscripciones || "",
         fechaInicioEvento: parseDate(evento.F_ini_evento),
         fechaFinEvento: parseDate(evento.F_fin_evento),
