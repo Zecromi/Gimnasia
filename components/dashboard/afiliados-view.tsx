@@ -38,6 +38,9 @@ export function AfiliadosView() {
     const [filteredAfiliados, setFilteredAfiliados] = useState<Afiliado[]>([])
     const [clubs, setClubs] = useState<ViewClubGral[]>([])
 
+    const [editingAfiliado, setEditingAfiliado] = useState<Afiliado | undefined>(undefined)
+    const [isEditOpen, setIsEditOpen] = useState(false)
+
     const { Escolaridad, Estados, Niveles_tecnicos, fetchCatalogs } = useCatalogStore()
     const authData = useAuthStore((state) => state.authData)
 
@@ -102,7 +105,12 @@ export function AfiliadosView() {
         fetchData()
     }, [fetchData])
 
-    const columns = useMemo(() => getColumns(fetchData, clubs, Escolaridad, Estados, Niveles_tecnicos), [fetchData, clubs, Escolaridad, Estados, Niveles_tecnicos])
+    const handleEdit = useCallback((afiliado: Afiliado) => {
+        setEditingAfiliado(afiliado)
+        setIsEditOpen(true)
+    }, [])
+
+    const columns = useMemo(() => getColumns(fetchData, handleEdit, clubs, Escolaridad, Estados, Niveles_tecnicos), [fetchData, handleEdit, clubs, Escolaridad, Estados, Niveles_tecnicos])
 
     const handleFilter = () => {
         let filtered = [...afiliados]
@@ -276,6 +284,16 @@ export function AfiliadosView() {
                     </CardContent>
                 </Card>
                 <DataTable columns={columns} data={filteredAfiliados} />
+
+                <AfiliadosDialog
+                    open={isEditOpen}
+                    onOpenChange={setIsEditOpen}
+                    afiliado={editingAfiliado}
+                    onSuccess={() => {
+                        setIsEditOpen(false)
+                        fetchData()
+                    }}
+                />
             </div>
         </TooltipProvider>
     )

@@ -52,11 +52,18 @@ interface AfiliadosDialogProps {
     afiliado?: Afiliado
     trigger?: React.ReactNode
     onSuccess?: () => void
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
 }
 
-export function AfiliadosDialog({ afiliado, trigger, onSuccess }: AfiliadosDialogProps) {
-    const [open, setOpen] = React.useState(false)
+export function AfiliadosDialog({ afiliado, trigger, onSuccess, open: controlledOpen, onOpenChange: controlledOnOpenChange }: AfiliadosDialogProps) {
+    const [internalOpen, setInternalOpen] = React.useState(false)
     const isMobile = useIsMobile()
+
+    const isControlled = controlledOpen !== undefined
+    const open = isControlled ? controlledOpen : internalOpen
+    const setOpen = isControlled ? (controlledOnOpenChange || (() => { })) : setInternalOpen
+
     const title = afiliado ? "Editar Afiliado" : "Nuevo Afiliado"
     const description = afiliado
         ? "Modifique los datos del afiliado existente."
@@ -70,7 +77,7 @@ export function AfiliadosDialog({ afiliado, trigger, onSuccess }: AfiliadosDialo
 
     if (isMobile) {
         return (
-            <Drawer open={open} onOpenChange={setOpen}>
+            <Drawer open={open} onOpenChange={setOpen} dismissible={false}>
                 <DrawerTrigger asChild>
                     {trigger || (
                         <Button variant="outline" size="icon" className="h-10 w-10 rounded-full">
@@ -120,7 +127,12 @@ export function AfiliadosDialog({ afiliado, trigger, onSuccess }: AfiliadosDialo
                     </TooltipContent>
                 </Tooltip>
             )}
-            <DialogContent className="sm:max-w-[auto] max-h-[auto] flex flex-col p-0">
+            <DialogContent
+                className="sm:max-w-[auto] max-h-[auto] flex flex-col p-0"
+                onInteractOutside={(e) => {
+                    e.preventDefault()
+                }}
+            >
                 <DialogHeader className="px-6 py-4 border-b">
                     <DialogTitle>{title}</DialogTitle>
                     <DialogDescription>{description}</DialogDescription>
@@ -394,6 +406,8 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
         }
     }
 
+
+
     return (
         <form id={id} className={cn("space-y-6", className)} onSubmit={handleSubmit}>
             {/* hidden input to ensure club value is submitted even if disabled select doesn't submit it (though ShadCN Select usually works differently, disabled inputs typically don't send values in native forms) */}
@@ -425,6 +439,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                             </InputGroup>
                             <InputGroup label="Club : *" className="col-span-12 md:col-span-6">
                                 <Select
+                                    key={selectedClubId || "empty"} // Force re-render to ensure value updates correctly
                                     name="club_select" // Rename to avoid conflict with hidden input, or just rely on state
                                     value={selectedClubId}
                                     onValueChange={setSelectedClubId}

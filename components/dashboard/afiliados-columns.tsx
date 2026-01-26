@@ -10,12 +10,12 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip"
 import { Afiliado } from "@/lib/afiliados-service"
-import { AfiliadosDialog } from "./afiliados-dialog"
 
 import { ViewClubGral, CatalogoItem, Estado } from "@/lib/club-service"
 
 export const getColumns = (
     onSuccess: () => void,
+    onEdit: (afiliado: Afiliado) => void,
     clubs: ViewClubGral[] = [],
     escolaridadList: CatalogoItem[] = [],
     estadosList: Estado[] = [],
@@ -27,25 +27,15 @@ export const getColumns = (
             cell: ({ row }) => {
                 return (
                     <div className="flex items-center">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <div className="inline-block">
-                                    <AfiliadosDialog
-                                        afiliado={row.original}
-                                        onSuccess={onSuccess}
-                                        trigger={
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-green-200 dark:hover:bg-green-800">
-                                                <Edit className="h-4 w-4" />
-                                                <span className="sr-only">Editar</span>
-                                            </Button>
-                                        }
-                                    />
-                                </div>
-                            </TooltipTrigger>
-                            <TooltipContent side="right">
-                                <p>Editar</p>
-                            </TooltipContent>
-                        </Tooltip>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-green-200 dark:hover:bg-green-800"
+                            onClick={() => onEdit(row.original)}
+                        >
+                            <Edit className="h-4 w-4" />
+                            <span className="sr-only">Editar</span>
+                        </Button>
                     </div>
                 )
             },
