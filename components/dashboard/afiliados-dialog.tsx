@@ -158,68 +158,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
         afiliado?.id_Club?.toString() || ""
     )
 
-    React.useEffect(() => {
-        const fetchData = async () => {
-            try {
-                console.log("AfiliadosDialog: Fetching data...", { authData: authData }) // DEBUG
 
-                const [catalogsData, clubsData] = await Promise.all([
-                    getAfiliadosCatalogs(),
-                    getClubs()
-                ])
-                setCatalogs(catalogsData)
-
-                let loadedClubs = clubsData.View_Club_gral
-                console.log("AfiliadosDialog: Loaded clubs count:", loadedClubs.length) // DEBUG
-
-                // Filter clubs if not admin
-                // eslint-disable-next-line eqeqeq
-                if (authData && authData.tipo_registro != 1) {
-                    console.log("AfiliadosDialog: Filtering for non-admin user", authData.id) // DEBUG
-                    // eslint-disable-next-line eqeqeq
-                    loadedClubs = loadedClubs.filter(c => c.id.toString() === authData.id.toString())
-                    console.log("AfiliadosDialog: Filtered clubs count:", loadedClubs.length) // DEBUG
-
-                    // Auto-select if we have a single club and we are not editing (or we are but want to ensure it matches)
-                    // Or if we are creating only? Let's just default to the single club if found.
-                    if (loadedClubs.length === 1 && !afiliado) {
-                        const autoSelectedId = loadedClubs[0].id.toString()
-                        console.log("AfiliadosDialog: Auto-selecting club:", autoSelectedId) // DEBUG
-                        setSelectedClubId(autoSelectedId)
-                    } else {
-                        console.log("AfiliadosDialog: No auto-select. Count:", loadedClubs.length, "Afiliado:", !!afiliado) // DEBUG
-                    }
-                }
-
-                setClubs(loadedClubs)
-                await fetchCatalogs()
-            } catch (error) {
-                console.error("Error fetching data:", error)
-                toast.error("Error al cargar la información")
-            }
-        }
-        if (open) { // Only fetch when open to save resources and ensure fresh state? Or keep as is? 
-            // The original didn't check 'open', but standard pattern is usually fetch on open. 
-            // I'll keep it as is for now to avoid side effects, but arguably 'open' dependency might be better.
-            fetchData()
-        } else {
-            // If not open, maybe we don't fetch? But the original effect had [fetchCatalogs, authData, afiliado].
-            // It didn't have 'open'.
-            // If I change it, I might break pre-loading. I will just stick to adding logs.
-            fetchData()
-        }
-    }, [fetchCatalogs, authData, afiliado, open]) // Added 'open' to dependency if I use it? No, checking logic.
-
-    // Reverting the "if (open)" change idea, just pure logs insertion as requested.
-    /* Correct implementation below */
-    React.useEffect(() => {
-        const fetchData = async () => {
-            // ... logic ...
-        }
-        fetchData()
-    }, [fetchCatalogs, authData, afiliado])
-
-    // START REPLACEMENT
     React.useEffect(() => {
         const fetchData = async () => {
             try {
