@@ -1,6 +1,6 @@
 import api from "./axios";
 import { CatalogoItem, Estado } from "./club-service";
-import Cookies from "js-cookie";
+
 
 export interface Afiliado {
     id: number;
@@ -40,47 +40,24 @@ export interface AfiliadosCatalogsResponse {
 }
 
 export const getAfiliadosCatalogs = async (id?: number, tipo?: number) => {
-    // Manual Token Injection with regex cleanup
-    let token = Cookies.get("token") || "";
-    token = token.replace(/"/g, '');
-
     // Construct params object dynamically
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const params: any = {};
     if (id !== undefined) params.id = id;
     if (tipo !== undefined) params.tipo = tipo;
 
-    console.log("DEBUG SERVICE: Fetching with params:", JSON.stringify(params));
-
     const response = await api.get<AfiliadosCatalogsResponse>("/GetInf_afil", {
-        headers: { Authorization: `Bearer ${token}` },
         params: params
     });
-
-    console.log("DEBUG SERVICE: Status:", response.status);
-    console.log("DEBUG SERVICE: Typeof data:", typeof response.data);
 
     // Handle potential text/plain response from backend
     if (typeof response.data === "string") {
         try {
-            const parsed = JSON.parse(response.data);
-            console.log("DEBUG SERVICE: Parsed successfully. Keys:", Object.keys(parsed));
-            if (parsed.Afiliados) console.log("DEBUG SERVICE: Afiliados count:", parsed.Afiliados.length);
-            return parsed;
+            return JSON.parse(response.data);
         } catch (e) {
-            console.error("DEBUG SERVICE: Failed to parse response data", e);
+            console.error("Failed to parse response data", e);
             return response.data;
         }
-    }
-
-    // If it's already an object
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const dataObj = response.data as any;
-    console.log("DEBUG SERVICE: Data is object. Keys:", Object.keys(dataObj));
-    if (dataObj.Afiliados) {
-        console.log("DEBUG SERVICE: Afiliados found in object:", dataObj.Afiliados.length);
-    } else {
-        console.log("DEBUG SERVICE: 'Afiliados' key MISSING in object!");
     }
 
     return response.data;
