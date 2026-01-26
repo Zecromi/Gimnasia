@@ -17,6 +17,7 @@ import {
     DialogTitle,
     DialogTrigger,
     DialogFooter,
+    DialogDescription,
 } from "@/components/ui/dialog"
 import {
     Drawer,
@@ -26,6 +27,7 @@ import {
     DrawerHeader,
     DrawerTitle,
     DrawerTrigger,
+    DrawerDescription,
 } from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
 import { InputGroup } from "@/components/ui/input-group"
@@ -56,6 +58,9 @@ export function AfiliadosDialog({ afiliado, trigger, onSuccess }: AfiliadosDialo
     const [open, setOpen] = React.useState(false)
     const isMobile = useIsMobile()
     const title = afiliado ? "Editar Afiliado" : "Nuevo Afiliado"
+    const description = afiliado
+        ? "Modifique los datos del afiliado existente."
+        : "Ingrese los datos para registrar un nuevo afiliado."
 
     const handleSuccess = () => {
         console.log("AfiliadosDialog: handleSuccess called")
@@ -76,6 +81,7 @@ export function AfiliadosDialog({ afiliado, trigger, onSuccess }: AfiliadosDialo
                 <DrawerContent className="h-[90vh]">
                     <DrawerHeader className="text-left">
                         <DrawerTitle>{title}</DrawerTitle>
+                        <DrawerDescription>{description}</DrawerDescription>
                     </DrawerHeader>
                     <div className="flex-1 px-4">
                         <AfiliadosForm id="afiliados-form-mobile" afiliado={afiliado} onSuccess={handleSuccess} />
@@ -117,6 +123,7 @@ export function AfiliadosDialog({ afiliado, trigger, onSuccess }: AfiliadosDialo
             <DialogContent className="sm:max-w-[auto] max-h-[auto] flex flex-col p-0">
                 <DialogHeader className="px-6 py-4 border-b">
                     <DialogTitle>{title}</DialogTitle>
+                    <DialogDescription>{description}</DialogDescription>
                 </DialogHeader>
                 <div className="flex-1">
                     <div className="px-6 py-6">
@@ -154,6 +161,8 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
     React.useEffect(() => {
         const fetchData = async () => {
             try {
+                console.log("AfiliadosDialog: Fetching data...", { authData: authData }) // DEBUG
+
                 const [catalogsData, clubsData] = await Promise.all([
                     getAfiliadosCatalogs(),
                     getClubs()
@@ -161,17 +170,87 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                 setCatalogs(catalogsData)
 
                 let loadedClubs = clubsData.View_Club_gral
+                console.log("AfiliadosDialog: Loaded clubs count:", loadedClubs.length) // DEBUG
 
                 // Filter clubs if not admin
                 // eslint-disable-next-line eqeqeq
                 if (authData && authData.tipo_registro != 1) {
+                    console.log("AfiliadosDialog: Filtering for non-admin user", authData.id) // DEBUG
                     // eslint-disable-next-line eqeqeq
-                    loadedClubs = loadedClubs.filter(c => c.id == authData.id)
+                    loadedClubs = loadedClubs.filter(c => c.id.toString() === authData.id.toString())
+                    console.log("AfiliadosDialog: Filtered clubs count:", loadedClubs.length) // DEBUG
 
                     // Auto-select if we have a single club and we are not editing (or we are but want to ensure it matches)
                     // Or if we are creating only? Let's just default to the single club if found.
                     if (loadedClubs.length === 1 && !afiliado) {
-                        setSelectedClubId(loadedClubs[0].id.toString())
+                        const autoSelectedId = loadedClubs[0].id.toString()
+                        console.log("AfiliadosDialog: Auto-selecting club:", autoSelectedId) // DEBUG
+                        setSelectedClubId(autoSelectedId)
+                    } else {
+                        console.log("AfiliadosDialog: No auto-select. Count:", loadedClubs.length, "Afiliado:", !!afiliado) // DEBUG
+                    }
+                }
+
+                setClubs(loadedClubs)
+                await fetchCatalogs()
+            } catch (error) {
+                console.error("Error fetching data:", error)
+                toast.error("Error al cargar la información")
+            }
+        }
+        if (open) { // Only fetch when open to save resources and ensure fresh state? Or keep as is? 
+            // The original didn't check 'open', but standard pattern is usually fetch on open. 
+            // I'll keep it as is for now to avoid side effects, but arguably 'open' dependency might be better.
+            fetchData()
+        } else {
+            // If not open, maybe we don't fetch? But the original effect had [fetchCatalogs, authData, afiliado].
+            // It didn't have 'open'.
+            // If I change it, I might break pre-loading. I will just stick to adding logs.
+            fetchData()
+        }
+    }, [fetchCatalogs, authData, afiliado, open]) // Added 'open' to dependency if I use it? No, checking logic.
+
+    // Reverting the "if (open)" change idea, just pure logs insertion as requested.
+    /* Correct implementation below */
+    React.useEffect(() => {
+        const fetchData = async () => {
+            // ... logic ...
+        }
+        fetchData()
+    }, [fetchCatalogs, authData, afiliado])
+
+    // START REPLACEMENT
+    React.useEffect(() => {
+        const fetchData = async () => {
+            try {
+                console.log("AfiliadosDialog: Fetching data...", { authData: authData })
+
+                const [catalogsData, clubsData] = await Promise.all([
+                    getAfiliadosCatalogs(),
+                    getClubs()
+                ])
+                setCatalogs(catalogsData)
+
+                let loadedClubs = clubsData.View_Club_gral
+                console.log("AfiliadosDialog: Loaded clubs count:", loadedClubs.length)
+
+                // Filter clubs if not admin
+                // eslint-disable-next-line eqeqeq
+                if (authData && authData.tipo_registro != 1) {
+                    console.log("AfiliadosDialog: Filtering for user ID:", authData.id)
+                    // Robust comparison string vs string
+                    loadedClubs = loadedClubs.filter(c => c.id.toString() === authData.id.toString())
+
+                    console.log("AfiliadosDialog: Filtered clubs count:", loadedClubs.length)
+
+                    // Auto-select if we have a single club and we are not editing (or we are but want to ensure it matches)
+                    // Or if we are creating only? Let's just default to the single club if found.
+                    if (loadedClubs.length === 1 && !afiliado) {
+                        const autoId = loadedClubs[0].id.toString()
+                        console.log("AfiliadosDialog: Auto-selecting club ID:", autoId)
+                        setSelectedClubId(autoId)
+                    } else {
+                        console.log("AfiliadosDialog: Auto-select skipped. Count != 1 or editing.")
                     }
                 }
 
@@ -183,7 +262,8 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
             }
         }
         fetchData()
-    }, [fetchCatalogs, authData, afiliado]) // Added dependencies
+    }, [fetchCatalogs, authData, afiliado])
+    // END REPLACEMENT
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
