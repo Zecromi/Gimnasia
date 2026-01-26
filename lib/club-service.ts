@@ -263,6 +263,22 @@ export const updateClub = async (id: number, payload: SetClubPayload) => {
     return response.data;
 };
 
+export interface SetSegPayload {
+    id: number | string;
+    tipo_registro: number | string;
+    usuario: string;
+    password: string;
+    intentos: number | string;
+    bloqueo: number | string;
+}
+
+export const setSeg = async (payload: SetSegPayload) => {
+    // Reverting to JSON body (standard method) to fix 415 Unsupported Media Type.
+    // 400 error likely due to content validation, not transport.
+    const response = await api.post("/SetSeg", payload);
+    return response.data;
+};
+
 
 
 
