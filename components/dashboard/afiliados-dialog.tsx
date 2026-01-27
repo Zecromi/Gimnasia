@@ -70,7 +70,7 @@ export function AfiliadosDialog({ afiliado, trigger, onSuccess, open: controlled
         : "Ingrese los datos para registrar un nuevo afiliado."
 
     const handleSuccess = () => {
-        console.log("AfiliadosDialog: handleSuccess called")
+
         setOpen(false)
         onSuccess?.()
     }
@@ -174,7 +174,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
     React.useEffect(() => {
         const fetchData = async () => {
             try {
-                console.log("AfiliadosDialog: Fetching data...", { authData: authData })
+
 
                 const [catalogsData, clubsData] = await Promise.all([
                     getAfiliadosCatalogs(),
@@ -183,25 +183,20 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                 setCatalogs(catalogsData)
 
                 let loadedClubs = clubsData.View_Club_gral
-                console.log("AfiliadosDialog: Loaded clubs count:", loadedClubs.length)
+
 
                 // Filter clubs if not admin
                 // eslint-disable-next-line eqeqeq
                 if (authData && authData.tipo_registro != 1) {
-                    console.log("AfiliadosDialog: Filtering for user ID:", authData.id)
+
                     // Robust comparison string vs string
                     loadedClubs = loadedClubs.filter(c => c.id.toString() === authData.id.toString())
-
-                    console.log("AfiliadosDialog: Filtered clubs count:", loadedClubs.length)
 
                     // Auto-select if we have a single club and we are not editing (or we are but want to ensure it matches)
                     // Or if we are creating only? Let's just default to the single club if found.
                     if (loadedClubs.length === 1 && !afiliado) {
                         const autoId = loadedClubs[0].id.toString()
-                        console.log("AfiliadosDialog: Auto-selecting club ID:", autoId)
                         setSelectedClubId(autoId)
-                    } else {
-                        console.log("AfiliadosDialog: Auto-select skipped. Count != 1 or editing.")
                     }
                 }
 
@@ -221,7 +216,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
         const formData = new FormData(e.currentTarget)
         const data = Object.fromEntries(formData.entries()) as Record<string, string>
 
-        console.log("Form data raw:", data)
+
 
         // Validate unique affiliation types
         const affiliations = [
@@ -229,7 +224,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
             data.tipoAfiliadoSecundario,
             data.tipoAfiliadoTercero,
             data.tipoAfiliadoCuarto
-        ].filter(val => val && val.trim() !== "") // Filter out empty selections
+        ].filter(val => val && val.trim() !== "" && val !== "none") // Filter out empty selections and "none"
 
         const uniqueAffiliations = new Set(affiliations)
         if (uniqueAffiliations.size !== affiliations.length) {
@@ -237,7 +232,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
             return
         }
 
-        console.log("handleSubmit processing data:", data);
+
 
         // Validate required fields
         const requiredFields: Record<string, string> = {
@@ -260,7 +255,6 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
 
         for (const [key, label] of Object.entries(requiredFields)) {
             if (!data[key] || data[key].trim() === "") {
-                console.warn(`Validation failed: ${label} is missing.`);
                 toast.error(`El campo ${label} es obligatorio`)
                 return
             }
@@ -334,6 +328,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
 
             for (const [formKey, backendField] of Object.entries(fieldMap)) {
                 let newValue = data[formKey] || ""
+                if (newValue === "none") newValue = "" // Convert "none" to empty string
                 const originalValue = getOriginalValue(formKey) || ""
 
                 if (formKey === 'curp') {
@@ -351,7 +346,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
             }
 
             try {
-                console.log("Sending updates:", changes)
+
                 await updateAfiliado(afiliado.id, { uno: changes })
                 toast.success("Afiliado actualizado exitosamente")
                 onSuccess?.()
@@ -381,17 +376,17 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                 telefono_c: data.telParticular,
                 telefono_cel: data.telCelular,
                 afiliacion_p: data.tipoAfiliadoPrincipal,
-                afiliacion_s: data.tipoAfiliadoSecundario || "",
-                afiliacion_3: data.tipoAfiliadoTercero || "",
-                afiliacion_4: data.tipoAfiliadoCuarto || "",
+                afiliacion_s: (data.tipoAfiliadoSecundario === "none" ? "" : data.tipoAfiliadoSecundario) || "",
+                afiliacion_3: (data.tipoAfiliadoTercero === "none" ? "" : data.tipoAfiliadoTercero) || "",
+                afiliacion_4: (data.tipoAfiliadoCuarto === "none" ? "" : data.tipoAfiliadoCuarto) || "",
                 id_nivel_tec: data.nivelTecnico,
                 modalidad: defaultModalidad
             }
 
-            console.log("Final Payload to API:", payload);
+
 
             try {
-                console.log("Calling createAfiliado...");
+
                 await createAfiliado(payload)
                 toast.success("Afiliado creado exitosamente")
 
@@ -476,7 +471,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                                 </Select>
                             </InputGroup>
                             <InputGroup label="Tipo de Afiliado Secundario :" className="col-span-12 md:col-span-6">
-                                <Select name="tipoAfiliadoSecundario" defaultValue={afiliado?.Afiliacion_2?.toString()}>
+                                <Select name="tipoAfiliadoSecundario" defaultValue={afiliado?.Afiliacion_2?.toString() || "none"}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
@@ -486,6 +481,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                                                 {item.Nombre}
                                             </SelectItem>
                                         ))}
+                                        <SelectItem value="none">Ninguno</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </InputGroup>
@@ -493,7 +489,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
 
                         <div className="grid grid-cols-12 gap-6">
                             <InputGroup label="Tipo de Afiliado Tercero :" className="col-span-12 md:col-span-6">
-                                <Select name="tipoAfiliadoTercero" defaultValue={afiliado?.Afiliacion_3?.toString()}>
+                                <Select name="tipoAfiliadoTercero" defaultValue={afiliado?.Afiliacion_3?.toString() || "none"}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
@@ -503,11 +499,12 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                                                 {item.Nombre}
                                             </SelectItem>
                                         ))}
+                                        <SelectItem value="none">Ninguno</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </InputGroup>
                             <InputGroup label="Tipo de Afiliado Cuarto :" className="col-span-12 md:col-span-6">
-                                <Select name="tipoAfiliadoCuarto" defaultValue={afiliado?.Afiliacion_4?.toString()}>
+                                <Select name="tipoAfiliadoCuarto" defaultValue={afiliado?.Afiliacion_4?.toString() || "none"}>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
@@ -517,6 +514,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                                                 {item.Nombre}
                                             </SelectItem>
                                         ))}
+                                        <SelectItem value="none">Ninguno</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </InputGroup>
