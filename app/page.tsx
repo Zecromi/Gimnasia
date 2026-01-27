@@ -57,7 +57,10 @@ export default function LoginPage() {
             setAuthData(passData[0]);
           }
         } catch (err) {
-          console.warn("GetPass failed but login proceeded", err);
+          console.warn("GetPass failed", err);
+          setError("Credenciales inválidas");
+          setLoading(false);
+          return;
         }
 
         // Restore missing Cookie set!
