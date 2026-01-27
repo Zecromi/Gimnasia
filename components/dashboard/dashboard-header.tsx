@@ -24,7 +24,7 @@ export function DashboardHeader() {
                         className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 dark:text-emerald-50"
                     >
                         Bienvenido <br />
-                        <span className="text-teal-900 dark:text-emerald-400"> a Gimnasia</span>
+                        <span className="text-teal-900 dark:text-emerald-400"> a GUEM</span>
                     </motion.h1>
 
                     <motion.p
