@@ -12,6 +12,8 @@ import {
     getSortedRowModel,
 } from "@tanstack/react-table"
 
+import { cn } from "@/lib/utils"
+
 import {
     Table,
     TableBody,
@@ -25,12 +27,14 @@ interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
     noResultsMessage?: string
+    containerClassName?: string
 }
 
 export function DataTable<TData, TValue>({
     columns,
     data,
     noResultsMessage = "No results.",
+    containerClassName,
 }: DataTableProps<TData, TValue>) {
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []

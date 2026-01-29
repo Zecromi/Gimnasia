@@ -57,7 +57,7 @@ export function UserNav() {
         <>
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+                    <Button variant="ghost" className="relative h-8 w-8 rounded-full" suppressHydrationWarning={true}>
                         <Avatar className="h-8 w-8">
                             <AvatarImage src="/avatars/01.png" alt="@shadcn" />
                             <AvatarFallback>AE</AvatarFallback>
