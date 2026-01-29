@@ -1,18 +1,15 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { CircleHelp, CalendarDays } from "lucide-react"
+import { CircleHelp } from "lucide-react"
+import { motion } from "framer-motion"
 
 export function Sidebar() {
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col items-center text-center">
-                {/* Placeholder for Logo */}
-                <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                    <span className="text-xs text-muted-foreground">Logo</span>
-                </div>
-                <h2 className="text-md font-bold">
-                    Bienvenido ASOCIACIÓN ESTADO DE MÉXICO
-                </h2>
-            </div>
+        <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="space-y-6"
+        >
 
             <Card className="bg-[#E4F2EF] shadow-none dark:bg-zinc-900 rounded-2xl border-green-100 dark:border-zinc-800">
                 <CardHeader className="pb-2">
@@ -49,6 +46,6 @@ export function Sidebar() {
                     </div>
                 </CardContent>
             </Card>
-        </div>
+        </motion.div>
     )
 }

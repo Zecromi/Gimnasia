@@ -1,10 +1,12 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown, TicketPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { format } from "date-fns"
+import { es } from "date-fns/locale"
 import { RegisterEventDialog } from "./register-event-dialog"
 import { EventosConfiguradosItem } from "@/lib/evento-service"
 
-export const columns: ColumnDef<EventosConfiguradosItem>[] = [
+export const getColumns = (onSuccess?: () => void): ColumnDef<EventosConfiguradosItem>[] => [
     {
         id: "inscribirse",
         header: "Inscribirse",
@@ -16,6 +18,10 @@ export const columns: ColumnDef<EventosConfiguradosItem>[] = [
                         eventoName={row.original.Nombre}
                         modalidad={row.original.Modalidad}
                         costo={row.original.Costo_base}
+                        fechaFinInscripcion={row.original.F_fin_incripciones}
+                        horaLimiteInscripcion={row.original.Hora_limite_inscripciones}
+                        limiteParticipantes={row.original.Limite_participantes}
+                        onSuccess={onSuccess}
                     >
                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-teal-100 text-teal-700">
                             <TicketPlus className="h-4 w-4" />
@@ -55,6 +61,30 @@ export const columns: ColumnDef<EventosConfiguradosItem>[] = [
         },
     },
     {
+        accessorKey: "Organizador",
+        header: ({ column }) => (
+            <Button
+                variant="ghost"
+                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+                Organizador
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+        ),
+    },
+    {
+        accessorKey: "Asociacion",
+        header: ({ column }) => (
+            <Button
+                variant="ghost"
+                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+                Asociación
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+        ),
+    },
+    {
         accessorKey: "Lugar",
         header: ({ column }) => {
             return (
@@ -83,6 +113,18 @@ export const columns: ColumnDef<EventosConfiguradosItem>[] = [
         },
     },
     {
+        accessorKey: "Region",
+        header: ({ column }) => (
+            <Button
+                variant="ghost"
+                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+            >
+                Región
+                <ArrowUpDown className="ml-2 h-4 w-4" />
+            </Button>
+        ),
+    },
+    {
         accessorKey: "F_ini_evento",
         header: ({ column }) => {
             return (
@@ -96,8 +138,10 @@ export const columns: ColumnDef<EventosConfiguradosItem>[] = [
             )
         },
         cell: ({ row }) => {
-            // Simple date formatting if needed, or raw string
-            return <div>{row.getValue("F_ini_evento")}</div>
+            const dateStr = row.getValue("F_ini_evento") as string
+            if (!dateStr) return <div>-</div>
+            const date = new Date(dateStr)
+            return <div>{format(date, "P", { locale: es })}</div>
         }
     },
     {
@@ -108,13 +152,13 @@ export const columns: ColumnDef<EventosConfiguradosItem>[] = [
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
-                    ¿Tiene restricción de inscripción?
+                    Restricción
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
             )
         },
         cell: ({ row }) => {
-            return <div className="pl-8">{row.getValue("Restriccion")}</div>
+            return <div className="pl-4">{row.getValue("Restriccion")}</div>
         }
     },
     {

@@ -318,7 +318,7 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
 
     React.useEffect(() => {
         const formData = getFormData()
-        const result = eventoSchema.omit({ adicionales: true }).safeParse(formData) // Omit as processed separately
+        const result = eventoSchema.safeParse(formData) // Omit as processed separately
 
         let valid = result.success
 

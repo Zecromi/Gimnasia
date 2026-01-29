@@ -196,6 +196,11 @@ export interface ViewClubGral {
     Telefono2: string
     usuario?: string
     password?: string
+    M_pago?: number
+    F_pago?: string
+    Comprobante?: string
+    Lugar_p?: string
+    fecha_p?: string | null
 }
 
 export interface GetClubesResponse {
@@ -263,6 +268,8 @@ export const updateClub = async (id: number, payload: SetClubPayload) => {
     return response.data;
 };
 
+
+
 export interface SetSegPayload {
     id: number | string;
     tipo_registro: number | string;
@@ -276,6 +283,23 @@ export const setSeg = async (payload: SetSegPayload) => {
     // Reverting to JSON body (standard method) to fix 415 Unsupported Media Type.
     // 400 error likely due to content validation, not transport.
     const response = await api.post("/SetSeg", payload);
+    return response.data;
+};
+
+export interface UpdateMembershipPayload {
+    tipo: string;
+    id: string; // id_club
+    total: string;
+    id_forma_pago: string;
+    no_ticket: string;
+    lugar_pago: string;
+    fecha_pago: string;
+}
+
+export const updateClubMembership = async (data: UpdateMembershipPayload) => {
+    console.log("enviando datos para actualizar membresía del club", data);
+    const response = await api.post("/PostPagos", data);
+    console.log(response.data);
     return response.data;
 };
 

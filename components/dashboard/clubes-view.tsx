@@ -201,7 +201,7 @@ export function ClubesView() {
                     </div>
                 </CardContent>
             </Card>
-            <DataTable columns={columns} data={filteredData} />
+            <DataTable columns={columns} data={filteredData} containerClassName="max-h-[700px]" />
         </div>
     )
 }

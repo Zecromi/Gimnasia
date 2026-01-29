@@ -1,7 +1,7 @@
 "use client"
 
-import { Suspense, useState, useCallback, useEffect } from "react"
-import { Search, Calendar as CalendarIcon, Plus, Eraser } from "lucide-react"
+import { Suspense, useState, useCallback, useEffect, useMemo } from "react"
+import { Search, Calendar as CalendarIcon, Plus, BrushCleaning } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -16,7 +16,7 @@ import {
     SelectValue,
 } from "@/components/ui/select"
 
-import { columns } from "./inscripciones-columns"
+import { getColumns } from "./inscripciones-columns"
 import { DataTable } from "@/components/dashboard/data-table"
 import { Calendar } from "@/components/ui/calendar"
 import {
@@ -33,7 +33,6 @@ import { useCatalogStore } from "@/lib/store/catalog-store"
 export function InscripcionesEventosView() {
     const { Catalogo_eventos, fetchCatalogs } = useCatalogStore()
     const [isLoading, setIsLoading] = useState(true)
-    const [date, setDate] = useState<Date>()
     const [eventos, setEventos] = useState<EventosConfiguradosItem[]>([])
     // Estado para manejo de errores de carga (simulado por ahora)
     const [error, setError] = useState<string | null>(null)
@@ -59,83 +58,56 @@ export function InscripcionesEventosView() {
         fetchData()
     }, [fetchData])
 
-    const [filters, setFilters] = useState({
-        id: "",
-        modalidad: "todas",
-        organizador: "todos",
-        tipoEvento: "todos",
-        region: "todas",
-    })
+    // Filters
+    const [filterId, setFilterId] = useState("")
+    const [filterModalidad, setFilterModalidad] = useState("todas")
+    const [filterOrganizador, setFilterOrganizador] = useState("todos")
+    const [filterTipo, setFilterTipo] = useState("todos")
+    const [filterRegion, setFilterRegion] = useState("todas")
+    const [date, setDate] = useState<Date>()
 
-    const [appliedFilters, setAppliedFilters] = useState({
-        id: "",
-        modalidad: "todas",
-        organizador: "todos",
-        tipoEvento: "todos",
-        region: "todas",
-        date: undefined as Date | undefined,
-    })
-
-    const handleFilter = () => {
-        setAppliedFilters({
-            ...filters,
-            date,
-        })
-    }
+    const columns = useMemo(() => getColumns(fetchData), [fetchData])
 
     const handleClearFilters = () => {
-        const resetFilters = {
-            id: "",
-            modalidad: "todas",
-            organizador: "todos",
-            tipoEvento: "todos",
-            region: "todas",
-        }
-        setFilters(resetFilters)
-        setAppliedFilters({
-            ...resetFilters,
-            date: undefined
-        })
+        setFilterId("")
+        setFilterModalidad("todas")
+        setFilterOrganizador("todos")
+        setFilterTipo("todos")
+        setFilterRegion("todas")
         setDate(undefined)
     }
 
     // Get unique values for dropdowns
-    const uniqueModalidades = Array.from(new Set(eventos.map(e => e.Modalidad).filter(Boolean))).sort()
-    const uniqueOrganizadores = Array.from(new Set(eventos.map(e => e.Organizador).filter(Boolean))).sort()
-    const uniqueRegiones = Array.from(new Set(eventos.map(e => e.Region).filter(Boolean))).sort()
+    const uniqueModalidades = useMemo(() => Array.from(new Set(eventos.map(e => e.Modalidad).filter(Boolean))).sort(), [eventos])
+    const uniqueOrganizadores = useMemo(() => Array.from(new Set(eventos.map(e => e.Organizador).filter(Boolean))).sort(), [eventos])
+    const uniqueRegiones = useMemo(() => Array.from(new Set(eventos.map(e => e.Region).filter(Boolean))).sort(), [eventos])
 
-    const filteredEventos = eventos.filter((evento) => {
-        const matchesId = appliedFilters.id ? String(evento.id).includes(appliedFilters.id) : true
-        const matchesModalidad = appliedFilters.modalidad !== "todas" ? evento.Modalidad === appliedFilters.modalidad : true
-        // Piramide matches not implemented as field missing
-        const matchesOrganizador = appliedFilters.organizador !== "todos" ? evento.Organizador === appliedFilters.organizador : true
+    const filteredEventos = useMemo(() => {
+        return eventos.filter((evento) => {
+            if (filterId && !String(evento.id).includes(filterId)) return false
+            if (filterModalidad !== "todas" && evento.Modalidad !== filterModalidad) return false
+            if (filterOrganizador !== "todos" && evento.Organizador !== filterOrganizador) return false
+            if (filterTipo !== "todos" && String(evento.id_Evento) !== filterTipo) return false
+            if (filterRegion !== "todas" && evento.Region !== filterRegion) return false
 
-        const matchesTipoEvento = appliedFilters.tipoEvento !== "todos"
-            ? String(evento.id_Evento) === appliedFilters.tipoEvento
-            : true
-
-        const matchesRegion = appliedFilters.region !== "todas" ? evento.Region === appliedFilters.region : true
-
-        let matchesDate = true
-        if (appliedFilters.date) {
-            // Compare dates (assuming F_ini_evento is YYYY-MM-DD or comparable string)
-            // If F_ini_evento is a full ISO string, we might need to parse it. 
-            // Based on previous files, it seems to be YYYY-MM-DD or similar.
-            // Let's try direct string match if format matches, otherwise parse.
-            // Safe bet: check if the event starts on the selected day.
-            try {
-                const eventDate = new Date(evento.F_ini_evento)
-                const filterDate = appliedFilters.date
-                matchesDate = eventDate.getFullYear() === filterDate.getFullYear() &&
-                    eventDate.getMonth() === filterDate.getMonth() &&
-                    eventDate.getDate() === filterDate.getDate()
-            } catch (e) {
-                console.warn("Invalid date format", evento.F_ini_evento)
+            if (date) {
+                try {
+                    const eventDate = new Date(evento.F_ini_evento)
+                    if (
+                        eventDate.getFullYear() !== date.getFullYear() ||
+                        eventDate.getMonth() !== date.getMonth() ||
+                        eventDate.getDate() !== date.getDate()
+                    ) {
+                        return false
+                    }
+                } catch (e) {
+                    console.warn("Invalid date format", evento.F_ini_evento)
+                }
             }
-        }
 
-        return matchesId && matchesModalidad && matchesOrganizador && matchesTipoEvento && matchesRegion && matchesDate
-    })
+            return true
+        })
+    }, [eventos, filterId, filterModalidad, filterOrganizador, filterTipo, filterRegion, date])
 
     if (isLoading) {
         return (
@@ -189,21 +161,22 @@ export function InscripcionesEventosView() {
                                         <Input
                                             id="no-evento"
                                             className="h-8"
-                                            value={filters.id}
-                                            onChange={(e) => setFilters(prev => ({ ...prev, id: e.target.value }))}
+                                            placeholder="Buscar por ID..."
+                                            value={filterId}
+                                            onChange={(e) => setFilterId(e.target.value)}
                                         />
                                     </InputGroup>
                                     <InputGroup label="Modalidad :">
                                         <Select
-                                            value={filters.modalidad}
-                                            onValueChange={(val) => setFilters(prev => ({ ...prev, modalidad: val }))}
+                                            value={filterModalidad}
+                                            onValueChange={setFilterModalidad}
                                         >
                                             <SelectTrigger className="h-8">
                                                 <SelectValue placeholder="Seleccione una opción" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="todas">Todas</SelectItem>
-                                                {uniqueModalidades.map(m => (
+                                                {uniqueModalidades.map((m: string) => (
                                                     <SelectItem key={m} value={m}>{m}</SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -221,15 +194,15 @@ export function InscripcionesEventosView() {
                                     </InputGroup>
                                     <InputGroup label="Organizador :">
                                         <Select
-                                            value={filters.organizador}
-                                            onValueChange={(val) => setFilters(prev => ({ ...prev, organizador: val }))}
+                                            value={filterOrganizador}
+                                            onValueChange={setFilterOrganizador}
                                         >
                                             <SelectTrigger className="h-8">
                                                 <SelectValue placeholder="Seleccione una opción" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="todos">Todos</SelectItem>
-                                                {uniqueOrganizadores.map(o => (
+                                                {uniqueOrganizadores.map((o: string) => (
                                                     <SelectItem key={o} value={o}>{o}</SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -241,8 +214,8 @@ export function InscripcionesEventosView() {
                                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 items-end">
                                     <InputGroup label="Tipo de evento :">
                                         <Select
-                                            value={filters.tipoEvento}
-                                            onValueChange={(val) => setFilters(prev => ({ ...prev, tipoEvento: val }))}
+                                            value={filterTipo}
+                                            onValueChange={setFilterTipo}
                                         >
                                             <SelectTrigger className="h-8">
                                                 <SelectValue placeholder="Seleccione una opción" />
@@ -259,15 +232,15 @@ export function InscripcionesEventosView() {
                                     </InputGroup>
                                     <InputGroup label="Región de evento :">
                                         <Select
-                                            value={filters.region}
-                                            onValueChange={(val) => setFilters(prev => ({ ...prev, region: val }))}
+                                            value={filterRegion}
+                                            onValueChange={setFilterRegion}
                                         >
                                             <SelectTrigger className="h-8">
                                                 <SelectValue placeholder="Seleccione una opción" />
                                             </SelectTrigger>
                                             <SelectContent>
                                                 <SelectItem value="todas">Todas</SelectItem>
-                                                {uniqueRegiones.map(r => (
+                                                {uniqueRegiones.map((r: string) => (
                                                     <SelectItem key={r} value={r}>{r}</SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -297,29 +270,18 @@ export function InscripcionesEventosView() {
                                                     mode="single"
                                                     selected={date}
                                                     onSelect={setDate}
-                                                    disabled={(date) =>
-                                                        date > new Date() || date < new Date("1900-01-01")
-                                                    }
                                                     initialFocus
                                                 />
                                             </PopoverContent>
                                         </Popover>
                                     </InputGroup>
-                                    <div className="flex gap-2">
+                                    <div>
                                         <Button
-                                            className="flex-1 bg-teal-600 hover:bg-teal-700 text-white h-8"
-                                            onClick={handleFilter}
-                                        >
-                                            <Search className="mr-2 h-4 w-4" />
-                                            Filtrar
-                                        </Button>
-                                        <Button
-                                            variant="outline"
-                                            className="flex-1 h-8"
+                                            className="w-full bg-teal-600 hover:bg-teal-700 text-white h-8"
                                             onClick={handleClearFilters}
                                         >
-                                            <Eraser className="mr-2 h-4 w-4" />
-                                            Limpiar
+                                            <BrushCleaning className="mr-2 h-4 w-4" />
+                                            Limpiar Filtros
                                         </Button>
                                     </div>
                                 </div>
@@ -336,7 +298,7 @@ export function InscripcionesEventosView() {
                 </div>
             ) : (
                 <DataTable
-                    columns={columns}
+                    columns={getColumns(fetchData)}
                     data={filteredEventos}
                     noResultsMessage="No existen registros de eventos"
                 />
