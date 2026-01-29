@@ -12,6 +12,8 @@ import {
     getSortedRowModel,
 } from "@tanstack/react-table"
 
+import { cn } from "@/lib/utils"
+
 import {
     Table,
     TableBody,
@@ -25,12 +27,14 @@ interface DataTableProps<TData, TValue> {
     columns: ColumnDef<TData, TValue>[]
     data: TData[]
     noResultsMessage?: string
+    containerClassName?: string
 }
 
 export function DataTable<TData, TValue>({
     columns,
     data,
     noResultsMessage = "No results.",
+    containerClassName,
 }: DataTableProps<TData, TValue>) {
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
@@ -53,9 +57,9 @@ export function DataTable<TData, TValue>({
 
     return (
         <div className="rounded-md border">
-            <div className="relative w-full overflow-auto">
+            <div className={cn("relative w-full overflow-auto", containerClassName)}>
                 <Table>
-                    <TableHeader>
+                    <TableHeader className="bg-background sticky top-0 z-10">
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id}>
                                 {headerGroup.headers.map((header) => {
