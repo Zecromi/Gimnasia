@@ -100,11 +100,11 @@ export function EditEventoDialog({ evento, children, onSuccess }: EditEventoDial
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[1000px] max-h-[95vh] h-fit flex flex-col p-0">
+            <DialogContent className="sm:max-w-[1000px] max-h-[90vh] h-[90vh] flex flex-col p-0 overflow-hidden">
                 <DialogHeader className="px-6 py-4 border-b shrink-0">
                     <DialogTitle>Editar Evento: {evento.Nombre}</DialogTitle>
                 </DialogHeader>
-                <div className="flex-1">
+                <div className="flex-1 min-h-0 overflow-hidden">
                     <EditEventoTabs id="edit-evento-form-desktop" evento={evento} onSuccess={handleSuccess} />
                 </div>
             </DialogContent>
@@ -160,8 +160,8 @@ function EditEventoTabs({ className, id, evento, onSuccess }: { className?: stri
     ]
 
     return (
-        <Tabs defaultValue="general" className="flex-1 h-full flex flex-col overflow-visible">
-            <div className="px-6 pt-1">
+        <Tabs defaultValue="general" className="flex-1 h-full flex flex-col min-h-0 overflow-hidden">
+            <div className="px-6 pt-1 shrink-0">
                 <TabsList className="flex w-full sm:w-auto h-auto p-1 bg-muted/80 gap-1">
                     {tabsConfig.map((tab) => (
                         <TooltipProvider key={tab.value}>
@@ -184,15 +184,15 @@ function EditEventoTabs({ className, id, evento, onSuccess }: { className?: stri
                 </TabsList>
             </div>
 
-            <div className="flex-1 w-full overflow-y-auto overflow-x-visible custom-scrollbar">
-                <div className="p-6 h-full">
+            <ScrollArea className="flex-1 w-full min-h-0 custom-scrollbar">
+                <div className="p-6">
                     {tabsConfig.map((tab) => (
                         <TabsContent key={tab.value} value={tab.value} className={cn("m-0 focus-visible:outline-none", tab.className)}>
                             {tab.content}
                         </TabsContent>
                     ))}
                 </div>
-            </div>
+            </ScrollArea>
         </Tabs>
     )
 }
