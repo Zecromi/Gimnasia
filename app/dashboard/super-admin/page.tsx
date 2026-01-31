@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Search, Users, UserCog, CreditCard, Edit } from "lucide-react"
+import { Search, Users, UserCog, CreditCard, Edit, FileText } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,6 +15,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EditAdminDialog, AdminUser } from "@/components/dashboard/edit-admin-dialog"
+import { ReportsTabContent } from "@/components/dashboard/super-admin/reports-tab-content"
 
 // Mock data type (now imported from dialog or defined there to avoid dup)
 // interface AdminUser {
@@ -94,6 +95,10 @@ export default function SuperUsuarioPage() {
                     <TabsTrigger value="pagos">
                         <CreditCard className="mr-2 h-4 w-4" />
                         Pagos
+                    </TabsTrigger>
+                    <TabsTrigger value="reportes">
+                        <FileText className="mr-2 h-4 w-4" />
+                        Reportes
                     </TabsTrigger>
                 </TabsList>
 
@@ -209,6 +214,10 @@ export default function SuperUsuarioPage() {
                             <p>Contenido de pagos próximamente...</p>
                         </CardContent>
                     </Card>
+                </TabsContent>
+
+                <TabsContent value="reportes">
+                    <ReportsTabContent />
                 </TabsContent>
             </Tabs>
 

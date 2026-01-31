@@ -54,9 +54,11 @@ interface AfiliadosDialogProps {
     onSuccess?: () => void
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    clubs?: ViewClubGral[]
+    catalogs?: AfiliadosCatalogsResponse
 }
 
-export function AfiliadosDialog({ afiliado, trigger, onSuccess, open: controlledOpen, onOpenChange: controlledOnOpenChange }: AfiliadosDialogProps) {
+export function AfiliadosDialog({ afiliado, trigger, onSuccess, open: controlledOpen, onOpenChange: controlledOnOpenChange, clubs, catalogs }: AfiliadosDialogProps) {
     const [internalOpen, setInternalOpen] = React.useState(false)
     const isMobile = useIsMobile()
 
@@ -91,7 +93,7 @@ export function AfiliadosDialog({ afiliado, trigger, onSuccess, open: controlled
                         <DrawerDescription>{description}</DrawerDescription>
                     </DrawerHeader>
                     <div className="flex-1 px-4">
-                        <AfiliadosForm id="afiliados-form-mobile" afiliado={afiliado} onSuccess={handleSuccess} />
+                        <AfiliadosForm id="afiliados-form-mobile" afiliado={afiliado} onSuccess={handleSuccess} clubs={clubs} catalogs={catalogs} />
                     </div>
                     <DrawerFooter className="pt-2 border-t">
                         <Button form="afiliados-form-mobile" type="submit">
@@ -139,7 +141,7 @@ export function AfiliadosDialog({ afiliado, trigger, onSuccess, open: controlled
                 </DialogHeader>
                 <div className="flex-1">
                     <div className="px-6 py-6">
-                        <AfiliadosForm id="afiliados-form-desktop" afiliado={afiliado} onSuccess={handleSuccess} />
+                        <AfiliadosForm id="afiliados-form-desktop" afiliado={afiliado} onSuccess={handleSuccess} clubs={clubs} catalogs={catalogs} />
                     </div>
                 </div>
                 <DialogFooter className="p-4 border-t">
@@ -158,11 +160,14 @@ import { Afiliado } from "@/lib/afiliados-service"
 interface AfiliadosFormProps extends React.ComponentProps<"form"> {
     afiliado?: Afiliado
     onSuccess?: () => void
+    clubs?: ViewClubGral[]
+    catalogs?: AfiliadosCatalogsResponse
 }
 
-function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProps) {
-    const [catalogs, setCatalogs] = React.useState<AfiliadosCatalogsResponse | null>(null)
-    const [clubs, setClubs] = React.useState<ViewClubGral[]>([])
+function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, catalogs: catalogsProp }: AfiliadosFormProps) {
+    const [catalogs, setCatalogs] = React.useState<AfiliadosCatalogsResponse | null>(catalogsProp || null)
+    const [clubs, setClubs] = React.useState<ViewClubGral[]>(clubsProp || [])
+    const [isLoading, setIsLoading] = React.useState(false)
     const { Modalidades, fetchCatalogs } = useCatalogStore()
     const authData = useAuthStore((state) => state.authData)
     // Add controlled state for the club select
@@ -173,9 +178,31 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
 
     React.useEffect(() => {
         const fetchData = async () => {
+            // Only fetch if data wasn't provided via props
+            if (catalogsProp && clubsProp) {
+                // Use provided data
+                setCatalogs(catalogsProp)
+                let loadedClubs = clubsProp
+
+                // Filter clubs if not admin
+                // eslint-disable-next-line eqeqeq
+                if (authData && authData.tipo_registro != 1) {
+                    loadedClubs = loadedClubs.filter(c => c.id.toString() === authData.id.toString())
+
+                    if (loadedClubs.length === 1 && !afiliado) {
+                        const autoId = loadedClubs[0].id.toString()
+                        setSelectedClubId(autoId)
+                    }
+                }
+
+                setClubs(loadedClubs)
+                await fetchCatalogs()
+                return
+            }
+
+            // Fetch data only if not provided
+            setIsLoading(true)
             try {
-
-
                 const [catalogsData, clubsData] = await Promise.all([
                     getAfiliadosCatalogs(),
                     getClubs()
@@ -184,16 +211,11 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
 
                 let loadedClubs = clubsData.View_Club_gral
 
-
                 // Filter clubs if not admin
                 // eslint-disable-next-line eqeqeq
                 if (authData && authData.tipo_registro != 1) {
-
-                    // Robust comparison string vs string
                     loadedClubs = loadedClubs.filter(c => c.id.toString() === authData.id.toString())
 
-                    // Auto-select if we have a single club and we are not editing (or we are but want to ensure it matches)
-                    // Or if we are creating only? Let's just default to the single club if found.
                     if (loadedClubs.length === 1 && !afiliado) {
                         const autoId = loadedClubs[0].id.toString()
                         setSelectedClubId(autoId)
@@ -205,11 +227,12 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
             } catch (error) {
                 console.error("Error fetching data:", error)
                 toast.error("Error al cargar la información")
+            } finally {
+                setIsLoading(false)
             }
         }
         fetchData()
-    }, [fetchCatalogs, authData, afiliado])
-    // END REPLACEMENT
+    }, [fetchCatalogs, authData])
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -402,6 +425,18 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
     }
 
 
+
+    // Show loading state only when fetching (not when props provided)
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center h-[60vh]">
+                <div className="flex flex-col items-center gap-2">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                    <p className="text-sm text-muted-foreground">Cargando formulario...</p>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <form id={id} className={cn("space-y-6", className)} onSubmit={handleSubmit}>
