@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Edit, ArrowUpDown } from "lucide-react"
+import { Edit, ArrowUpDown, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
     Tooltip,
@@ -16,6 +16,7 @@ import { ViewClubGral, CatalogoItem, Estado } from "@/lib/club-service"
 export const getColumns = (
     onSuccess: () => void,
     onEdit: (afiliado: Afiliado) => void,
+    onPayment: (afiliado: Afiliado) => void,
     clubs: ViewClubGral[] = [],
     escolaridadList: CatalogoItem[] = [],
     estadosList: Estado[] = [],
@@ -26,16 +27,40 @@ export const getColumns = (
             header: "Detalle",
             cell: ({ row }) => {
                 return (
-                    <div className="flex items-center">
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-green-200 dark:hover:bg-green-800"
-                            onClick={() => onEdit(row.original)}
-                        >
-                            <Edit className="h-4 w-4" />
-                            <span className="sr-only">Editar</span>
-                        </Button>
+                    <div className="flex items-center gap-1">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 hover:bg-green-200 dark:hover:bg-green-800 text-green-600"
+                                    onClick={() => onEdit(row.original)}
+                                >
+                                    <Edit className="h-4 w-4" />
+                                    <span className="sr-only">Editar</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Editar Afiliado</p>
+                            </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600"
+                                    onClick={() => onPayment(row.original)}
+                                >
+                                    <CreditCard className="h-4 w-4" />
+                                    <span className="sr-only">Pago</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Pago de Afiliación</p>
+                            </TooltipContent>
+                        </Tooltip>
                     </div>
                 )
             },
@@ -200,6 +225,34 @@ export const getColumns = (
         {
             accessorKey: "Modalidad",
             header: "Modalidad",
+        },
+        {
+            accessorKey: "M_pago",
+            header: "Monto Pago",
+            cell: ({ row }) => {
+                const amount = parseFloat(row.getValue("M_pago"))
+                return isNaN(amount) ? "-" : new Intl.NumberFormat("es-MX", { style: "currency", currency: "MXN" }).format(amount)
+            }
+        },
+        {
+            accessorKey: "F_pago",
+            header: "Forma Pago",
+        },
+        {
+            accessorKey: "Comprobante",
+            header: "Comprobante",
+        },
+        {
+            accessorKey: "Lugar_p",
+            header: "Lugar Pago",
+        },
+        {
+            accessorKey: "fecha_p",
+            header: "Fecha Pago",
+            cell: ({ row }) => {
+                const date = row.getValue("fecha_p") as string
+                return date ? new Date(date).toLocaleDateString() : "-"
+            }
         },
         {
             id: "estatus",

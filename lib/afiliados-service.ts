@@ -29,6 +29,12 @@ export interface Afiliado {
     Afiliacion_4: number | null;
     id_nivel_tec: number;
     Modalidad: number;
+    Afiliado: any | null;
+    M_pago: number;
+    F_pago: string;
+    Comprobante: string;
+    Lugar_p: string;
+    fecha_p: string;
 }
 
 export interface AfiliadosCatalogsResponse {
@@ -87,6 +93,11 @@ export interface CreateAfiliadoPayload {
     afiliacion_4: string;
     id_nivel_tec: string;
     modalidad: string;
+    m_pago?: string;
+    f_pago?: string;
+    comprobante?: string;
+    lugar_p?: string;
+    fecha_p?: string;
 }
 
 export const createAfiliado = async (payload: CreateAfiliadoPayload) => {

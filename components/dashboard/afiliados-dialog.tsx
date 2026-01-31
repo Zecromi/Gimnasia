@@ -445,7 +445,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                                         <SelectValue placeholder="Selecciona una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {Array.from(new Map(clubs.map(club => [club.id, club])).values()).map((club) => (
+                                        {Array.from(new Map(clubs.map((club: any) => [club.id, club])).values()).map((club: any) => (
                                             <SelectItem key={club.id} value={club.id.toString()}>
                                                 {club.Club}
                                             </SelectItem>
@@ -462,7 +462,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Catalogo_afiliaciones.map((item) => (
+                                        {catalogs?.Catalogo_afiliaciones.map((item: any) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>
@@ -494,7 +494,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Catalogo_afiliaciones.map((item) => (
+                                        {catalogs?.Catalogo_afiliaciones.map((item: any) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>
@@ -527,7 +527,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Niveles_tecnicos.map((item) => (
+                                        {catalogs?.Niveles_tecnicos.map((item: any) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Descripcion}
                                             </SelectItem>
@@ -541,7 +541,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Escolaridad.map((item) => (
+                                        {catalogs?.Escolaridad.map((item: any) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>
@@ -602,7 +602,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess }: AfiliadosFormProp
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Estados.map((item) => (
+                                        {catalogs?.Estados.map((item: any) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>

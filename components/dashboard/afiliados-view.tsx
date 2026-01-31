@@ -24,6 +24,7 @@ import {
 import { getColumns } from "./afiliados-columns"
 import { DataTable } from "./data-table"
 import { AfiliadosDialog } from "./afiliados-dialog"
+import { AffiliateMembershipDialog } from "./afiliado-membership-dialog"
 import { getClubs, ViewClubGral } from "@/lib/club-service"
 import { getAfiliadosCatalogs, Afiliado } from "@/lib/afiliados-service"
 
@@ -40,6 +41,8 @@ export function AfiliadosView() {
 
     const [editingAfiliado, setEditingAfiliado] = useState<Afiliado | undefined>(undefined)
     const [isEditOpen, setIsEditOpen] = useState(false)
+    const [isPaymentOpen, setIsPaymentOpen] = useState(false)
+    const [payingAfiliado, setPayingAfiliado] = useState<Afiliado | undefined>(undefined)
 
     const { Escolaridad, Estados, Niveles_tecnicos, fetchCatalogs } = useCatalogStore()
     const authData = useAuthStore((state) => state.authData)
@@ -110,7 +113,12 @@ export function AfiliadosView() {
         setIsEditOpen(true)
     }, [])
 
-    const columns = useMemo(() => getColumns(fetchData, handleEdit, clubs, Escolaridad, Estados, Niveles_tecnicos), [fetchData, handleEdit, clubs, Escolaridad, Estados, Niveles_tecnicos])
+    const handlePayment = useCallback((afiliado: Afiliado) => {
+        setPayingAfiliado(afiliado)
+        setIsPaymentOpen(true)
+    }, [])
+
+    const columns = useMemo(() => getColumns(fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos), [fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos])
 
     const handleFilter = () => {
         let filtered = [...afiliados]
@@ -283,7 +291,12 @@ export function AfiliadosView() {
                         </div>
                     </CardContent>
                 </Card>
-                <DataTable columns={columns} data={filteredAfiliados} />
+                <DataTable
+                    columns={columns}
+                    data={filteredAfiliados}
+                    headerClassName="bg-white dark:bg-sky-950"
+                    tableHeight="h-[700px]"
+                />
 
                 <AfiliadosDialog
                     open={isEditOpen}
@@ -294,6 +307,18 @@ export function AfiliadosView() {
                         fetchData()
                     }}
                 />
+
+                {payingAfiliado && (
+                    <AffiliateMembershipDialog
+                        open={isPaymentOpen}
+                        onOpenChange={setIsPaymentOpen}
+                        afiliado={payingAfiliado}
+                        onSuccess={() => {
+                            setIsPaymentOpen(false)
+                            fetchData()
+                        }}
+                    />
+                )}
             </div>
         </TooltipProvider>
     )
