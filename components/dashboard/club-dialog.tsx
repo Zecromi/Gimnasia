@@ -183,7 +183,10 @@ export function ClubDialog({ onClubCreated }: { onClubCreated?: () => void }) {
                     </TooltipContent>
                 </Tooltip>
             </TooltipProvider>
-            <DialogContent className={cn("flex flex-col p-0 transition-all duration-300", successData ? "sm:max-w-md" : "sm:max-w-[900px] max-h-[90vh]")}>
+            <DialogContent
+                className={cn("flex flex-col p-0 transition-all duration-300", successData ? "sm:max-w-md" : "sm:max-w-[900px] max-h-[90vh]")}
+                onInteractOutside={(e) => e.preventDefault()}
+            >
                 {successData ? (
                     <SuccessContent />
                 ) : (

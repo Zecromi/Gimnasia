@@ -241,7 +241,10 @@ export function EditClubDialog({ club, children }: EditClubDialogProps) {
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[1000px] h-[90vh] flex flex-col p-0">
+            <DialogContent
+                className="sm:max-w-[1000px] h-[90vh] flex flex-col p-0"
+                onInteractOutside={(e) => e.preventDefault()}
+            >
                 <FormProvider {...methods}>
                     <form onSubmit={methods.handleSubmit(onSubmit)} className="h-full flex flex-col overflow-hidden">
                         <DialogHeader className="px-6 py-4 border-b">

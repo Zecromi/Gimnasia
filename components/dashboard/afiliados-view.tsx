@@ -64,6 +64,8 @@ export function AfiliadosView() {
     }, [authData])
 
     const fetchData = useCallback(async () => {
+        if (!authData) return
+
         console.log("AfiliadosView: executing fetchData") // Debug log
         setIsLoading(true)
         try {

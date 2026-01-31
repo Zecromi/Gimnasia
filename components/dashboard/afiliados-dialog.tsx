@@ -176,11 +176,15 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
     )
 
 
+    // Memoize unique clubs calculation to avoid re-calculation on every render
+    const uniqueClubs = React.useMemo(() => {
+        return Array.from(new Map(clubs.map((club: any) => [club.id, club])).values())
+    }, [clubs])
+
     React.useEffect(() => {
         const fetchData = async () => {
-            // Only fetch if data wasn't provided via props
+            // If props are provided, use them and don't fetch
             if (catalogsProp && clubsProp) {
-                // Use provided data
                 setCatalogs(catalogsProp)
                 let loadedClubs = clubsProp
 
@@ -194,13 +198,11 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                         setSelectedClubId(autoId)
                     }
                 }
-
                 setClubs(loadedClubs)
-                await fetchCatalogs()
                 return
             }
 
-            // Fetch data only if not provided
+            // Only fetch if data is NOT provided
             setIsLoading(true)
             try {
                 const [catalogsData, clubsData] = await Promise.all([
@@ -223,7 +225,10 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 }
 
                 setClubs(loadedClubs)
-                await fetchCatalogs()
+                // We don't necessarily need to fetch global catalogs here if getAfiliadosCatalogs returns what we need
+                // but keeping it if it populates the store for other components might be useful, 
+                // though unnecessary for just this form if we use local state.
+                // await fetchCatalogs() 
             } catch (error) {
                 console.error("Error fetching data:", error)
                 toast.error("Error al cargar la información")
@@ -231,8 +236,10 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 setIsLoading(false)
             }
         }
+
         fetchData()
-    }, [fetchCatalogs, authData])
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [catalogsProp, clubsProp, authData]) // Removed fetchCatalogs from dependency to avoid loops if it changes identity
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -480,7 +487,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Selecciona una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {Array.from(new Map(clubs.map((club: any) => [club.id, club])).values()).map((club: any) => (
+                                        {uniqueClubs.map((club: any) => (
                                             <SelectItem key={club.id} value={club.id.toString()}>
                                                 {club.Club}
                                             </SelectItem>
