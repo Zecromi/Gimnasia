@@ -25,7 +25,7 @@ import { getColumns } from "./afiliados-columns"
 import { DataTable } from "./data-table"
 import { AfiliadosDialog } from "./afiliados-dialog"
 import { getClubs, ViewClubGral } from "@/lib/club-service"
-import { getAfiliadosCatalogs, Afiliado } from "@/lib/afiliados-service"
+import { getAfiliadosCatalogs, Afiliado, AfiliadosCatalogsResponse } from "@/lib/afiliados-service"
 
 import { useCatalogStore } from "@/lib/store/catalog-store"
 import { useAuthStore } from "@/lib/store/auth-store"
@@ -37,6 +37,7 @@ export function AfiliadosView() {
     const [afiliados, setAfiliados] = useState<Afiliado[]>([])
     const [filteredAfiliados, setFilteredAfiliados] = useState<Afiliado[]>([])
     const [clubs, setClubs] = useState<ViewClubGral[]>([])
+    const [afiliadosCatalogs, setAfiliadosCatalogs] = useState<AfiliadosCatalogsResponse | null>(null)
 
     const [editingAfiliado, setEditingAfiliado] = useState<Afiliado | undefined>(undefined)
     const [isEditOpen, setIsEditOpen] = useState(false)
@@ -94,6 +95,7 @@ export function AfiliadosView() {
                 setFilteredAfiliados(allAfiliados)
             }
             setClubs(clubsData.View_Club_gral)
+            setAfiliadosCatalogs(data)
         } catch (error) {
             console.error("Error fetching afiliados:", error)
         } finally {
@@ -278,8 +280,9 @@ export function AfiliadosView() {
                                 </div>
                             </div>
                             <div className="col-span-1 flex items-center justify-center border-l pl-4">
-                                <AfiliadosDialog onSuccess={fetchData} />
+                                <AfiliadosDialog onSuccess={fetchData} clubs={clubs} catalogs={afiliadosCatalogs || undefined} />
                             </div>
+
                         </div>
                     </CardContent>
                 </Card>
@@ -289,6 +292,9 @@ export function AfiliadosView() {
                     open={isEditOpen}
                     onOpenChange={setIsEditOpen}
                     afiliado={editingAfiliado}
+                    trigger={<span className="sr-only"></span>}
+                    clubs={clubs}
+                    catalogs={afiliadosCatalogs || undefined}
                     onSuccess={() => {
                         setIsEditOpen(false)
                         fetchData()
