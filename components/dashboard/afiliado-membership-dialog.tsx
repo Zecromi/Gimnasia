@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CalendarIcon, CreditCard, Save, Mail, Globe, Phone, MapPin, Calendar as CalendarDays, Fingerprint, Building, ShieldCheck, ExternalLink, Info } from "lucide-react"
+import { CalendarIcon, CreditCard, Save, Mail, Phone, MapPin, Calendar as CalendarDays, Fingerprint, User, ShieldCheck, Info, ExternalLink } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { toast } from "sonner"
@@ -35,9 +35,10 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { useCatalogPayStore } from "@/lib/store/catalog-pay-store"
-import { useClubStore } from "@/lib/store/club-store"
-import { ViewClubGral, updateClubMembership, getClubs } from "@/lib/club-service"
+import { Afiliado } from "@/lib/afiliados-service"
+import { updateClubMembership } from "@/lib/club-service"
 import { useIsMobile } from "@/hooks/use-mobile"
+import { afiliadoPaymentSchema } from "@/lib/schemas/afiliados/afiliado-payment-schema"
 import {
     Drawer,
     DrawerClose,
@@ -45,51 +46,55 @@ import {
     DrawerFooter,
     DrawerHeader,
     DrawerTitle,
-    DrawerTrigger,
+    DrawerDescription,
 } from "@/components/ui/drawer"
 
-interface MembershipDialogProps {
-    club: ViewClubGral
-    children: React.ReactNode
+interface AffiliateMembershipDialogProps {
+    afiliado: Afiliado
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
+    onSuccess?: () => void
+    trigger?: React.ReactNode
 }
 
-export function MembershipDialog({ club, children }: MembershipDialogProps) {
-    const [open, setOpen] = React.useState(false)
+export function AffiliateMembershipDialog({ afiliado, open: controlledOpen, onOpenChange: controlledOnOpenChange, onSuccess, trigger }: AffiliateMembershipDialogProps) {
+    const [internalOpen, setInternalOpen] = React.useState(false)
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const { Catalogo_formas_pago, fetchCatalogs } = useCatalogPayStore()
-    const { setClubs } = useClubStore()
+
+    const isControlled = controlledOpen !== undefined
+    const open = isControlled ? controlledOpen : internalOpen
+    const setOpen = isControlled ? (controlledOnOpenChange || (() => { })) : setInternalOpen
 
     const [formValues, setFormValues] = React.useState({
-        formaPago: club.F_pago || "",
-        noTicket: club.Comprobante || "",
-        lugarPago: club.Lugar_p || "",
-        total: club.M_pago?.toString() || "",
-        fechaPago: club.fecha_p ? new Date(club.fecha_p) : new Date(),
+        formaPago: afiliado.F_pago || "",
+        noTicket: afiliado.Comprobante || "",
+        lugarPago: afiliado.Lugar_p || "",
+        total: afiliado.M_pago?.toString() || "",
+        fechaPago: afiliado.fecha_p ? new Date(afiliado.fecha_p) : new Date(),
     })
 
     React.useEffect(() => {
         if (open) {
             fetchCatalogs()
+            // Reset form values when opening with a new/different affiliate
+            setFormValues({
+                formaPago: afiliado.F_pago || "",
+                noTicket: afiliado.Comprobante || "",
+                lugarPago: afiliado.Lugar_p || "",
+                total: afiliado.M_pago?.toString() || "",
+                fechaPago: afiliado.fecha_p ? new Date(afiliado.fecha_p) : new Date(),
+            })
         }
-    }, [open, fetchCatalogs])
+    }, [open, fetchCatalogs, afiliado])
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (!formValues.formaPago) {
-            toast.error("Seleccione una forma de pago")
-            return
-        }
-        if (!formValues.noTicket) {
-            toast.error("Ingrese el número de ticket")
-            return
-        }
-        if (!formValues.lugarPago) {
-            toast.error("Ingrese el lugar de pago")
-            return
-        }
-        if (!formValues.total || isNaN(Number(formValues.total))) {
-            toast.error("Ingrese un monto total válido")
+        // Validate with Zod
+        const result = afiliadoPaymentSchema.safeParse(formValues)
+        if (!result.success) {
+            toast.error(result.error.issues[0].message)
             return
         }
 
@@ -98,8 +103,8 @@ export function MembershipDialog({ club, children }: MembershipDialogProps) {
         setIsSubmitting(true)
         try {
             const response = await updateClubMembership({
-                tipo: "1",
-                id: club.id.toString(),
+                tipo: "2", // 2 for Affiliate
+                id: afiliado.id.toString(),
                 total: formValues.total,
                 id_forma_pago: selectedForma?.id.toString() || "0",
                 no_ticket: formValues.noTicket,
@@ -108,23 +113,15 @@ export function MembershipDialog({ club, children }: MembershipDialogProps) {
             })
 
             if (response) {
-                toast.success("Membresía actualizada correctamente")
+                toast.success("Pago de afiliación actualizado correctamente")
                 setOpen(false)
-
-                try {
-                    const clubsRes = await getClubs()
-                    if (clubsRes && clubsRes.View_Club_gral) {
-                        setClubs(clubsRes.View_Club_gral)
-                    }
-                } catch (refreshError) {
-                    console.error("Error refreshing clubs store:", refreshError)
-                }
+                onSuccess?.()
             } else {
                 toast.error("La respuesta del servidor no fue válida")
             }
         } catch (error) {
-            console.error("Error updating membership:", error)
-            toast.error("Error al actualizar la membresía")
+            console.error("Error updating affiliate membership:", error)
+            toast.error("Error al actualizar el pago de afiliación")
         } finally {
             setIsSubmitting(false)
         }
@@ -133,38 +130,44 @@ export function MembershipDialog({ club, children }: MembershipDialogProps) {
     const isMobile = useIsMobile()
 
     // Check if already paid
-    const isAlreadyPaid = (club.M_pago || 0) > 0 && !!club.F_pago
+    const isAlreadyPaid = (afiliado.M_pago || 0) > 0 && !!afiliado.F_pago
+
+    const formContent = (
+        <MembershipForm
+            Catalogo_formas_pago={Catalogo_formas_pago}
+            formValues={formValues}
+            setFormValues={setFormValues}
+            handleSubmit={handleSubmit}
+            isSubmitting={isSubmitting}
+            isAlreadyPaid={isAlreadyPaid}
+        />
+    )
 
     if (isMobile) {
         return (
             <Drawer open={open} onOpenChange={setOpen}>
-                <DrawerTrigger asChild>
-                    {children}
-                </DrawerTrigger>
+                <DialogTrigger asChild>
+                    {trigger}
+                </DialogTrigger>
                 <DrawerContent className="h-[95vh]">
                     <DrawerHeader className="text-left border-b">
                         <DrawerTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
-                            <div className="p-1.5 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400">
+                            <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
                                 <CreditCard className="h-5 w-5" />
                             </div>
-                            <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
-                                Membresía
+                            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                Pago de Afiliación
                             </span>
                         </DrawerTitle>
+                        <DrawerDescription>
+                            Ingrese los datos del pago para el afiliado {afiliado.Nombre} {afiliado.Paterno}.
+                        </DrawerDescription>
                     </DrawerHeader>
                     <div className="flex-1 overflow-y-auto px-4 py-4">
                         <div className="flex flex-col gap-6">
-                            <ClubInfoPanel club={club} />
+                            <AfiliadoInfoPanel afiliado={afiliado} />
                             <Separator />
-                            <MembershipForm
-                                club={club}
-                                Catalogo_formas_pago={Catalogo_formas_pago}
-                                formValues={formValues}
-                                setFormValues={setFormValues}
-                                handleSubmit={handleSubmit}
-                                isSubmitting={isSubmitting}
-                                isAlreadyPaid={isAlreadyPaid}
-                            />
+                            {formContent}
                         </div>
                     </div>
                 </DrawerContent>
@@ -174,58 +177,43 @@ export function MembershipDialog({ club, children }: MembershipDialogProps) {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                {children}
-            </DialogTrigger>
+            {trigger && (
+                <DialogTrigger asChild>
+                    {trigger}
+                </DialogTrigger>
+            )}
             <DialogContent className="sm:max-w-[1000px] p-0 overflow-hidden border-none shadow-2xl">
                 <div className="flex flex-col md:flex-row h-full max-h-[90vh]">
                     {/* Left Side: Form */}
                     <div className="flex-1 p-6 md:p-8 bg-background overflow-y-auto">
                         <DialogHeader className="mb-6">
                             <DialogTitle className="flex items-center gap-2 text-2xl font-bold tracking-tight">
-                                <div className="p-2 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400">
+                                <div className="p-2 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400">
                                     <CreditCard className="h-6 w-6" />
                                 </div>
-                                <span className="bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
-                                    Gestión de Membresía
+                                <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                                    Pago de Afiliación
                                 </span>
                             </DialogTitle>
                             <p className="text-muted-foreground mt-1">
                                 {isAlreadyPaid
-                                    ? "Este club ya cuenta con un registro de pago. No es posible guardar cambios nuevamente."
-                                    : "Ingrese los datos del comprobante de pago para habilitar la membresía del club."}
+                                    ? "Este afiliado ya cuenta con un registro de pago. No es posible guardar cambios nuevamente."
+                                    : "Ingrese los datos del comprobante de pago para este afiliado."}
                             </p>
                         </DialogHeader>
 
-                        <MembershipForm
-                            club={club}
-                            Catalogo_formas_pago={Catalogo_formas_pago}
-                            formValues={formValues}
-                            setFormValues={setFormValues}
-                            handleSubmit={handleSubmit}
-                            isSubmitting={isSubmitting}
-                            isAlreadyPaid={isAlreadyPaid}
-                        />
+                        {formContent}
                     </div>
 
-                    {/* Right Side: Club Info */}
-                    <ClubInfoPanel club={club} className="w-full md:w-[400px] bg-slate-50 dark:bg-slate-900/40 p-6 md:p-8 flex flex-col border-l border-slate-200 dark:border-slate-800" />
+                    {/* Right Side: Affiliate Info */}
+                    <AfiliadoInfoPanel afiliado={afiliado} className="w-full md:w-[400px] bg-slate-50 dark:bg-slate-900/40 p-6 md:p-8 flex flex-col border-l border-slate-200 dark:border-slate-800" />
                 </div>
             </DialogContent>
         </Dialog>
     )
 }
 
-interface MembershipFormProps {
-    club: ViewClubGral
-    Catalogo_formas_pago: any[]
-    formValues: any
-    setFormValues: React.Dispatch<React.SetStateAction<any>>
-    handleSubmit: (e: React.FormEvent) => void
-    isSubmitting: boolean
-}
-
-function MembershipForm({ club, Catalogo_formas_pago, formValues, setFormValues, handleSubmit, isSubmitting, isAlreadyPaid }: any) {
+function MembershipForm({ Catalogo_formas_pago, formValues, setFormValues, handleSubmit, isSubmitting, isAlreadyPaid }: any) {
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
@@ -235,7 +223,7 @@ function MembershipForm({ club, Catalogo_formas_pago, formValues, setFormValues,
                     onValueChange={(val) => setFormValues((prev: any) => ({ ...prev, formaPago: val }))}
                     disabled={isAlreadyPaid}
                 >
-                    <SelectTrigger id="formaPago" className="h-9 bg-muted/30 border-muted-foreground/20 focus:ring-teal-500/20">
+                    <SelectTrigger id="formaPago" className="h-9 bg-muted/30 border-muted-foreground/20 focus:ring-blue-500/20">
                         <SelectValue placeholder="Seleccione una forma de pago" />
                     </SelectTrigger>
                     <SelectContent>
@@ -254,9 +242,10 @@ function MembershipForm({ club, Catalogo_formas_pago, formValues, setFormValues,
                     <Input
                         id="noTicket"
                         placeholder="Ej. 12345"
-                        className="h-9 bg-muted/30 border-muted-foreground/20 focus-visible:ring-teal-500/20"
+                        className="h-9 bg-muted/30 border-muted-foreground/20 focus-visible:ring-blue-500/20"
                         value={formValues.noTicket}
                         onChange={(e) => setFormValues((prev: any) => ({ ...prev, noTicket: e.target.value }))}
+                        disabled={isAlreadyPaid}
                     />
                 </div>
 
@@ -265,7 +254,7 @@ function MembershipForm({ club, Catalogo_formas_pago, formValues, setFormValues,
                     <Input
                         id="lugarPago"
                         placeholder="Sucursal / Banco"
-                        className="h-9 bg-muted/30 border-muted-foreground/20 focus-visible:ring-teal-500/20"
+                        className="h-9 bg-muted/30 border-muted-foreground/20 focus-visible:ring-blue-500/20"
                         value={formValues.lugarPago}
                         onChange={(e) => setFormValues((prev: any) => ({ ...prev, lugarPago: e.target.value }))}
                         disabled={isAlreadyPaid}
@@ -280,8 +269,8 @@ function MembershipForm({ club, Catalogo_formas_pago, formValues, setFormValues,
                         id="total"
                         type="number"
                         step="0.01"
-                        placeholder="Ej. 1500.00"
-                        className="h-9 bg-muted/30 border-muted-foreground/20 focus-visible:ring-teal-500/20"
+                        placeholder="Ej. 500.00"
+                        className="h-9 bg-muted/30 border-muted-foreground/20 focus-visible:ring-blue-500/20"
                         value={formValues.total}
                         onChange={(e) => setFormValues((prev: any) => ({ ...prev, total: e.target.value }))}
                         disabled={isAlreadyPaid}
@@ -295,7 +284,7 @@ function MembershipForm({ club, Catalogo_formas_pago, formValues, setFormValues,
                             <Button
                                 variant={"outline"}
                                 className={cn(
-                                    "w-full h-9 justify-start text-left font-normal bg-muted/30 border-muted-foreground/20 focus:ring-teal-500/20",
+                                    "w-full h-9 justify-start text-left font-normal bg-muted/30 border-muted-foreground/20 focus:ring-blue-500/20",
                                     !formValues.fechaPago && "text-muted-foreground"
                                 )}
                                 disabled={isAlreadyPaid}
@@ -328,7 +317,7 @@ function MembershipForm({ club, Catalogo_formas_pago, formValues, setFormValues,
             <DialogFooter className="pt-8 block sm:justify-between sm:flex">
                 <Button
                     type="submit"
-                    className="w-full sm:w-auto"
+                    className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white"
                     disabled={isSubmitting || isAlreadyPaid}
                 >
                     {isSubmitting ? (
@@ -339,7 +328,7 @@ function MembershipForm({ club, Catalogo_formas_pago, formValues, setFormValues,
                     ) : (
                         <div className="flex items-center gap-2">
                             <Save className="h-4 w-4" />
-                            Guardar Membresía
+                            Guardar Pago
                         </div>
                     )}
                 </Button>
@@ -348,48 +337,47 @@ function MembershipForm({ club, Catalogo_formas_pago, formValues, setFormValues,
     )
 }
 
-function ClubInfoPanel({ club, className }: { club: ViewClubGral, className?: string }) {
+function AfiliadoInfoPanel({ afiliado, className }: { afiliado: Afiliado, className?: string }) {
     return (
         <div className={className}>
             <div className="flex flex-col items-center text-center mb-8">
-                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white mb-4 shadow-xl shadow-teal-500/10 ring-4 ring-white dark:ring-slate-800">
-                    <Building className="h-10 w-10" />
+                <div className="w-24 h-24 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white mb-4 shadow-xl shadow-blue-500/10 ring-4 ring-white dark:ring-slate-800">
+                    <User className="h-10 w-10" />
                 </div>
-                <h3 className="text-xl font-bold line-clamp-2 px-2">{club.Club}</h3>
+                <h3 className="text-xl font-bold line-clamp-2 px-2">{afiliado.Nombre} {afiliado.Paterno} {afiliado.Materno}</h3>
                 <div className="flex gap-2 mt-3">
-                    <Badge variant={club.Estatus ? "default" : "destructive"} className={cn("px-3", club.Estatus ? "bg-emerald-500 hover:bg-emerald-600" : "bg-rose-500 hover:bg-rose-600")}>
+                    <Badge variant={afiliado.Fecha_baja ? "destructive" : "default"} className={cn("px-3", !afiliado.Fecha_baja ? "bg-emerald-500 hover:bg-emerald-600" : "bg-rose-500 hover:bg-rose-600")}>
                         <ShieldCheck className="mr-1 h-3 w-3" />
-                        {club.Estatus ? "Alta" : "Baja"}
+                        {!afiliado.Fecha_baja ? "Alta" : "Baja"}
                     </Badge>
-                    <Badge variant="outline" className={cn("px-3 border-teal-200 dark:border-teal-900/50", club.membresia ? "bg-teal-50 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400" : "bg-slate-50 text-slate-500")}>
+                    <Badge variant="outline" className={cn("px-3 border-blue-200 dark:border-blue-900/50", afiliado.F_pago ? "bg-blue-50 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400" : "bg-slate-50 text-slate-500")}>
                         <CreditCard className="mr-1 h-3 w-3" />
-                        {club.membresia ? "Membresía Activa" : "Sin Membresía"}
+                        {afiliado.F_pago ? "Pagado" : "Pendiente"}
                     </Badge>
                 </div>
             </div>
 
             <ScrollArea className="flex-1 pr-2">
                 <div className="space-y-6">
-                    <InfoSection title="Información de Contacto">
-                        <InfoItem icon={<Mail />} label="Email" value={club.Email} isEmail />
-                        {club.Web && <InfoItem icon={<Globe />} label="Web" value={club.Web} isWeb />}
-                        <InfoItem icon={<Phone />} label="Teléfono 1" value={club.Telefono1} />
-                        {club.Telefono2 && <InfoItem icon={<Phone />} label="Teléfono 2" value={club.Telefono2} />}
+                    <InfoSection title="Información Personal">
+                        <InfoItem icon={<Fingerprint />} label="CURP" value={afiliado.Curp} />
+                        <InfoItem icon={<CalendarDays />} label="Nacimiento" value={afiliado.Fecha_nacimiento ? format(new Date(afiliado.Fecha_nacimiento), "dd-MMMM-yyyy", { locale: es }) : "N/A"} />
+                        <InfoItem icon={<User />} label="Género" value={afiliado.Genero} />
                     </InfoSection>
 
                     <Separator className="opacity-50" />
 
-                    <InfoSection title="Detalles Institucionales">
-                        <InfoItem icon={<MapPin />} label="Asociación" value={club.Asociacion} />
-                        <InfoItem icon={<Fingerprint />} label="RFC" value={club.rfc || "N/A"} />
-                        <InfoItem icon={<CalendarDays />} label="Fundación" value={club.Fundacion ? format(new Date(club.Fundacion), "dd-MMMM-yyyy", { locale: es }) : "N/A"} />
-                        {club.Alias && <InfoItem icon={<Building />} label="Alias" value={club.Alias} />}
+                    <InfoSection title="Contacto">
+                        <InfoItem icon={<MapPin />} label="Dirección" value={`${afiliado.Calle} ${afiliado.Exterior}, ${afiliado.Colonia}`} />
+                        <InfoItem icon={<MapPin />} label="Ciudad" value={`${afiliado.Ciudad}, ${afiliado.Estado}`} />
+                        <InfoItem icon={<Phone />} label="Tel. Particular" value={afiliado.Telefono_c} />
+                        <InfoItem icon={<Phone />} label="Celular" value={afiliado.Telefono_cel} />
                     </InfoSection>
 
-                    <div className="p-4 rounded-xl bg-teal-50/50 dark:bg-teal-900/10 border border-teal-100 dark:border-teal-900/30 flex gap-3 mt-4">
-                        <Info className="h-5 w-5 text-teal-600 shrink-0 mt-0.5" />
-                        <p className="text-xs text-teal-800/80 dark:text-teal-400/80 leading-relaxed font-medium">
-                            Llene los datos del comprobante de pago para habilitar la membresía del club.
+                    <div className="p-4 rounded-xl bg-blue-50/50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 flex gap-3 mt-4">
+                        <Info className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                        <p className="text-xs text-blue-800/80 dark:text-blue-400/80 leading-relaxed font-medium">
+                            Llene los datos del comprobante de pago para registrar la afiliación.
                         </p>
                     </div>
                 </div>
@@ -409,10 +397,10 @@ function InfoSection({ title, children }: { title: string, children: React.React
     )
 }
 
-function InfoItem({ icon, label, value, isEmail, isWeb }: { icon: React.ReactNode, label: string, value: string, isEmail?: boolean, isWeb?: boolean }) {
+function InfoItem({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
     return (
         <div className="group flex items-start gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
-            <div className="p-1.5 rounded-md bg-white dark:bg-slate-800 text-slate-500 shadow-sm border border-slate-200 dark:border-slate-700 group-hover:text-teal-600 dark:group-hover:text-teal-400 group-hover:border-teal-200 dark:group-hover:border-teal-900 transition-all">
+            <div className="p-1.5 rounded-md bg-white dark:bg-slate-800 text-slate-500 shadow-sm border border-slate-200 dark:border-slate-700 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:border-blue-200 dark:group-hover:border-blue-900 transition-all">
                 {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<{ className?: string }>, { className: "h-3.5 w-3.5" }) : icon}
             </div>
             <div className="flex-1 min-w-0">
@@ -421,9 +409,6 @@ function InfoItem({ icon, label, value, isEmail, isWeb }: { icon: React.ReactNod
                     <p className="text-sm font-semibold truncate text-slate-700 dark:text-slate-300">
                         {value}
                     </p>
-                    {(isEmail || isWeb) && (
-                        <ExternalLink className="h-3 w-3 text-muted-foreground/40 group-hover:text-teal-500/50 transition-colors shrink-0" />
-                    )}
                 </div>
             </div>
         </div>

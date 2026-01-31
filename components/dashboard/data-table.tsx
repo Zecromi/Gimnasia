@@ -28,6 +28,8 @@ interface DataTableProps<TData, TValue> {
     data: TData[]
     noResultsMessage?: string
     containerClassName?: string
+    headerClassName?: string
+    tableHeight?: string
 }
 
 export function DataTable<TData, TValue>({
@@ -35,6 +37,8 @@ export function DataTable<TData, TValue>({
     data,
     noResultsMessage = "No results.",
     containerClassName,
+    headerClassName = "bg-white dark:bg-teal-950",
+    tableHeight = "h-[41.75rem]",
 }: DataTableProps<TData, TValue>) {
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
@@ -56,17 +60,20 @@ export function DataTable<TData, TValue>({
     })
 
     return (
-        <div className="rounded-md border">
-            <div className="relative w-full overflow-auto h-[41.75rem]">
-                <table className="w-full caption-bottom text-sm">
-                    <TableHeader className="bg-white dark:bg-teal-950">
+        <div className={cn("rounded-md border", containerClassName)}>
+            <div className={cn("relative w-full overflow-auto", tableHeight)}>
+                <table className="w-full caption-bottom text-sm border-collapse">
+                    <TableHeader className={headerClassName}>
                         {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id}>
+                            <TableRow key={headerGroup.id} className="border-none">
                                 {headerGroup.headers.map((header) => {
                                     return (
                                         <TableHead
                                             key={header.id}
-                                            className="sticky top-0 z-10 bg-white dark:bg-teal-950 shadow-sm"
+                                            className={cn(
+                                                "sticky top-0 z-20 shadow-[0_1px_0_0_rgba(0,0,0,0.1)] dark:shadow-[0_1px_0_0_rgba(255,255,255,0.1)]",
+                                                headerClassName
+                                            )}
                                         >
                                             {header.isPlaceholder
                                                 ? null

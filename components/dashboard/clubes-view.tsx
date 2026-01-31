@@ -201,7 +201,12 @@ export function ClubesView() {
                     </div>
                 </CardContent>
             </Card>
-            <DataTable columns={columns} data={filteredData} containerClassName="max-h-[700px]" />
+            <DataTable
+                columns={columns}
+                data={filteredData}
+                headerClassName="bg-white dark:bg-sky-950"
+                tableHeight="h-[700px]"
+            />
         </div>
     )
 }

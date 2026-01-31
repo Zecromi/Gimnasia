@@ -301,6 +301,7 @@ export function InscripcionesEventosView() {
                     columns={getColumns(fetchData)}
                     data={filteredEventos}
                     noResultsMessage="No existen registros de eventos"
+                    headerClassName="bg-white dark:bg-teal-950"
                 />
             )}
         </div >
