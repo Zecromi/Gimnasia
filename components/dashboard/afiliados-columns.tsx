@@ -13,6 +13,8 @@ import { Afiliado } from "@/lib/afiliados-service"
 
 import { ViewClubGral, CatalogoItem, Estado } from "@/lib/club-service"
 
+import { AuthData } from "@/lib/store/auth-store"
+
 export const getColumns = (
     onSuccess: () => void,
     onEdit: (afiliado: Afiliado) => void,
@@ -20,7 +22,8 @@ export const getColumns = (
     clubs: ViewClubGral[] = [],
     escolaridadList: CatalogoItem[] = [],
     estadosList: Estado[] = [],
-    nivelesTecnicosList: { id: number; Descripcion: string }[] = []
+    nivelesTecnicosList: { id: number; Descripcion: string }[] = [],
+    authData: AuthData | null = null
 ): ColumnDef<Afiliado>[] => [
         {
             id: "detalle",
@@ -45,22 +48,24 @@ export const getColumns = (
                             </TooltipContent>
                         </Tooltip>
 
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600"
-                                    onClick={() => onPayment(row.original)}
-                                >
-                                    <CreditCard className="h-4 w-4" />
-                                    <span className="sr-only">Pago</span>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Pago de Afiliación</p>
-                            </TooltipContent>
-                        </Tooltip>
+                        {(authData?.tipo_registro === 1 || authData?.tipo_registro === 3) && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600"
+                                        onClick={() => onPayment(row.original)}
+                                    >
+                                        <CreditCard className="h-4 w-4" />
+                                        <span className="sr-only">Pago</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Pago de Afiliación</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
                     </div>
                 )
             },

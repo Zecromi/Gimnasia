@@ -122,7 +122,7 @@ export function AfiliadosView() {
         setIsPaymentOpen(true)
     }, [])
 
-    const columns = useMemo(() => getColumns(fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos), [fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos])
+    const columns = useMemo(() => getColumns(fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos, authData), [fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos, authData])
 
     const handleFilter = () => {
         let filtered = [...afiliados]

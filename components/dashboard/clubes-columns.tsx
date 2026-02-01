@@ -44,23 +44,25 @@ export const getColumns = (authData: AuthData | null): ColumnDef<ViewClubGral>[]
                             </Button>
                         </EditClubDialog>
                     )}
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <MembershipDialog club={club}>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 hover:bg-blue-200 dark:hover:bg-blue-800"
-                                    >
-                                        <CreditCard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                                        <span className="sr-only">Membresía</span>
-                                    </Button>
-                                </MembershipDialog>
-                            </TooltipTrigger>
-                            <TooltipContent>Membresía</TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                    {(authData?.tipo_registro === 1 || authData?.tipo_registro === 3) && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <MembershipDialog club={club}>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="h-8 w-8 hover:bg-blue-200 dark:hover:bg-blue-800"
+                                        >
+                                            <CreditCard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                            <span className="sr-only">Membresía</span>
+                                        </Button>
+                                    </MembershipDialog>
+                                </TooltipTrigger>
+                                <TooltipContent>Membresía</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
                 </div>
             )
         },
