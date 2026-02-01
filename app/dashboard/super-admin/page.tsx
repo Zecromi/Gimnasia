@@ -92,10 +92,6 @@ export default function SuperUsuarioPage() {
                         <Users className="mr-2 h-4 w-4" />
                         Super Admin
                     </TabsTrigger>
-                    <TabsTrigger value="pagos">
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Pagos
-                    </TabsTrigger>
                     <TabsTrigger value="reportes">
                         <FileText className="mr-2 h-4 w-4" />
                         Reportes
@@ -197,21 +193,6 @@ export default function SuperUsuarioPage() {
                                     </TableBody>
                                 </Table>
                             </div>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="pagos">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Gestión de Pagos</CardTitle>
-                            <CardDescription>
-                                Sección para la administración de pagos y transacciones del sistema.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="h-[400px] flex flex-col items-center justify-center text-muted-foreground">
-                            <CreditCard className="h-16 w-16 mb-4 opacity-20" />
-                            <p>Contenido de pagos próximamente...</p>
                         </CardContent>
                     </Card>
                 </TabsContent>

@@ -303,6 +303,51 @@ export const updateClubMembership = async (data: UpdateMembershipPayload) => {
     return response.data;
 };
 
+export interface ClubMembershipReportParams {
+    nombre_club?: string;
+    status_membresia?: string;
+    status_club?: string;
+    forma_pago?: string;
+    fecha_ini?: string;
+    fecha_fin?: string;
+}
+
+export interface ClubMembershipItem {
+    id: number;
+    Club: string;
+    Alias: string;
+    rfc: string;
+    Tipo_aparatos_nac: boolean;
+    Tipo_aparatos_imp: boolean;
+    Tipos_aparatos_fig: boolean;
+    Tipos_aparatos_otros: boolean;
+    Latitud: number;
+    longitud: number;
+    Asociacion: string;
+    Email: string;
+    Web: string;
+    id_club_principal: number;
+    membresia: boolean;
+    Estatus: boolean;
+    Fundacion: string;
+    Sector: boolean;
+    Tipo_instalaciones: boolean;
+    Telefono1: string;
+    Telefono2: string;
+    M_pago?: number;
+    F_pago?: string;
+    Lugar_p?: string;
+    fecha_p?: string; // or Date string
+    Comprobante?: string;
+}
+
+export const getClubMembershipReport = async (params: ClubMembershipReportParams) => {
+    // Determine if we need to send query params (GET)
+    // The requirement says GET with query params.
+    const response = await api.get<ClubMembershipItem[]>("/GetRepo_club_mem", { params });
+    return response.data;
+};
+
 
 
 
