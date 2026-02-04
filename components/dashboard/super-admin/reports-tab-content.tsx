@@ -83,26 +83,15 @@ export function ReportsTabContent() {
 
     const formatClubData = (club: ClubMembershipItem) => {
         return {
-            ID: club.id,
             Club: club.Club,
             Alias: club.Alias,
             Email: club.Email,
             Asociación: club.Asociacion,
             Membresía: club.membresia ? "Activa" : "Inactiva",
             Estatus: club.Estatus ? "Alta" : "Baja",
-            Web: club.Web,
-            RFC: club.rfc,
-            "Aparatos Nac.": club.Tipo_aparatos_nac ? "Sí" : "No",
-            "Aparatos Imp.": club.Tipo_aparatos_imp ? "Sí" : "No",
-            "Aparatos FIG": club.Tipos_aparatos_fig ? "Sí" : "No",
-            "Otros Aparatos": club.Tipos_aparatos_otros ? "Sí" : "No",
-            Fundación: club.Fundacion ? new Date(club.Fundacion).toLocaleDateString("es-MX") : "-",
-            Sector: club.Sector ? "Privado" : "Público",
-            Instalaciones: club.Tipo_instalaciones ? "Rentadas" : "Propias",
-            "Teléfono 1": club.Telefono1,
-            "Teléfono 2": club.Telefono2,
             "Monto Pago": club.M_pago ? `$${Number(club.M_pago).toFixed(2)}` : "$0.00",
             "F. Pago": club.F_pago,
+            "Comprobante": club.Comprobante,
             "Lugar Pago": club.Lugar_p,
             "Fecha Pago": club.fecha_p ? new Date(club.fecha_p).toLocaleDateString("es-MX", { timeZone: 'UTC' }) : "-",
         }
@@ -237,21 +226,15 @@ export function ReportsTabContent() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead className="whitespace-nowrap">ID</TableHead>
                                     <TableHead className="whitespace-nowrap">Club</TableHead>
                                     <TableHead className="whitespace-nowrap">Alias</TableHead>
                                     <TableHead className="whitespace-nowrap">Email</TableHead>
                                     <TableHead className="whitespace-nowrap">Asociación</TableHead>
                                     <TableHead className="whitespace-nowrap">Membresía</TableHead>
                                     <TableHead className="whitespace-nowrap">Estatus</TableHead>
-                                    <TableHead className="whitespace-nowrap">Web</TableHead>
-                                    <TableHead className="whitespace-nowrap">RFC</TableHead>
-                                    <TableHead className="whitespace-nowrap">Fundación</TableHead>
-                                    <TableHead className="whitespace-nowrap">Sector</TableHead>
-                                    <TableHead className="whitespace-nowrap">Instalaciones</TableHead>
-                                    <TableHead className="whitespace-nowrap">Teléfono 1</TableHead>
                                     <TableHead className="whitespace-nowrap">Monto Pago</TableHead>
                                     <TableHead className="whitespace-nowrap">Forma Pago</TableHead>
+                                    <TableHead className="whitespace-nowrap">Comprobante</TableHead>
                                     <TableHead className="whitespace-nowrap">Lugar Pago</TableHead>
                                     <TableHead className="whitespace-nowrap">Fecha Pago</TableHead>
                                 </TableRow>
@@ -262,7 +245,6 @@ export function ReportsTabContent() {
                                         const formatted = formatClubData(item)
                                         return (
                                             <TableRow key={`${item.id}-${index}`}>
-                                                <TableCell className="font-medium whitespace-nowrap">{formatted.ID}</TableCell>
                                                 <TableCell className="whitespace-nowrap">{formatted.Club}</TableCell>
                                                 <TableCell className="whitespace-nowrap">{formatted.Alias}</TableCell>
                                                 <TableCell className="whitespace-nowrap">{formatted.Email}</TableCell>
@@ -283,14 +265,9 @@ export function ReportsTabContent() {
                                                         {formatted.Estatus}
                                                     </span>
                                                 </TableCell>
-                                                <TableCell className="whitespace-nowrap">{formatted.Web}</TableCell>
-                                                <TableCell className="whitespace-nowrap">{formatted.RFC}</TableCell>
-                                                <TableCell className="whitespace-nowrap">{formatted.Fundación}</TableCell>
-                                                <TableCell className="whitespace-nowrap">{formatted.Sector}</TableCell>
-                                                <TableCell className="whitespace-nowrap">{formatted.Instalaciones}</TableCell>
-                                                <TableCell className="whitespace-nowrap">{formatted["Teléfono 1"]}</TableCell>
                                                 <TableCell className="whitespace-nowrap">{formatted["Monto Pago"]}</TableCell>
                                                 <TableCell className="whitespace-nowrap">{formatted["F. Pago"]}</TableCell>
+                                                <TableCell className="whitespace-nowrap">{formatted.Comprobante}</TableCell>
                                                 <TableCell className="whitespace-nowrap">{formatted["Lugar Pago"]}</TableCell>
                                                 <TableCell className="whitespace-nowrap">{formatted["Fecha Pago"]}</TableCell>
                                             </TableRow>
