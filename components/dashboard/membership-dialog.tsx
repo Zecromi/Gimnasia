@@ -132,8 +132,8 @@ export function MembershipDialog({ club, children }: MembershipDialogProps) {
 
     const isMobile = useIsMobile()
 
-    // Check if already paid
-    const isAlreadyPaid = (club.M_pago || 0) > 0 && !!club.F_pago
+    // Check if already paid or has active membership
+    const isAlreadyPaid = club.membresia || ((club.M_pago || 0) > 0 && !!club.F_pago)
 
     if (isMobile) {
         return (
@@ -257,6 +257,7 @@ function MembershipForm({ club, Catalogo_formas_pago, formValues, setFormValues,
                         className="h-9 bg-muted/30 border-muted-foreground/20 focus-visible:ring-teal-500/20"
                         value={formValues.noTicket}
                         onChange={(e) => setFormValues((prev: any) => ({ ...prev, noTicket: e.target.value }))}
+                        disabled={isAlreadyPaid}
                     />
                 </div>
 
