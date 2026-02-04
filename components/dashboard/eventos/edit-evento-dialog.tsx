@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CircleFadingArrowUp, Upload, Database, FileText, Image, Receipt, BookOpen } from "lucide-react"
+import { CircleFadingArrowUp, Upload, Database, FileText, Image, Receipt, BookOpen, CalendarDays, MapPin, Clock, Trophy, Globe, User, Building2 } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
@@ -38,16 +38,27 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { EventoResponseItem as Evento, createEvento, putEventos, SetEventoPayload, ConfiguracionItem, NivelItem, AdicionalItem, EventoItem } from "@/lib/evento-service"
-import { CalendarPlus, Save, Calendar as CalendarIcon, Medal, Hash, AlertCircle } from "lucide-react"
+import {
+    getEventos,
+    putEventos,
+    getNiveles,
+    SetEventoPayload,
+    ConfiguracionItem,
+    NivelItem,
+    AdicionalItem,
+    EventoItem,
+    EventosConfiguradosItem as Evento
+} from "@/lib/evento-service"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Calendar } from "@/components/ui/calendar"
+import { CalendarPlus, Save, Calendar as CalendarIcon, Medal, Hash, AlertCircle, Plus, Trash2, ChevronsUpDown, Users } from "lucide-react"
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import { Badge } from "@/components/ui/badge"
 import {
     Table,
     TableBody,
@@ -100,11 +111,11 @@ export function EditEventoDialog({ evento, children, onSuccess }: EditEventoDial
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[1000px] max-h-[95vh] h-fit flex flex-col p-0">
+            <DialogContent className="sm:max-w-[1000px] h-[95vh] flex flex-col p-0">
                 <DialogHeader className="px-6 py-4 border-b shrink-0">
                     <DialogTitle>Editar Evento: {evento.Nombre}</DialogTitle>
                 </DialogHeader>
-                <div className="flex-1">
+                <div className="flex-1 overflow-hidden">
                     <EditEventoTabs id="edit-evento-form-desktop" evento={evento} onSuccess={handleSuccess} />
                 </div>
             </DialogContent>
@@ -160,8 +171,8 @@ function EditEventoTabs({ className, id, evento, onSuccess }: { className?: stri
     ]
 
     return (
-        <Tabs defaultValue="general" className="flex-1 h-full flex flex-col overflow-visible">
-            <div className="px-6 pt-1">
+        <Tabs defaultValue="general" className="flex-1 h-full flex flex-col overflow-hidden">
+            <div className="px-6 pt-1 shrink-0">
                 <TabsList className="flex w-full sm:w-auto h-auto p-1 bg-muted/80 gap-1">
                     {tabsConfig.map((tab) => (
                         <TooltipProvider key={tab.value}>
@@ -184,21 +195,21 @@ function EditEventoTabs({ className, id, evento, onSuccess }: { className?: stri
                 </TabsList>
             </div>
 
-            <div className="flex-1 w-full overflow-y-auto overflow-x-visible custom-scrollbar">
-                <div className="p-6 h-full">
-                    {tabsConfig.map((tab) => (
-                        <TabsContent key={tab.value} value={tab.value} className={cn("m-0 focus-visible:outline-none", tab.className)}>
-                            {tab.content}
-                        </TabsContent>
-                    ))}
-                </div>
+            <div className="flex-1 w-full overflow-hidden">
+                <ScrollArea className="h-full">
+                    <div className="p-6">
+                        {tabsConfig.map((tab) => (
+                            <TabsContent key={tab.value} value={tab.value} className={cn("m-0 focus-visible:outline-none", tab.className)}>
+                                {tab.content}
+                            </TabsContent>
+                        ))}
+                    </div>
+                </ScrollArea>
             </div>
         </Tabs>
     )
 }
 
-import { Badge } from "@/components/ui/badge"
-import { CalendarDays, MapPin, Clock, Trophy, Globe, User, Building2, Users } from "lucide-react"
 
 function GeneralInfoForm({ id, evento }: { id: string, evento: Evento }) {
     return (
@@ -337,12 +348,8 @@ import { cn } from "@/lib/utils"
 function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento, onSuccess?: () => void }) {
     const [modalidades, setModalidades] = React.useState<ModalidadItem[]>([])
     const [modalidadesDetalle, setModalidadesDetalle] = React.useState<ModalidadDetalleItem[]>([])
-    const [isCustomModality, setIsCustomModality] = React.useState(false)
-    const [newModality, setNewModality] = React.useState({
-        descripcion: "",
-        costo: "",
-        configuracion: ""
-    })
+    const [isTableCollapsed, setIsTableCollapsed] = React.useState<Record<string, boolean>>({})
+
     const [selectedDetails, setSelectedDetails] = React.useState<Record<string, boolean>>({})
     const [detailValues, setDetailValues] = React.useState<Record<string, { costo: string, descripcion: string }>>({})
     const [selectedModalities, setSelectedModalities] = React.useState<Record<string, boolean>>({})
@@ -359,6 +366,10 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
             ...prev,
             [id]: !prev[id]
         }))
+    }, [])
+
+    const toggleTableCollapse = React.useCallback((id: string) => {
+        setIsTableCollapsed(prev => ({ ...prev, [id]: !prev[id] }))
     }, [])
 
     const toggleDetail = React.useCallback((key: string) => {
@@ -387,7 +398,6 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
         }))
     }, [])
 
-    const hasNewData = Object.values(newModality).some(value => value.trim() !== "")
 
     const groupedDetails = React.useMemo(() => {
         const grouped: Record<number, ModalidadDetalleItem[]> = {}
@@ -400,10 +410,6 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
 
     const grandTotal = React.useMemo(() => {
         let total = 0
-        if (isCustomModality) {
-            const cost = parseFloat(newModality.costo)
-            if (!isNaN(cost)) total += cost
-        }
         Object.keys(selectedDetails).forEach((key) => {
             if (selectedDetails[key]) {
                 const cost = parseFloat(detailValues[key]?.costo || "0")
@@ -411,24 +417,49 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
             }
         })
         return total
-    }, [isCustomModality, newModality.costo, selectedDetails, detailValues])
+    }, [selectedDetails, detailValues])
 
     React.useEffect(() => {
         const fetchData = async () => {
             try {
-                const data = await getGlobalInfo();
+                const [data, eventNiveles] = await Promise.all([
+                    getGlobalInfo(),
+                    getNiveles(String(evento.id))
+                ]);
+
                 if (data.Modalidades) {
-                    setModalidades(data.Modalidades);
+                    const filteredModalities = data.Modalidades.filter(m => m.Nombre === evento.Modalidad);
+                    setModalidades(filteredModalities);
+                    if (filteredModalities.length === 1) {
+                        setSelectedModalities({ [String(filteredModalities[0].id)]: true });
+                    }
                 }
-                if (data.View_Modalidades_detalle) {
-                    setModalidadesDetalle(data.View_Modalidades_detalle);
+
+                const details = data.View_Modalidades_detalle || [];
+                setModalidadesDetalle(details);
+
+                if (eventNiveles?.Niveles && eventNiveles.Niveles.length > 0) {
+                    const newSelectedDetails: Record<string, boolean> = {};
+                    const newDetailValues: Record<string, { costo: string, descripcion: string }> = {};
+
+                    eventNiveles.Niveles.forEach(nivel => {
+                        const key = `det-${nivel.id_modalidad}-${nivel.id_nivel}`;
+                        newSelectedDetails[key] = true;
+                        newDetailValues[key] = {
+                            costo: String(nivel.costo),
+                            descripcion: ""
+                        };
+                    });
+
+                    setSelectedDetails(newSelectedDetails);
+                    setDetailValues(newDetailValues);
                 }
             } catch (error) {
-                console.error("Error fetching modalities:", error);
+                console.error("Error fetching modalities and levels:", error);
             }
         };
         fetchData();
-    }, []);
+    }, [evento.id, evento.Modalidad]);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -457,27 +488,16 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
             if (selectedDetails[key]) {
                 const parts = key.split('-')
                 if (parts.length === 3) {
-                    const modId = parseInt(parts[1])
-                    const idx = parseInt(parts[2])
-                    const detail = groupedDetails[modId]?.[idx]
-                    if (detail) {
-                        nivelesData.push({
-                            id_modalidad: parts[1],
-                            id_nivel: String(detail.id_nivel),
-                            costo: detailValues[key]?.costo || "0"
-                        })
-                    }
+                    nivelesData.push({
+                        id_modalidad: parts[1],
+                        id_nivel: parts[2],
+                        costo: detailValues[key]?.costo || "0"
+                    })
                 }
             }
         })
 
         const adicionalesData: AdicionalItem[] = []
-        if (isCustomModality) {
-            adicionalesData.push({
-                descripcion: newModality.descripcion,
-                costo_base: newModality.costo
-            })
-        }
 
         Object.keys(selectedDetails).forEach(key => {
             if (selectedDetails[key]) {
@@ -538,69 +558,6 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
                         Seleccione las modalidades y configure los costos para este evento.
                     </p>
                     <Accordion type="single" collapsible className="w-full space-y-2 pb-6">
-                        <AccordionItem
-                            value="new-mode"
-                            className={cn(
-                                "border rounded-lg px-4",
-                                hasNewData && "bg-teal-50 border-teal-200 dark:bg-teal-900/20 dark:border-teal-800"
-                            )}
-                        >
-                            <AccordionPrimitive.Header className="flex items-center py-3">
-                                <div className="flex items-center mr-3">
-                                    <Checkbox
-                                        id={`${id}-create-custom-modality`}
-                                        checked={isCustomModality}
-                                        onCheckedChange={(checked) => setIsCustomModality(checked as boolean)}
-                                    />
-                                </div>
-                                <AccordionPrimitive.Trigger
-                                    className={cn(
-                                        "flex flex-1 items-center justify-between py-0 text-sm font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180 cursor-pointer"
-                                    )}
-                                >
-                                    <Label htmlFor={`${id}-create-custom-modality`} className="cursor-pointer pointer-events-none">
-                                        Extras de la modalidad
-                                    </Label>
-                                    <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
-                                </AccordionPrimitive.Trigger>
-                            </AccordionPrimitive.Header>
-                            <AccordionContent className="pt-2 pb-4 px-2">
-                                <div className="space-y-4 pt-2">
-                                    <div className="space-y-2">
-                                        <Label htmlFor={`${id}-mod-descripcion`}>Descripción</Label>
-                                        <Input
-                                            id={`${id}-mod-descripcion`}
-                                            placeholder="Descripción de la modalidad"
-                                            value={newModality.descripcion}
-                                            onChange={(e) => setNewModality(prev => ({ ...prev, descripcion: e.target.value }))}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor={`${id}-mod-costo`}>Costo</Label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                                            <Input
-                                                id={`${id}-mod-costo`}
-                                                type="number"
-                                                className="pl-7"
-                                                placeholder="0.00"
-                                                value={newModality.costo}
-                                                onChange={(e) => setNewModality(prev => ({ ...prev, costo: e.target.value }))}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor={`${id}-mod-configuracion`}>Configuración</Label>
-                                        <Input
-                                            id={`${id}-mod-configuracion`}
-                                            placeholder="Detalles de configuración"
-                                            value={newModality.configuracion}
-                                            onChange={(e) => setNewModality(prev => ({ ...prev, configuracion: e.target.value }))}
-                                        />
-                                    </div>
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
 
                         {modalidades.map((modalidad) => (
                             <AccordionItem value={`item-${modalidad.id}`} key={modalidad.id} className="border rounded-lg px-4 data-[state=open]:bg-muted/30">
@@ -637,76 +594,121 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
                                 </AccordionPrimitive.Header>
                                 <AccordionContent className="pt-2 pb-4 px-2">
                                     <div className="space-y-3">
-                                        {modalidad.Descripcion && (
-                                            <div className="px-1">
+                                        <div className="flex items-center justify-between px-1">
+                                            {modalidad.Descripcion && (
                                                 <h4 className="text-sm font-medium text-muted-foreground">{modalidad.Descripcion}</h4>
+                                            )}
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                                                onClick={() => toggleTableCollapse(String(modalidad.id))}
+                                            >
+                                                {isTableCollapsed[String(modalidad.id)] ? "Ver Niveles" : "Ocultar Niveles"}
+                                                <ChevronsUpDown className="ml-2 h-3 w-3" />
+                                            </Button>
+                                        </div>
+
+                                        {!isTableCollapsed[String(modalidad.id)] && (
+                                            <div className="border rounded-md overflow-hidden">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow className="bg-muted/50 hover:bg-muted/60 transition-colors">
+                                                            <TableHead className="w-[50px] text-center">
+                                                                <Hash className="h-3.5 w-3.5 mx-auto text-muted-foreground" />
+                                                            </TableHead>
+                                                            <TableHead>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Medal className="h-3.5 w-3.5 text-teal-600" />
+                                                                    <span>Nivel</span>
+                                                                </div>
+                                                            </TableHead>
+                                                            <TableHead>
+                                                                <div className="flex items-center gap-2">
+                                                                    <FileText className="h-3.5 w-3.5 text-teal-600" />
+                                                                    <span>Título</span>
+                                                                </div>
+                                                            </TableHead>
+                                                            <TableHead className="text-center">
+                                                                <div className="flex items-center justify-center gap-2">
+                                                                    <Users className="h-3.5 w-3.5 text-teal-600" />
+                                                                    <span>Rango de Edad</span>
+                                                                </div>
+                                                            </TableHead>
+                                                            <TableHead className="w-[120px]">
+                                                                <span>Costo</span>
+                                                            </TableHead>
+                                                            <TableHead className="w-[120px]">
+                                                                <span>Total</span>
+                                                            </TableHead>
+                                                            <TableHead className="min-w-[150px]">
+                                                                <span>Descripción</span>
+                                                            </TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {(groupedDetails[modalidad.id] || []).map((detail, idx) => {
+                                                            const stateKey = `det-${modalidad.id}-${detail.id_nivel}`
+                                                            const reactKey = `${stateKey}-${idx}`
+                                                            const isSelected = selectedDetails[stateKey] || false;
+                                                            const currentValues = detailValues[stateKey] || { costo: "", descripcion: "" };
+
+                                                            return (
+                                                                <TableRow key={reactKey} className="hover:bg-muted/50 transition-colors">
+                                                                    <TableCell className="w-[50px]">
+                                                                        <Checkbox
+                                                                            id={`${id}-${reactKey}`}
+                                                                            checked={isSelected}
+                                                                            onCheckedChange={() => toggleDetail(stateKey)}
+                                                                        />
+                                                                    </TableCell>
+                                                                    <TableCell className="font-medium">{detail.Nivel}</TableCell>
+                                                                    <TableCell>{detail.titulo}</TableCell>
+                                                                    <TableCell className="text-center">
+                                                                        {detail.edad_ini !== null && detail.edad_fin !== null
+                                                                            ? `${detail.edad_ini} - ${detail.edad_fin} años`
+                                                                            : 'N/A'}
+                                                                    </TableCell>
+                                                                    <TableCell className="w-[120px]">
+                                                                        <Input
+                                                                            id={`${id}-${reactKey}-costo`}
+                                                                            type="number"
+                                                                            placeholder="0.00"
+                                                                            value={currentValues.costo || ""}
+                                                                            onChange={(e) => updateDetailValue(stateKey, 'costo', e.target.value)}
+                                                                            className="h-8 text-right"
+                                                                            disabled={!isSelected}
+                                                                        />
+                                                                    </TableCell>
+                                                                    <TableCell className="w-[120px] text-right font-semibold">
+                                                                        {isSelected ? `$${(parseFloat(currentValues.costo || "0")).toFixed(2)}` : "$0.00"}
+                                                                    </TableCell>
+                                                                    <TableCell className="min-w-[150px]">
+                                                                        <Input
+                                                                            id={`${id}-${reactKey}-descripcion`}
+                                                                            placeholder="Descripción adicional"
+                                                                            value={currentValues.descripcion || ""}
+                                                                            onChange={(e) => updateDetailValue(stateKey, 'descripcion', e.target.value)}
+                                                                            className="h-8"
+                                                                            disabled={!isSelected}
+                                                                        />
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            )
+                                                        })}
+                                                        {(!groupedDetails[modalidad.id] || groupedDetails[modalidad.id].length === 0) && (
+                                                            <TableRow>
+                                                                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                                                                    No hay detalles disponibles
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )}
+                                                    </TableBody>
+                                                </Table>
                                             </div>
                                         )}
-                                        <div className="border rounded-md overflow-hidden">
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow className="bg-muted/50 hover:bg-muted/60 transition-colors">
-                                                        <TableHead className="w-[50px] text-center">
-                                                            <Hash className="h-3.5 w-3.5 mx-auto text-muted-foreground" />
-                                                        </TableHead>
-                                                        <TableHead>
-                                                            <div className="flex items-center gap-2">
-                                                                <Medal className="h-3.5 w-3.5 text-teal-600" />
-                                                                <span>Nivel</span>
-                                                            </div>
-                                                        </TableHead>
-                                                        <TableHead>
-                                                            <div className="flex items-center gap-2">
-                                                                <FileText className="h-3.5 w-3.5 text-teal-600" />
-                                                                <span>Título</span>
-                                                            </div>
-                                                        </TableHead>
-                                                        <TableHead className="text-center">
-                                                            <div className="flex items-center justify-center gap-2">
-                                                                <Users className="h-3.5 w-3.5 text-teal-600" />
-                                                                <span>Rango de Edad</span>
-                                                            </div>
-                                                        </TableHead>
-                                                        <TableHead className="w-[120px]">
-                                                            <span>Costo</span>
-                                                        </TableHead>
-                                                        <TableHead className="w-[120px]">
-                                                            <span>Total</span>
-                                                        </TableHead>
-                                                        <TableHead className="min-w-[150px]">
-                                                            <span>Descripción</span>
-                                                        </TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {(groupedDetails[modalidad.id] || []).map((detalle, idx) => {
-                                                        const detailKey = `det-${modalidad.id}-${idx}`;
-                                                        const isSelected = selectedDetails[detailKey] || false;
-                                                        const currentValues = detailValues[detailKey] || { costo: "", descripcion: "" };
 
-                                                        return (
-                                                            <DetailRow
-                                                                key={detailKey}
-                                                                detail={detalle}
-                                                                detailKey={detailKey}
-                                                                isSelected={isSelected}
-                                                                values={currentValues}
-                                                                grandTotal={grandTotal}
-                                                                onToggle={toggleDetail}
-                                                                onUpdate={updateDetailValue}
-                                                            />
-                                                        )
-                                                    })}
-                                                    {(!groupedDetails[modalidad.id] || groupedDetails[modalidad.id].length === 0) && (
-                                                        <TableRow>
-                                                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                                                                No hay detalles disponibles
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    )}
-                                                </TableBody>
-                                            </Table>
-                                        </div>
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
@@ -733,7 +735,7 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
                     </Button>
                 </div>
             </div>
-        </form>
+        </form >
     )
 }
 

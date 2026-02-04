@@ -163,9 +163,31 @@ export interface GetAdicionalesResponse {
     Adicionales: AdicionalEventoItem[];
 }
 
+export interface NivelConfiguradoItem {
+    id_evento: number;
+    id_modalidad: number;
+    id_nivel: number;
+    costo: number | string;
+}
+
+export interface GetNivelesResponse {
+    Niveles: NivelConfiguradoItem[];
+}
+
 export const getAdicionales = async (id: string): Promise<GetAdicionalesResponse> => {
     console.log(id)
     const response = await api.get<GetAdicionalesResponse>(`/GetEventAdd`, {
+        params: {
+            evento: id
+        }
+    });
+    console.log(response.data);
+    return response.data;
+};
+
+export const getNiveles = async (id: string): Promise<GetNivelesResponse> => {
+    console.log(id)
+    const response = await api.get<GetNivelesResponse>(`/GetEventNiveles`, {
         params: {
             evento: id
         }
