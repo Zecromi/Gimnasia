@@ -249,11 +249,11 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
             data.tipoAfiliadoCuarto
         ].filter(val => val && val.trim() !== "" && val !== "none") // Filter out empty selections and "none"
 
-        const uniqueAffiliations = new Set(affiliations)
-        if (uniqueAffiliations.size !== affiliations.length) {
-            toast.error("No se pueden repetir los tipos de afiliación")
-            return
-        }
+        // const uniqueAffiliations = new Set(affiliations)
+        // // if (uniqueAffiliations.size !== affiliations.length) {
+        // //     toast.error("No se pueden repetir los tipos de afiliación")
+        // //     return
+        // // }
 
 
 
