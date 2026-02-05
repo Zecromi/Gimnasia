@@ -176,15 +176,11 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
     )
 
 
-    // Memoize unique clubs calculation to avoid re-calculation on every render
-    const uniqueClubs = React.useMemo(() => {
-        return Array.from(new Map(clubs.map((club: any) => [club.id, club])).values())
-    }, [clubs])
-
     React.useEffect(() => {
         const fetchData = async () => {
-            // If props are provided, use them and don't fetch
+            // Only fetch if data wasn't provided via props
             if (catalogsProp && clubsProp) {
+                // Use provided data
                 setCatalogs(catalogsProp)
                 let loadedClubs = clubsProp
 
@@ -198,11 +194,13 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                         setSelectedClubId(autoId)
                     }
                 }
+
                 setClubs(loadedClubs)
+                await fetchCatalogs()
                 return
             }
 
-            // Only fetch if data is NOT provided
+            // Fetch data only if not provided
             setIsLoading(true)
             try {
                 const [catalogsData, clubsData] = await Promise.all([
@@ -225,10 +223,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 }
 
                 setClubs(loadedClubs)
-                // We don't necessarily need to fetch global catalogs here if getAfiliadosCatalogs returns what we need
-                // but keeping it if it populates the store for other components might be useful, 
-                // though unnecessary for just this form if we use local state.
-                // await fetchCatalogs() 
+                await fetchCatalogs()
             } catch (error) {
                 console.error("Error fetching data:", error)
                 toast.error("Error al cargar la información")
@@ -236,10 +231,8 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 setIsLoading(false)
             }
         }
-
         fetchData()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [catalogsProp, clubsProp, authData]) // Removed fetchCatalogs from dependency to avoid loops if it changes identity
+    }, [fetchCatalogs, authData])
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -257,10 +250,10 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
         ].filter(val => val && val.trim() !== "" && val !== "none") // Filter out empty selections and "none"
 
         // const uniqueAffiliations = new Set(affiliations)
-        // if (uniqueAffiliations.size !== affiliations.length) {
-        //     toast.error("No se pueden repetir los tipos de afiliación")
-        //     return
-        // }
+        // // if (uniqueAffiliations.size !== affiliations.length) {
+        // //     toast.error("No se pueden repetir los tipos de afiliación")
+        // //     return
+        // // }
 
 
 
@@ -363,6 +356,10 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
 
                 if (formKey === 'curp') {
                     newValue = newValue.toUpperCase();
+                }
+
+                if (formKey === 'genero') {
+                    newValue = newValue === "masculino" ? "M" : "F"
                 }
 
                 if (newValue !== originalValue) {
@@ -487,7 +484,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Selecciona una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {uniqueClubs.map((club: any) => (
+                                        {Array.from(new Map(clubs.map(club => [club.id, club])).values()).map((club) => (
                                             <SelectItem key={club.id} value={club.id.toString()}>
                                                 {club.Club}
                                             </SelectItem>
@@ -504,7 +501,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Catalogo_afiliaciones.map((item: any) => (
+                                        {catalogs?.Catalogo_afiliaciones.map((item) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>
@@ -536,7 +533,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Catalogo_afiliaciones.map((item: any) => (
+                                        {catalogs?.Catalogo_afiliaciones.map((item) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>
@@ -569,7 +566,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Niveles_tecnicos.map((item: any) => (
+                                        {catalogs?.Niveles_tecnicos.map((item) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Descripcion}
                                             </SelectItem>
@@ -583,7 +580,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Escolaridad.map((item: any) => (
+                                        {catalogs?.Escolaridad.map((item) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>
@@ -602,7 +599,11 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                             </InputGroup>
                             <div className="col-span-12 md:col-span-4 space-y-3">
                                 <Label>Género : *</Label>
-                                <RadioGroup defaultValue={afiliado?.Genero || "femenino"} className="flex gap-4" name="genero">
+                                <RadioGroup
+                                    defaultValue={afiliado?.Genero === "M" ? "masculino" : "femenino"}
+                                    className="flex gap-4"
+                                    name="genero"
+                                >
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="femenino" id="femenino" />
                                         <Label htmlFor="femenino">Femenino</Label>
@@ -644,7 +645,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Estados.map((item: any) => (
+                                        {catalogs?.Estados.map((item) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>
