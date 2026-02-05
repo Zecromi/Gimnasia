@@ -358,6 +358,10 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                     newValue = newValue.toUpperCase();
                 }
 
+                if (formKey === 'genero') {
+                    newValue = newValue === "masculino" ? "M" : "F"
+                }
+
                 if (newValue !== originalValue) {
                     changes.push({ campo: backendField, valor: newValue })
                 }
@@ -595,7 +599,11 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                             </InputGroup>
                             <div className="col-span-12 md:col-span-4 space-y-3">
                                 <Label>Género : *</Label>
-                                <RadioGroup defaultValue={afiliado?.Genero || "femenino"} className="flex gap-4" name="genero">
+                                <RadioGroup
+                                    defaultValue={afiliado?.Genero === "M" ? "masculino" : "femenino"}
+                                    className="flex gap-4"
+                                    name="genero"
+                                >
                                     <div className="flex items-center space-x-2">
                                         <RadioGroupItem value="femenino" id="femenino" />
                                         <Label htmlFor="femenino">Femenino</Label>
