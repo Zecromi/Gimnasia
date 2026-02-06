@@ -7,7 +7,7 @@ interface CatalogStore extends CatalogsResponse {
     fetchCatalogs: () => Promise<void>;
 }
 
-export const useCatalogStore = create<CatalogStore>((set) => ({
+export const useCatalogStore = create<CatalogStore>((set, get) => ({
     Catalogo_afiliaciones: [],
     Niveles_tecnicos: [],
     Estados: [],
@@ -20,6 +20,12 @@ export const useCatalogStore = create<CatalogStore>((set) => ({
     error: null,
 
     fetchCatalogs: async () => {
+        // Prevent refetching if data is already loaded
+        const state = get();
+        if (state.Catalogo_afiliaciones.length > 0 && !state.error) {
+            return;
+        }
+
         set({ isLoading: true, error: null });
         try {
             const data = await getGlobalInfo();

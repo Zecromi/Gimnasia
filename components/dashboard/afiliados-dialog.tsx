@@ -165,74 +165,78 @@ interface AfiliadosFormProps extends React.ComponentProps<"form"> {
 }
 
 function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, catalogs: catalogsProp }: AfiliadosFormProps) {
-    const [catalogs, setCatalogs] = React.useState<AfiliadosCatalogsResponse | null>(catalogsProp || null)
-    const [clubs, setClubs] = React.useState<ViewClubGral[]>(clubsProp || [])
+    const { Modalidades, fetchCatalogs, Catalogo_afiliaciones, Niveles_tecnicos, Estados: StoreEstados, Escolaridad: StoreEscolaridad } = useCatalogStore()
+
+    // Prioritize props, fallback to store or empty
+    const activeCatalogs = catalogsProp || {
+        Catalogo_afiliaciones: Catalogo_afiliaciones,
+        Niveles_tecnicos: Niveles_tecnicos,
+        Estados: StoreEstados,
+        Escolaridad: StoreEscolaridad,
+        Puestos: [],
+        Modalidades: Modalidades,
+        View_Modalidades_detalle: [],
+        Catalogo_eventos: []
+    }
+
     const [isLoading, setIsLoading] = React.useState(false)
-    const { Modalidades, fetchCatalogs } = useCatalogStore()
+    const [clubs, setClubs] = React.useState<ViewClubGral[]>(clubsProp || [])
     const authData = useAuthStore((state) => state.authData)
-    // Add controlled state for the club select
     const [selectedClubId, setSelectedClubId] = React.useState<string>(
         afiliado?.id_Club?.toString() || ""
     )
 
+    // Memoize the unique clubs list
+    const uniqueClubs = React.useMemo(() => {
+        return Array.from(new Map(clubs.map(club => [club.id, club])).values())
+    }, [clubs])
 
     React.useEffect(() => {
-        const fetchData = async () => {
-            // Only fetch if data wasn't provided via props
-            if (catalogsProp && clubsProp) {
-                // Use provided data
-                setCatalogs(catalogsProp)
+        const initData = async () => {
+            // If props are provided, use them and filtering logic
+            if (clubsProp) {
                 let loadedClubs = clubsProp
-
-                // Filter clubs if not admin
-                // eslint-disable-next-line eqeqeq
                 if (authData && authData.tipo_registro != 1) {
                     loadedClubs = loadedClubs.filter(c => c.id.toString() === authData.id.toString())
-
                     if (loadedClubs.length === 1 && !afiliado) {
-                        const autoId = loadedClubs[0].id.toString()
-                        setSelectedClubId(autoId)
+                        // Logic to auto-select club handled via default value or effect below, 
+                        // but avoiding state updates during render is better.
+                        // We'll handle selection separately.
                     }
                 }
-
                 setClubs(loadedClubs)
-                await fetchCatalogs()
-                return
+            } else {
+                // If no props, fetch
+                setIsLoading(true)
+                try {
+                    const clubsData = await getClubs()
+                    let loadedClubs = clubsData.View_Club_gral
+                    if (authData && authData.tipo_registro != 1) {
+                        loadedClubs = loadedClubs.filter(c => c.id.toString() === authData.id.toString())
+                    }
+                    setClubs(loadedClubs)
+                } catch (e) {
+                    console.error(e)
+                } finally {
+                    setIsLoading(false)
+                }
             }
 
-            // Fetch data only if not provided
-            setIsLoading(true)
-            try {
-                const [catalogsData, clubsData] = await Promise.all([
-                    getAfiliadosCatalogs(),
-                    getClubs()
-                ])
-                setCatalogs(catalogsData)
-
-                let loadedClubs = clubsData.View_Club_gral
-
-                // Filter clubs if not admin
-                // eslint-disable-next-line eqeqeq
-                if (authData && authData.tipo_registro != 1) {
-                    loadedClubs = loadedClubs.filter(c => c.id.toString() === authData.id.toString())
-
-                    if (loadedClubs.length === 1 && !afiliado) {
-                        const autoId = loadedClubs[0].id.toString()
-                        setSelectedClubId(autoId)
-                    }
-                }
-
-                setClubs(loadedClubs)
+            // Always ensure catalogs are loaded if not passed
+            if (!catalogsProp) {
                 await fetchCatalogs()
-            } catch (error) {
-                console.error("Error fetching data:", error)
-                toast.error("Error al cargar la información")
-            } finally {
-                setIsLoading(false)
             }
         }
-        fetchData()
-    }, [fetchCatalogs, authData])
+
+        initData()
+    }, [clubsProp, catalogsProp, fetchCatalogs, authData])
+
+    // Auto-select club effect
+    React.useEffect(() => {
+        if (!afiliado && clubs.length === 1 && selectedClubId === "") {
+            setSelectedClubId(clubs[0].id.toString())
+        }
+    }, [clubs, afiliado, selectedClubId])
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
@@ -484,7 +488,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Selecciona una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {Array.from(new Map(clubs.map(club => [club.id, club])).values()).map((club) => (
+                                        {uniqueClubs.map((club) => (
                                             <SelectItem key={club.id} value={club.id.toString()}>
                                                 {club.Club}
                                             </SelectItem>
@@ -501,7 +505,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Catalogo_afiliaciones.map((item) => (
+                                        {activeCatalogs.Catalogo_afiliaciones.map((item) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>
@@ -515,7 +519,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Catalogo_afiliaciones.map((item) => (
+                                        {activeCatalogs.Catalogo_afiliaciones.map((item) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>
@@ -533,7 +537,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Catalogo_afiliaciones.map((item) => (
+                                        {activeCatalogs.Catalogo_afiliaciones.map((item) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>
@@ -548,7 +552,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Catalogo_afiliaciones.map((item) => (
+                                        {activeCatalogs.Catalogo_afiliaciones.map((item) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>
@@ -566,7 +570,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Niveles_tecnicos.map((item) => (
+                                        {activeCatalogs.Niveles_tecnicos.map((item) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Descripcion}
                                             </SelectItem>
@@ -580,7 +584,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Escolaridad.map((item) => (
+                                        {activeCatalogs.Escolaridad.map((item) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>
@@ -645,7 +649,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                                         <SelectValue placeholder="Seleccione una opción" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {catalogs?.Estados.map((item) => (
+                                        {activeCatalogs.Estados.map((item) => (
                                             <SelectItem key={item.id} value={item.id.toString()}>
                                                 {item.Nombre}
                                             </SelectItem>
