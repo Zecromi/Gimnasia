@@ -5,9 +5,9 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
 import { EditEventoDialog } from "./edit-evento-dialog"
-import { EventoResponseItem } from "@/lib/evento-service"
+import { EventosConfiguradosItem } from "@/lib/evento-service"
 
-export const getColumns = (onEventUpdated: () => void): ColumnDef<EventoResponseItem>[] => [
+export const getColumns = (onEventUpdated: () => void): ColumnDef<EventosConfiguradosItem>[] => [
     {
         id: "detalle",
         header: "Detalle",

@@ -27,6 +27,7 @@ export interface NivelItem {
     id_modalidad: string;
     id_nivel: string;
     costo: string;
+    id_categoria: string;
 }
 
 export interface AdicionalItem {
@@ -45,6 +46,7 @@ export const createEvento = async (payload: SetEventoPayload) => {
     console.log(payload)
     const response = await api.post("/SetEvento", payload);
     return response.data;
+    //return true;
 };
 
 export interface EventoResponseItem {
@@ -110,6 +112,13 @@ export const putEventos = async (id_evento: string, body: any) => {
     return response.data;
 };
 
+export const putEventosNiveles = async (body: any) => {
+    console.log(body)
+    const response = await api.post("/PutNiveles_insc_act", body);
+    return response.data;
+    //return true;
+};
+
 export const postBlock = async (User: string, tipo: string) => {
     console.log(User, tipo)
     const response = await api.post("/PostBlock", null, {
@@ -163,6 +172,18 @@ export interface GetAdicionalesResponse {
     Adicionales: AdicionalEventoItem[];
 }
 
+export interface NivelConfiguradoItem {
+    id_evento: number;
+    id_modalidad: number;
+    id_nivel: number;
+    id_categoria: number;
+    costo: number | string;
+}
+
+export interface GetNivelesResponse {
+    Niveles: NivelConfiguradoItem[];
+}
+
 export const getAdicionales = async (id: string): Promise<GetAdicionalesResponse> => {
     console.log(id)
     const response = await api.get<GetAdicionalesResponse>(`/GetEventAdd`, {
@@ -173,3 +194,16 @@ export const getAdicionales = async (id: string): Promise<GetAdicionalesResponse
     console.log(response.data);
     return response.data;
 };
+
+export const getNiveles = async (id: string): Promise<GetNivelesResponse> => {
+    console.log(id)
+    const response = await api.get<GetNivelesResponse>(`/GetEventNiveles`, {
+        params: {
+            evento: id
+        }
+    });
+    console.log(response.data);
+    return response.data;
+};
+
+

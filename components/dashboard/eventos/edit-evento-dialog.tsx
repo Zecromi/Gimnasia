@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { CircleFadingArrowUp, Upload, Database, FileText, Image, Receipt, BookOpen } from "lucide-react"
+import { CircleFadingArrowUp, Upload, Database, FileText, Image, Receipt, BookOpen, CalendarDays, MapPin, Clock, Trophy, Globe, User, Building2 } from "lucide-react"
 
 import { useIsMobile } from "@/hooks/use-mobile"
 import { Button } from "@/components/ui/button"
@@ -38,16 +38,28 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { EventoResponseItem as Evento, createEvento, putEventos, SetEventoPayload, ConfiguracionItem, NivelItem, AdicionalItem, EventoItem } from "@/lib/evento-service"
-import { CalendarPlus, Save, Calendar as CalendarIcon, Medal, Hash, AlertCircle } from "lucide-react"
+import {
+    getEventos,
+    putEventos,
+    putEventosNiveles,
+    getNiveles,
+    SetEventoPayload,
+    ConfiguracionItem,
+    NivelItem,
+    AdicionalItem,
+    EventoItem,
+    EventosConfiguradosItem as Evento
+} from "@/lib/evento-service"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Calendar } from "@/components/ui/calendar"
+import { CalendarPlus, Save, Calendar as CalendarIcon, Medal, Hash, AlertCircle, Plus, Trash2, ChevronsUpDown, Users } from "lucide-react"
 import {
     Popover,
     PopoverContent,
     PopoverTrigger,
 } from "@/components/ui/popover"
+import { Badge } from "@/components/ui/badge"
 import {
     Table,
     TableBody,
@@ -100,11 +112,19 @@ export function EditEventoDialog({ evento, children, onSuccess }: EditEventoDial
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
+<<<<<<< HEAD
             <DialogContent className="sm:max-w-[1000px] max-h-[90vh] h-[90vh] flex flex-col p-0 overflow-hidden">
                 <DialogHeader className="px-6 py-4 border-b shrink-0">
                     <DialogTitle>Editar Evento: {evento.Nombre}</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 min-h-0 overflow-hidden">
+=======
+            <DialogContent className="sm:max-w-[1000px] h-[95vh] flex flex-col p-0">
+                <DialogHeader className="px-6 py-4 border-b shrink-0">
+                    <DialogTitle>Editar Evento: {evento.Nombre}</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-hidden">
+>>>>>>> origin/HU-Transaccion
                     <EditEventoTabs id="edit-evento-form-desktop" evento={evento} onSuccess={handleSuccess} />
                 </div>
             </DialogContent>
@@ -160,7 +180,11 @@ function EditEventoTabs({ className, id, evento, onSuccess }: { className?: stri
     ]
 
     return (
+<<<<<<< HEAD
         <Tabs defaultValue="general" className="flex-1 h-full flex flex-col min-h-0 overflow-hidden">
+=======
+        <Tabs defaultValue="general" className="flex-1 h-full flex flex-col overflow-hidden">
+>>>>>>> origin/HU-Transaccion
             <div className="px-6 pt-1 shrink-0">
                 <TabsList className="flex w-full sm:w-auto h-auto p-1 bg-muted/80 gap-1">
                     {tabsConfig.map((tab) => (
@@ -184,6 +208,7 @@ function EditEventoTabs({ className, id, evento, onSuccess }: { className?: stri
                 </TabsList>
             </div>
 
+<<<<<<< HEAD
             <ScrollArea className="flex-1 w-full min-h-0 custom-scrollbar">
                 <div className="p-6">
                     {tabsConfig.map((tab) => (
@@ -193,12 +218,23 @@ function EditEventoTabs({ className, id, evento, onSuccess }: { className?: stri
                     ))}
                 </div>
             </ScrollArea>
+=======
+            <div className="flex-1 w-full overflow-hidden">
+                <ScrollArea className="h-full">
+                    <div className="p-6">
+                        {tabsConfig.map((tab) => (
+                            <TabsContent key={tab.value} value={tab.value} className={cn("m-0 focus-visible:outline-none", tab.className)}>
+                                {tab.content}
+                            </TabsContent>
+                        ))}
+                    </div>
+                </ScrollArea>
+            </div>
+>>>>>>> origin/HU-Transaccion
         </Tabs>
     )
 }
 
-import { Badge } from "@/components/ui/badge"
-import { CalendarDays, MapPin, Clock, Trophy, Globe, User, Building2, Users } from "lucide-react"
 
 function GeneralInfoForm({ id, evento }: { id: string, evento: Evento }) {
     return (
@@ -337,12 +373,8 @@ import { cn } from "@/lib/utils"
 function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento, onSuccess?: () => void }) {
     const [modalidades, setModalidades] = React.useState<ModalidadItem[]>([])
     const [modalidadesDetalle, setModalidadesDetalle] = React.useState<ModalidadDetalleItem[]>([])
-    const [isCustomModality, setIsCustomModality] = React.useState(false)
-    const [newModality, setNewModality] = React.useState({
-        descripcion: "",
-        costo: "",
-        configuracion: ""
-    })
+    const [isTableCollapsed, setIsTableCollapsed] = React.useState<Record<string, boolean>>({})
+
     const [selectedDetails, setSelectedDetails] = React.useState<Record<string, boolean>>({})
     const [detailValues, setDetailValues] = React.useState<Record<string, { costo: string, descripcion: string }>>({})
     const [selectedModalities, setSelectedModalities] = React.useState<Record<string, boolean>>({})
@@ -359,6 +391,10 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
             ...prev,
             [id]: !prev[id]
         }))
+    }, [])
+
+    const toggleTableCollapse = React.useCallback((id: string) => {
+        setIsTableCollapsed(prev => ({ ...prev, [id]: !prev[id] }))
     }, [])
 
     const toggleDetail = React.useCallback((key: string) => {
@@ -387,7 +423,6 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
         }))
     }, [])
 
-    const hasNewData = Object.values(newModality).some(value => value.trim() !== "")
 
     const groupedDetails = React.useMemo(() => {
         const grouped: Record<number, ModalidadDetalleItem[]> = {}
@@ -400,10 +435,6 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
 
     const grandTotal = React.useMemo(() => {
         let total = 0
-        if (isCustomModality) {
-            const cost = parseFloat(newModality.costo)
-            if (!isNaN(cost)) total += cost
-        }
         Object.keys(selectedDetails).forEach((key) => {
             if (selectedDetails[key]) {
                 const cost = parseFloat(detailValues[key]?.costo || "0")
@@ -411,121 +442,106 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
             }
         })
         return total
-    }, [isCustomModality, newModality.costo, selectedDetails, detailValues])
+    }, [selectedDetails, detailValues])
 
     React.useEffect(() => {
         const fetchData = async () => {
             try {
-                const data = await getGlobalInfo();
+                const [data, eventNiveles] = await Promise.all([
+                    getGlobalInfo(),
+                    getNiveles(String(evento.id))
+                ]);
+
                 if (data.Modalidades) {
-                    setModalidades(data.Modalidades);
+                    const filteredModalities = data.Modalidades.filter(m => m.Nombre === evento.Modalidad);
+                    setModalidades(filteredModalities);
+                    if (filteredModalities.length === 1) {
+                        setSelectedModalities({ [String(filteredModalities[0].id)]: true });
+                    }
                 }
-                if (data.View_Modalidades_detalle) {
-                    setModalidadesDetalle(data.View_Modalidades_detalle);
+
+                const details = data.View_Modalidades_detalle || [];
+                setModalidadesDetalle(details);
+
+                if (eventNiveles?.Niveles && eventNiveles.Niveles.length > 0) {
+                    const newSelectedDetails: Record<string, boolean> = {};
+                    const newDetailValues: Record<string, { costo: string, descripcion: string }> = {};
+
+                    eventNiveles.Niveles.forEach(nivel => {
+                        const key = `det-${nivel.id_modalidad}-${nivel.id_nivel}-${nivel.id_categoria}`;
+                        newSelectedDetails[key] = true;
+                        newDetailValues[key] = {
+                            costo: String(nivel.costo),
+                            descripcion: ""
+                        };
+                    });
+
+                    setSelectedDetails(newSelectedDetails);
+                    setDetailValues(newDetailValues);
                 }
             } catch (error) {
-                console.error("Error fetching modalities:", error);
+                console.error("Error fetching modalities and levels:", error);
             }
         };
         fetchData();
-    }, []);
+    }, [evento.id, evento.Modalidad]);
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
 
-        const configuracionData: ConfiguracionItem[] = Object.keys(selectedModalities)
-            .filter(key => selectedModalities[key])
-            .map(modIdStr => {
-                let sumCost = 0
-                Object.keys(selectedDetails).forEach(detKey => {
-                    if (selectedDetails[detKey] && detKey.startsWith(`det-${modIdStr}-`)) {
-                        const val = parseFloat(detailValues[detKey]?.costo || "0")
-                        if (!isNaN(val)) sumCost += val
-                    }
-                })
+        const nivelesData: { id_modalidad: string, id_nivel: string, id_categoria: string, costo: string }[] = []
+        let hasInvalidCost = false
 
-                return {
-                    id_modalidad: modIdStr,
-                    costo_base: sumCost.toString(),
-                    costo_grupo: "0",
-                    es_grupo: "0"
-                }
-            })
-
-        const nivelesData: NivelItem[] = []
         Object.keys(selectedDetails).forEach(key => {
             if (selectedDetails[key]) {
                 const parts = key.split('-')
-                if (parts.length === 3) {
-                    const modId = parseInt(parts[1])
-                    const idx = parseInt(parts[2])
-                    const detail = groupedDetails[modId]?.[idx]
-                    if (detail) {
-                        nivelesData.push({
-                            id_modalidad: parts[1],
-                            id_nivel: String(detail.id_nivel),
-                            costo: detailValues[key]?.costo || "0"
-                        })
+                if (parts.length === 4) {
+                    const modId = parts[1]
+                    const nivId = parts[2]
+                    const catId = parts[3]
+                    const costo = detailValues[key]?.costo
+
+                    if (!costo || parseFloat(costo) < 0 || costo.trim() === "") {
+                        hasInvalidCost = true
                     }
-                }
-            }
-        })
 
-        const adicionalesData: AdicionalItem[] = []
-        if (isCustomModality) {
-            adicionalesData.push({
-                descripcion: newModality.descripcion,
-                costo_base: newModality.costo
-            })
-        }
-
-        Object.keys(selectedDetails).forEach(key => {
-            if (selectedDetails[key]) {
-                const values = detailValues[key]
-                if (values && (values.costo || values.descripcion)) {
-                    adicionalesData.push({
-                        descripcion: values.descripcion,
-                        costo_base: values.costo
+                    nivelesData.push({
+                        id_modalidad: modId,
+                        id_nivel: nivId,
+                        id_categoria: catId,
+                        costo: costo || "0"
                     })
                 }
             }
         })
 
-        // NOTE: For now, we are sending empty general info or current general info is needed?
-        // The API might require event data. We send what defaults we can or the event ID.
-        // Assuming createEvento updates partially or overwrites. We send event ID.
-        // Similar to ActualizaEventoForm, we construct minimal event data to valid payload.
-
-        const eventoData: EventoItem = {
-            id_evento: String(evento.id),
-            organizador: evento.Organizador || "",
-            asociacion: evento.Asociacion || "",
-            nombre: evento.Nombre || "",
-            lugar: evento.Lugar || "",
-            sede: evento.Sede || "",
-            region: evento.Region || "",
-            limite_participantes: evento.Limite_participantes ? String(evento.Limite_participantes) : "0",
-            f_ini_evento: evento.F_ini_evento ? evento.F_ini_evento.split('T')[0] : "",
-            f_fin_evento: evento.F_fin_evento ? evento.F_fin_evento.split('T')[0] : "",
-            f_ini_incripciones: evento.F_ini_incripciones ? evento.F_ini_incripciones.split('T')[0] : "",
-            f_fin_incripciones: evento.F_fin_incripciones ? evento.F_fin_incripciones.split('T')[0] : "",
-            hora_limite_inscripciones: evento.Hora_limite_inscripciones || "",
+        if (hasInvalidCost) {
+            toast.error("Por favor ingrese un costo válido para todos los niveles seleccionados")
+            return
         }
 
-        const payload: SetEventoPayload = {
-            evento: [eventoData],
-            configuracion: configuracionData,
-            niveles: nivelesData,
-            adicionales: adicionalesData
+        const lista_act_niv = nivelesData
+            .filter(nivel => nivel.id_categoria && nivel.id_categoria !== "null")
+            .map(nivel => ({
+                id_evnt: String(evento.id),
+                id_modalidad: String(nivel.id_modalidad),
+                id_categoria: String(nivel.id_categoria),
+                id_nivel: String(nivel.id_nivel),
+                costo: String(nivel.costo)
+            }))
+
+        if (lista_act_niv.length === 0) {
+            toast.info("No hay niveles seleccionados para actualizar")
+            return
         }
 
         try {
-            await putEventos(String(evento.id), payload)
-            toast.success("Modalidades actualizadas exitosamente")
+            await putEventosNiveles({ lista_act_niv })
+            toast.success("Niveles actualizados exitosamente")
             if (onSuccess) onSuccess()
         } catch (error) {
             console.error(error)
-            toast.error("Error al actualizar modalidades")
+            toast.error("Error al actualizar niveles")
         }
     }
 
@@ -538,69 +554,6 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
                         Seleccione las modalidades y configure los costos para este evento.
                     </p>
                     <Accordion type="single" collapsible className="w-full space-y-2 pb-6">
-                        <AccordionItem
-                            value="new-mode"
-                            className={cn(
-                                "border rounded-lg px-4",
-                                hasNewData && "bg-teal-50 border-teal-200 dark:bg-teal-900/20 dark:border-teal-800"
-                            )}
-                        >
-                            <AccordionPrimitive.Header className="flex items-center py-3">
-                                <div className="flex items-center mr-3">
-                                    <Checkbox
-                                        id={`${id}-create-custom-modality`}
-                                        checked={isCustomModality}
-                                        onCheckedChange={(checked) => setIsCustomModality(checked as boolean)}
-                                    />
-                                </div>
-                                <AccordionPrimitive.Trigger
-                                    className={cn(
-                                        "flex flex-1 items-center justify-between py-0 text-sm font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180 cursor-pointer"
-                                    )}
-                                >
-                                    <Label htmlFor={`${id}-create-custom-modality`} className="cursor-pointer pointer-events-none">
-                                        Extras de la modalidad
-                                    </Label>
-                                    <ChevronDown className="h-4 w-4 shrink-0 transition-transform duration-200" />
-                                </AccordionPrimitive.Trigger>
-                            </AccordionPrimitive.Header>
-                            <AccordionContent className="pt-2 pb-4 px-2">
-                                <div className="space-y-4 pt-2">
-                                    <div className="space-y-2">
-                                        <Label htmlFor={`${id}-mod-descripcion`}>Descripción</Label>
-                                        <Input
-                                            id={`${id}-mod-descripcion`}
-                                            placeholder="Descripción de la modalidad"
-                                            value={newModality.descripcion}
-                                            onChange={(e) => setNewModality(prev => ({ ...prev, descripcion: e.target.value }))}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor={`${id}-mod-costo`}>Costo</Label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                                            <Input
-                                                id={`${id}-mod-costo`}
-                                                type="number"
-                                                className="pl-7"
-                                                placeholder="0.00"
-                                                value={newModality.costo}
-                                                onChange={(e) => setNewModality(prev => ({ ...prev, costo: e.target.value }))}
-                                            />
-                                        </div>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor={`${id}-mod-configuracion`}>Configuración</Label>
-                                        <Input
-                                            id={`${id}-mod-configuracion`}
-                                            placeholder="Detalles de configuración"
-                                            value={newModality.configuracion}
-                                            onChange={(e) => setNewModality(prev => ({ ...prev, configuracion: e.target.value }))}
-                                        />
-                                    </div>
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
 
                         {modalidades.map((modalidad) => (
                             <AccordionItem value={`item-${modalidad.id}`} key={modalidad.id} className="border rounded-lg px-4 data-[state=open]:bg-muted/30">
@@ -637,76 +590,108 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
                                 </AccordionPrimitive.Header>
                                 <AccordionContent className="pt-2 pb-4 px-2">
                                     <div className="space-y-3">
-                                        {modalidad.Descripcion && (
-                                            <div className="px-1">
+                                        <div className="flex items-center justify-between px-1">
+                                            {modalidad.Descripcion && (
                                                 <h4 className="text-sm font-medium text-muted-foreground">{modalidad.Descripcion}</h4>
+                                            )}
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 text-xs text-muted-foreground hover:text-foreground"
+                                                onClick={() => toggleTableCollapse(String(modalidad.id))}
+                                            >
+                                                {isTableCollapsed[String(modalidad.id)] ? "Ver Niveles" : "Ocultar Niveles"}
+                                                <ChevronsUpDown className="ml-2 h-3 w-3" />
+                                            </Button>
+                                        </div>
+
+                                        {!isTableCollapsed[String(modalidad.id)] && (
+                                            <div className="border rounded-md overflow-hidden">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow className="bg-muted/50 hover:bg-muted/60 transition-colors">
+                                                            <TableHead className="w-[50px] text-center">
+                                                                <Hash className="h-3.5 w-3.5 mx-auto text-muted-foreground" />
+                                                            </TableHead>
+                                                            <TableHead>
+                                                                <div className="flex items-center gap-2">
+                                                                    <Medal className="h-3.5 w-3.5 text-teal-600" />
+                                                                    <span>Nivel</span>
+                                                                </div>
+                                                            </TableHead>
+                                                            <TableHead>
+                                                                <div className="flex items-center gap-2">
+                                                                    <FileText className="h-3.5 w-3.5 text-teal-600" />
+                                                                    <span>Título</span>
+                                                                </div>
+                                                            </TableHead>
+                                                            <TableHead className="text-center">
+                                                                <div className="flex items-center justify-center gap-2">
+                                                                    <Users className="h-3.5 w-3.5 text-teal-600" />
+                                                                    <span>Rango de Edad</span>
+                                                                </div>
+                                                            </TableHead>
+                                                            <TableHead className="w-[120px]">
+                                                                <span>Costo</span>
+                                                            </TableHead>
+                                                            <TableHead className="w-[120px]">
+                                                                <span>Total</span>
+                                                            </TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {(groupedDetails[modalidad.id] || []).map((detail, idx) => {
+                                                            const stateKey = `det-${modalidad.id}-${detail.id_nivel}-${detail.id_categoria}`
+                                                            const reactKey = `${stateKey}-${idx}`
+                                                            const isSelected = selectedDetails[stateKey] || false;
+                                                            const currentValues = detailValues[stateKey] || { costo: "", descripcion: "" };
+
+                                                            return (
+                                                                <TableRow key={reactKey} className="hover:bg-muted/50 transition-colors">
+                                                                    <TableCell className="w-[50px]">
+                                                                        <Checkbox
+                                                                            id={`${id}-${reactKey}`}
+                                                                            checked={isSelected}
+                                                                            onCheckedChange={() => toggleDetail(stateKey)}
+                                                                        />
+                                                                    </TableCell>
+                                                                    <TableCell className="font-medium">{detail.Nivel}</TableCell>
+                                                                    <TableCell>{detail.titulo}</TableCell>
+                                                                    <TableCell className="text-center">
+                                                                        {detail.edad_ini !== null && detail.edad_fin !== null
+                                                                            ? `${detail.edad_ini} - ${detail.edad_fin} años`
+                                                                            : 'N/A'}
+                                                                    </TableCell>
+                                                                    <TableCell className="w-[120px]">
+                                                                        <Input
+                                                                            id={`${id}-${reactKey}-costo`}
+                                                                            type="number"
+                                                                            placeholder="0.00"
+                                                                            value={currentValues.costo || ""}
+                                                                            onChange={(e) => updateDetailValue(stateKey, 'costo', e.target.value)}
+                                                                            className="h-8 text-right"
+                                                                            disabled={!isSelected}
+                                                                        />
+                                                                    </TableCell>
+                                                                    <TableCell className="w-[120px] text-right font-semibold">
+                                                                        {isSelected ? `$${(parseFloat(currentValues.costo || "0")).toFixed(2)}` : "$0.00"}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            )
+                                                        })}
+                                                        {(!groupedDetails[modalidad.id] || groupedDetails[modalidad.id].length === 0) && (
+                                                            <TableRow>
+                                                                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                                                                    No hay detalles disponibles
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )}
+                                                    </TableBody>
+                                                </Table>
                                             </div>
                                         )}
-                                        <div className="border rounded-md overflow-hidden">
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow className="bg-muted/50 hover:bg-muted/60 transition-colors">
-                                                        <TableHead className="w-[50px] text-center">
-                                                            <Hash className="h-3.5 w-3.5 mx-auto text-muted-foreground" />
-                                                        </TableHead>
-                                                        <TableHead>
-                                                            <div className="flex items-center gap-2">
-                                                                <Medal className="h-3.5 w-3.5 text-teal-600" />
-                                                                <span>Nivel</span>
-                                                            </div>
-                                                        </TableHead>
-                                                        <TableHead>
-                                                            <div className="flex items-center gap-2">
-                                                                <FileText className="h-3.5 w-3.5 text-teal-600" />
-                                                                <span>Título</span>
-                                                            </div>
-                                                        </TableHead>
-                                                        <TableHead className="text-center">
-                                                            <div className="flex items-center justify-center gap-2">
-                                                                <Users className="h-3.5 w-3.5 text-teal-600" />
-                                                                <span>Rango de Edad</span>
-                                                            </div>
-                                                        </TableHead>
-                                                        <TableHead className="w-[120px]">
-                                                            <span>Costo</span>
-                                                        </TableHead>
-                                                        <TableHead className="w-[120px]">
-                                                            <span>Total</span>
-                                                        </TableHead>
-                                                        <TableHead className="min-w-[150px]">
-                                                            <span>Descripción</span>
-                                                        </TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                    {(groupedDetails[modalidad.id] || []).map((detalle, idx) => {
-                                                        const detailKey = `det-${modalidad.id}-${idx}`;
-                                                        const isSelected = selectedDetails[detailKey] || false;
-                                                        const currentValues = detailValues[detailKey] || { costo: "", descripcion: "" };
 
-                                                        return (
-                                                            <DetailRow
-                                                                key={detailKey}
-                                                                detail={detalle}
-                                                                detailKey={detailKey}
-                                                                isSelected={isSelected}
-                                                                values={currentValues}
-                                                                grandTotal={grandTotal}
-                                                                onToggle={toggleDetail}
-                                                                onUpdate={updateDetailValue}
-                                                            />
-                                                        )
-                                                    })}
-                                                    {(!groupedDetails[modalidad.id] || groupedDetails[modalidad.id].length === 0) && (
-                                                        <TableRow>
-                                                            <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
-                                                                No hay detalles disponibles
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    )}
-                                                </TableBody>
-                                            </Table>
-                                        </div>
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
@@ -733,7 +718,7 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
                     </Button>
                 </div>
             </div>
-        </form>
+        </form >
     )
 }
 
@@ -1106,15 +1091,6 @@ const DetailRow = React.memo(({
                 <div className="flex items-center h-8 px-2 text-sm font-medium text-muted-foreground bg-muted/20 rounded-md border border-transparent">
                     ${isSelected ? (parseFloat(values.costo) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
                 </div>
-            </TableCell>
-            <TableCell>
-                <Input
-                    className="h-8 w-full"
-                    placeholder="Descripción"
-                    disabled={!isSelected}
-                    value={values.descripcion}
-                    onChange={(e) => onUpdate(detailKey, 'descripcion', e.target.value)}
-                />
             </TableCell>
         </TableRow>
     )

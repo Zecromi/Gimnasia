@@ -28,13 +28,13 @@ import {
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { getEventos, EventoResponseItem } from "@/lib/evento-service"
+import { getEventos, EventosConfiguradosItem } from "@/lib/evento-service"
 import { useCatalogStore } from "@/lib/store/catalog-store"
 
 export function EventosView() {
     const { Catalogo_eventos, fetchCatalogs } = useCatalogStore()
     const [isLoading, setIsLoading] = useState(true)
-    const [eventos, setEventos] = useState<EventoResponseItem[]>([])
+    const [eventos, setEventos] = useState<EventosConfiguradosItem[]>([])
 
     // Filters
     const [filterId, setFilterId] = useState("")
@@ -50,8 +50,8 @@ export function EventosView() {
     const fetchData = useCallback(async () => {
         try {
             const data = await getEventos()
-            if (data && data.Eventos) {
-                setEventos(data.Eventos)
+            if (data && data.Eventos_configurados) {
+                setEventos(data.Eventos_configurados)
             }
         } catch (error) {
             console.error("Error fetching events:", error)

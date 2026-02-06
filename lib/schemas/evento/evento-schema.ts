@@ -26,6 +26,7 @@ export const eventoSchema = z.object({
     detalles: z.array(z.object({
         idModalidad: z.union([z.string(), z.number()]),
         idNivel: z.union([z.string(), z.number()]),
+        id_categoria: z.union([z.string(), z.number()]),
         costo: z.string().min(1, "El costo es obligatorio").refine(val => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, "Debe ser un precio válido"),
         descripcion: z.string().min(1, "La descripción es obligatoria")
     })).min(1, "Debe seleccionar al menos una modalidad y un nivel, completando costo y descripción para cada uno."),
