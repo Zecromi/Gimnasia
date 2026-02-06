@@ -264,7 +264,7 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
     }, [modalityExtras, selectedDetails, detailValues])
 
     const getFormData = React.useCallback((): EventoFormValues => {
-        const detalles: { idModalidad: string | number; idNivel: string | number; costo: string; descripcion: string }[] = []
+        const detalles: { idModalidad: string | number; idNivel: string | number; id_categoria: string | number; costo: string; descripcion: string }[] = []
 
         // Custom modality
         /* 
@@ -290,6 +290,7 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
                         detalles.push({
                             idModalidad: modId,
                             idNivel: String(detail.id_nivel),
+                            id_categoria: String(detail.id_categoria),
                             costo: values.costo,
                             descripcion: values.descripcion
                         })
@@ -418,7 +419,8 @@ function NewEventoTabs({ className, id, onClose, onEventSaved }: { className?: s
                         nivelesData.push({
                             id_modalidad: parts[1],
                             id_nivel: String(detail.id_nivel),
-                            costo: detailValues[key]?.costo || "0"
+                            costo: detailValues[key]?.costo || "0",
+                            id_categoria: String(detail.id_categoria)
                         })
                     }
                 }

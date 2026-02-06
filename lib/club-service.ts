@@ -35,6 +35,7 @@ export interface ModalidadDetalleItem {
     edad_ini: number;
     edad_fin: number;
     id_nivel: number;
+    id_categoria: number;
 }
 
 export interface EventoCatalogoItem {

@@ -41,6 +41,7 @@ import {
 import {
     getEventos,
     putEventos,
+    putEventosNiveles,
     getNiveles,
     SetEventoPayload,
     ConfiguracionItem,
@@ -443,7 +444,7 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
                     const newDetailValues: Record<string, { costo: string, descripcion: string }> = {};
 
                     eventNiveles.Niveles.forEach(nivel => {
-                        const key = `det-${nivel.id_modalidad}-${nivel.id_nivel}`;
+                        const key = `det-${nivel.id_modalidad}-${nivel.id_nivel}-${nivel.id_categoria}`;
                         newSelectedDetails[key] = true;
                         newDetailValues[key] = {
                             costo: String(nivel.costo),
@@ -464,88 +465,59 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
 
-        const configuracionData: ConfiguracionItem[] = Object.keys(selectedModalities)
-            .filter(key => selectedModalities[key])
-            .map(modIdStr => {
-                let sumCost = 0
-                Object.keys(selectedDetails).forEach(detKey => {
-                    if (selectedDetails[detKey] && detKey.startsWith(`det-${modIdStr}-`)) {
-                        const val = parseFloat(detailValues[detKey]?.costo || "0")
-                        if (!isNaN(val)) sumCost += val
-                    }
-                })
+        const nivelesData: { id_modalidad: string, id_nivel: string, id_categoria: string, costo: string }[] = []
+        let hasInvalidCost = false
 
-                return {
-                    id_modalidad: modIdStr,
-                    costo_base: sumCost.toString(),
-                    costo_grupo: "0",
-                    es_grupo: "0"
-                }
-            })
-
-        const nivelesData: NivelItem[] = []
         Object.keys(selectedDetails).forEach(key => {
             if (selectedDetails[key]) {
                 const parts = key.split('-')
-                if (parts.length === 3) {
+                if (parts.length === 4) {
+                    const modId = parts[1]
+                    const nivId = parts[2]
+                    const catId = parts[3]
+                    const costo = detailValues[key]?.costo
+
+                    if (!costo || parseFloat(costo) < 0 || costo.trim() === "") {
+                        hasInvalidCost = true
+                    }
+
                     nivelesData.push({
-                        id_modalidad: parts[1],
-                        id_nivel: parts[2],
-                        costo: detailValues[key]?.costo || "0"
+                        id_modalidad: modId,
+                        id_nivel: nivId,
+                        id_categoria: catId,
+                        costo: costo || "0"
                     })
                 }
             }
         })
 
-        const adicionalesData: AdicionalItem[] = []
-
-        Object.keys(selectedDetails).forEach(key => {
-            if (selectedDetails[key]) {
-                const values = detailValues[key]
-                if (values && (values.costo || values.descripcion)) {
-                    adicionalesData.push({
-                        descripcion: values.descripcion,
-                        costo_base: values.costo
-                    })
-                }
-            }
-        })
-
-        // NOTE: For now, we are sending empty general info or current general info is needed?
-        // The API might require event data. We send what defaults we can or the event ID.
-        // Assuming createEvento updates partially or overwrites. We send event ID.
-        // Similar to ActualizaEventoForm, we construct minimal event data to valid payload.
-
-        const eventoData: EventoItem = {
-            id_evento: String(evento.id),
-            organizador: evento.Organizador || "",
-            asociacion: evento.Asociacion || "",
-            nombre: evento.Nombre || "",
-            lugar: evento.Lugar || "",
-            sede: evento.Sede || "",
-            region: evento.Region || "",
-            limite_participantes: evento.Limite_participantes ? String(evento.Limite_participantes) : "0",
-            f_ini_evento: evento.F_ini_evento ? evento.F_ini_evento.split('T')[0] : "",
-            f_fin_evento: evento.F_fin_evento ? evento.F_fin_evento.split('T')[0] : "",
-            f_ini_incripciones: evento.F_ini_incripciones ? evento.F_ini_incripciones.split('T')[0] : "",
-            f_fin_incripciones: evento.F_fin_incripciones ? evento.F_fin_incripciones.split('T')[0] : "",
-            hora_limite_inscripciones: evento.Hora_limite_inscripciones || "",
+        if (hasInvalidCost) {
+            toast.error("Por favor ingrese un costo válido para todos los niveles seleccionados")
+            return
         }
 
-        const payload: SetEventoPayload = {
-            evento: [eventoData],
-            configuracion: configuracionData,
-            niveles: nivelesData,
-            adicionales: adicionalesData
+        const lista_act_niv = nivelesData
+            .filter(nivel => nivel.id_categoria && nivel.id_categoria !== "null")
+            .map(nivel => ({
+                id_evnt: String(evento.id),
+                id_modalidad: String(nivel.id_modalidad),
+                id_categoria: String(nivel.id_categoria),
+                id_nivel: String(nivel.id_nivel),
+                costo: String(nivel.costo)
+            }))
+
+        if (lista_act_niv.length === 0) {
+            toast.info("No hay niveles seleccionados para actualizar")
+            return
         }
 
         try {
-            await putEventos(String(evento.id), payload)
-            toast.success("Modalidades actualizadas exitosamente")
+            await putEventosNiveles({ lista_act_niv })
+            toast.success("Niveles actualizados exitosamente")
             if (onSuccess) onSuccess()
         } catch (error) {
             console.error(error)
-            toast.error("Error al actualizar modalidades")
+            toast.error("Error al actualizar niveles")
         }
     }
 
@@ -642,14 +614,11 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
                                                             <TableHead className="w-[120px]">
                                                                 <span>Total</span>
                                                             </TableHead>
-                                                            <TableHead className="min-w-[150px]">
-                                                                <span>Descripción</span>
-                                                            </TableHead>
                                                         </TableRow>
                                                     </TableHeader>
                                                     <TableBody>
                                                         {(groupedDetails[modalidad.id] || []).map((detail, idx) => {
-                                                            const stateKey = `det-${modalidad.id}-${detail.id_nivel}`
+                                                            const stateKey = `det-${modalidad.id}-${detail.id_nivel}-${detail.id_categoria}`
                                                             const reactKey = `${stateKey}-${idx}`
                                                             const isSelected = selectedDetails[stateKey] || false;
                                                             const currentValues = detailValues[stateKey] || { costo: "", descripcion: "" };
@@ -683,16 +652,6 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
                                                                     </TableCell>
                                                                     <TableCell className="w-[120px] text-right font-semibold">
                                                                         {isSelected ? `$${(parseFloat(currentValues.costo || "0")).toFixed(2)}` : "$0.00"}
-                                                                    </TableCell>
-                                                                    <TableCell className="min-w-[150px]">
-                                                                        <Input
-                                                                            id={`${id}-${reactKey}-descripcion`}
-                                                                            placeholder="Descripción adicional"
-                                                                            value={currentValues.descripcion || ""}
-                                                                            onChange={(e) => updateDetailValue(stateKey, 'descripcion', e.target.value)}
-                                                                            className="h-8"
-                                                                            disabled={!isSelected}
-                                                                        />
                                                                     </TableCell>
                                                                 </TableRow>
                                                             )
@@ -1108,15 +1067,6 @@ const DetailRow = React.memo(({
                 <div className="flex items-center h-8 px-2 text-sm font-medium text-muted-foreground bg-muted/20 rounded-md border border-transparent">
                     ${isSelected ? (parseFloat(values.costo) || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : "0.00"}
                 </div>
-            </TableCell>
-            <TableCell>
-                <Input
-                    className="h-8 w-full"
-                    placeholder="Descripción"
-                    disabled={!isSelected}
-                    value={values.descripcion}
-                    onChange={(e) => onUpdate(detailKey, 'descripcion', e.target.value)}
-                />
             </TableCell>
         </TableRow>
     )
