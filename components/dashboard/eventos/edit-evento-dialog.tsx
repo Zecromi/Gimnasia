@@ -112,19 +112,11 @@ export function EditEventoDialog({ evento, children, onSuccess }: EditEventoDial
             <DialogTrigger asChild>
                 {children}
             </DialogTrigger>
-<<<<<<< HEAD
-            <DialogContent className="sm:max-w-[1000px] max-h-[90vh] h-[90vh] flex flex-col p-0 overflow-hidden">
-                <DialogHeader className="px-6 py-4 border-b shrink-0">
-                    <DialogTitle>Editar Evento: {evento.Nombre}</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 min-h-0 overflow-hidden">
-=======
             <DialogContent className="sm:max-w-[1000px] h-[95vh] flex flex-col p-0">
                 <DialogHeader className="px-6 py-4 border-b shrink-0">
                     <DialogTitle>Editar Evento: {evento.Nombre}</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 overflow-hidden">
->>>>>>> origin/HU-Transaccion
                     <EditEventoTabs id="edit-evento-form-desktop" evento={evento} onSuccess={handleSuccess} />
                 </div>
             </DialogContent>
@@ -180,11 +172,7 @@ function EditEventoTabs({ className, id, evento, onSuccess }: { className?: stri
     ]
 
     return (
-<<<<<<< HEAD
-        <Tabs defaultValue="general" className="flex-1 h-full flex flex-col min-h-0 overflow-hidden">
-=======
         <Tabs defaultValue="general" className="flex-1 h-full flex flex-col overflow-hidden">
->>>>>>> origin/HU-Transaccion
             <div className="px-6 pt-1 shrink-0">
                 <TabsList className="flex w-full sm:w-auto h-auto p-1 bg-muted/80 gap-1">
                     {tabsConfig.map((tab) => (
@@ -208,17 +196,6 @@ function EditEventoTabs({ className, id, evento, onSuccess }: { className?: stri
                 </TabsList>
             </div>
 
-<<<<<<< HEAD
-            <ScrollArea className="flex-1 w-full min-h-0 custom-scrollbar">
-                <div className="p-6">
-                    {tabsConfig.map((tab) => (
-                        <TabsContent key={tab.value} value={tab.value} className={cn("m-0 focus-visible:outline-none", tab.className)}>
-                            {tab.content}
-                        </TabsContent>
-                    ))}
-                </div>
-            </ScrollArea>
-=======
             <div className="flex-1 w-full overflow-hidden">
                 <ScrollArea className="h-full">
                     <div className="p-6">
@@ -230,7 +207,6 @@ function EditEventoTabs({ className, id, evento, onSuccess }: { className?: stri
                     </div>
                 </ScrollArea>
             </div>
->>>>>>> origin/HU-Transaccion
         </Tabs>
     )
 }
