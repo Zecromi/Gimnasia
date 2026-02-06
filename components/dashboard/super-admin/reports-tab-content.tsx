@@ -1,3 +1,5 @@
+"use client"
+
 import * as React from "react"
 import { utils, write } from "xlsx"
 import { Download, Loader2, Search } from "lucide-react"
@@ -73,14 +75,15 @@ export function ReportsTabContent() {
                 setClubReportData(items)
                 if (items.length === 0) toast.info("No se encontraron resultados.")
             } else {
-                const params: any = {
-                    id_afilido: affiliateFilters.id_afilido || "",
-                    nombre: affiliateFilters.nombre || "",
-                    status: affiliateFilters.status === "todos" ? "" : affiliateFilters.status,
-                    forma_pago: affiliateFilters.forma_pago === "todos" ? "" : affiliateFilters.forma_pago,
-                    fecha_ini: affiliateFilters.fecha_ini || "",
-                    fecha_fin: affiliateFilters.fecha_fin || ""
-                }
+                // Construct params dynamically to avoid sending empty strings which might break backend filtering
+                const params: any = {}
+                if (affiliateFilters.id_afilido) params.id_afilido = affiliateFilters.id_afilido
+                if (affiliateFilters.nombre) params.nombre = affiliateFilters.nombre
+                if (affiliateFilters.status && affiliateFilters.status !== "todos") params.status = affiliateFilters.status
+                if (affiliateFilters.forma_pago && affiliateFilters.forma_pago !== "todos") params.forma_pago = affiliateFilters.forma_pago
+                if (affiliateFilters.fecha_ini) params.fecha_ini = affiliateFilters.fecha_ini
+                if (affiliateFilters.fecha_fin) params.fecha_fin = affiliateFilters.fecha_fin
+
                 const data = await getAffiliatePaymentReport(params)
                 setAffiliateReportData(data.resultados || [])
                 if (!data.resultados || data.resultados.length === 0) toast.info("No se encontraron resultados.")
@@ -256,8 +259,10 @@ export function ReportsTabContent() {
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="todos">Todos</SelectItem>
-                                            <SelectItem value="1">Activo</SelectItem>
-                                            <SelectItem value="0">Inactivo</SelectItem>
+                                            <SelectItem value="Afiliado">Afiliado</SelectItem>
+                                            <SelectItem value="Sin Afiliacion">Sin Afiliación</SelectItem>
+                                            <SelectItem value="Activo">Activo</SelectItem>
+                                            <SelectItem value="Baja">Baja</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </InputGroup>
@@ -407,7 +412,7 @@ export function ReportsTabContent() {
                                                     <TableCell className="whitespace-nowrap">{formatted["Fecha Pago"]}</TableCell>
                                                     <TableCell className="whitespace-nowrap">{formatted["Forma Pago"]}</TableCell>
                                                     <TableCell className="whitespace-nowrap">
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.Estatus === "Activo" || item.Estatus == "1"
+                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.Estatus === "Activo" || item.Estatus === "1" || item.Estatus === "Afiliado"
                                                             ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
                                                             : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
                                                             }`}>

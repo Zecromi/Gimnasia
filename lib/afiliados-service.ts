@@ -146,6 +146,7 @@ export interface GetAffiliatePaymentReportResponse {
 }
 
 export const getAffiliatePaymentReport = async (params: AfiliadoPaymentReportParams) => {
+    console.log("getAffiliatePaymentReport params:", params);
     const response = await api.get<GetAffiliatePaymentReportResponse>("/GetRepo_afil_pago", { params });
     return response.data;
 };
