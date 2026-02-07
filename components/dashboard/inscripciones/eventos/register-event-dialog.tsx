@@ -468,9 +468,9 @@ export function RegisterEventDialog({
     }
 
     const content = (
-        <div className="flex-1 overflow-hidden flex flex-col md:flex-row min-h-0">
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row min-h-0 h-full">
             {/* Left Column: Member Table */}
-            <div className="flex-[1.8] flex flex-col min-w-0 bg-background border-b lg:border-b-0 lg:border-r min-h-0">
+            <div className="flex-[1.8] flex flex-col min-w-0 bg-background border-b lg:border-b-0 lg:border-r min-h-0 h-full">
                 <ScrollArea className="flex-1 h-full">
                     <div className="lg:min-w-[800px] flex flex-col">
                         {/* Sticky Header: Fixed at top, and moves horizontally with ScrollArea */}
@@ -484,7 +484,7 @@ export function RegisterEventDialog({
                             <span className="truncate hidden md:block">Aparatos</span>
                             <span className="truncate">Descuento</span>
                         </div>
-                        <div className="p-4 space-y-0">
+                        <div className="p-4 space-y-0 overflow-y-auto overflow-x-auto h-full">
                             {afiliados.map((member) => {
                                 const memberId = String(member.id_afiliado);
                                 const fullName = `${member.Nombre} ${member.Paterno} ${member.Materno || ""}`.trim();
@@ -935,7 +935,7 @@ export function RegisterEventDialog({
                     {header}
                 </DialogHeader>
 
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden flex flex-col">
                     {content}
                 </div>
 
