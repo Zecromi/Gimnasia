@@ -54,7 +54,7 @@ const items = [
         icon: Ticket,
     },
      {
-       title: "Super Admin",
+       title: "Admin",
         url: "/dashboard/super-admin",
         icon: Users,
  },
