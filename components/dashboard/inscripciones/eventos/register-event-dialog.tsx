@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback } from "react"
-import { Check, ChevronsUpDown, Calendar, Clock, Users } from "lucide-react"
+import { Check, ChevronsUpDown, Calendar, Clock, Users, Loader2 } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
@@ -121,6 +121,7 @@ export function RegisterEventDialog({
     const [niveles, setNiveles] = useState<NivelConfiguradoItem[]>([])
     const [loadingAdicionales, setLoadingAdicionales] = useState(true)
     const [loadingNiveles, setLoadingNiveles] = useState(true)
+    const [isSubmitting, setIsSubmitting] = useState(false)
 
     useEffect(() => {
         if (!open) return
@@ -390,6 +391,7 @@ export function RegisterEventDialog({
         const paymentMethod = Catalogo_formas_pago.find(p => p.id === selectedPaymentMethod)
 
         try {
+            setIsSubmitting(true)
             const detalle_afiliados = Array.from(selectedMembers).map(memberId => {
                 const config = memberConfigs[memberId]
                 const aparatos = config?.additionalItemIds.map(itemId => ({
@@ -457,6 +459,8 @@ export function RegisterEventDialog({
         } catch (error) {
             console.error("Error registering:", error)
             toast.error("Error al realizar la inscripción")
+        } finally {
+            setIsSubmitting(false)
         }
     }
 
@@ -874,9 +878,16 @@ export function RegisterEventDialog({
                 className="bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/20"
                 size="lg"
                 onClick={handleRegister}
-                disabled={totals.itemsCount === 0 || isRegistrationClosed}
+                disabled={totals.itemsCount === 0 || isRegistrationClosed || isSubmitting}
             >
-                {isRegistrationClosed ? "Inscripciones Cerradas" : `Confirmar Inscripción (${formatCurrency(totals.totalCost)})`}
+                {isSubmitting ? (
+                    <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Guardando...
+                    </>
+                ) : (
+                    isRegistrationClosed ? "Inscripciones Cerradas" : `Confirmar Inscripción (${formatCurrency(totals.totalCost)})`
+                )}
             </Button>
             {isMobile ? (
                 <DrawerClose asChild>
