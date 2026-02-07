@@ -21,7 +21,8 @@ import {
     DrawerTitle,
     DrawerTrigger,
     DrawerClose,
-    DrawerDescription
+    DrawerDescription,
+    DrawerFooter
 } from "@/components/ui/drawer"
 import { useIsMobile } from "@/hooks/use-mobile"
 import {
@@ -57,6 +58,12 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from "@/components/ui/accordion"
 import { useCatalogPayStore } from "@/lib/store/catalog-pay-store"
 import { useCatalogStore } from "@/lib/store/catalog-store"
 import { useAfiliadosEventosStore } from "@/lib/store/afiliados-eventos-store"
@@ -460,284 +467,248 @@ export function RegisterEventDialog({
         }).format(amount)
     }
 
-    return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <TooltipProvider>
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <DialogTrigger asChild>
-                            {children}
-                        </DialogTrigger>
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                        <p>Inscribirse</p>
-                    </TooltipContent>
-                </Tooltip>
-            </TooltipProvider>
-
-            <DialogContent
-                className="max-w-[95vw] w-full lg:max-w-7xl max-h-[95vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl"
-                onInteractOutside={(e) => e.preventDefault()}
-            >
-                <DialogHeader className="p-6 pb-4">
-                    <DialogTitle>Inscripción al evento: <span className="text-teal-600">{eventoName}</span></DialogTitle>
-                    <div className="flex flex-wrap gap-4 pt-1 text-sm text-muted-foreground">
-                        {fechaFinInscripcion && (
-                            <div className="flex items-center gap-1.5">
-                                <Calendar className="h-4 w-4 text-teal-600" />
-                                <span>Cierre: {format(new Date(fechaFinInscripcion), "PPP", { locale: es })}</span>
-                            </div>
-                        )}
-                        {horaLimiteInscripcion && (
-                            <div className="flex items-center gap-1.5">
-                                <Clock className="h-4 w-4 text-teal-600" />
-                                <span>{horaLimiteInscripcion}</span>
-                            </div>
-                        )}
-                        <div className="flex items-center gap-1.5">
-                            <Users className="h-4 w-4 text-teal-600" />
-                            <span>Lugares disponibles: <span className="font-medium text-foreground">{limiteParticipantes}</span></span>
-                        </div>
-                    </div>
-                    {isRegistrationClosed && (
-                        <div className="mt-2 p-3 bg-red-100 text-red-700 rounded-md text-sm font-medium border border-red-200">
-                            No es posible realizar inscripciones: {closureReason}
-                        </div>
-                    )}
-                </DialogHeader>
-
-                <div className="flex-1 overflow-hidden flex flex-col lg:flex-row min-h-0">
-                    {/* Left Column: Member Table */}
-                    <div className="flex-[1.5] flex flex-col min-w-0 bg-background border-r">
-                        <div className="p-4 border-b bg-muted/30 grid grid-cols-[40px_minmax(100px,1.2fr)_minmax(150px,1.5fr)_minmax(150px,1.5fr)_minmax(120px,1fr)] gap-4 items-center text-sm font-medium text-muted-foreground">
+    const content = (
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row min-h-0">
+            {/* Left Column: Member Table */}
+            <div className="flex-[1.8] flex flex-col min-w-0 bg-background border-b lg:border-b-0 lg:border-r min-h-0">
+                <ScrollArea className="flex-1 h-full">
+                    <div className="lg:min-w-[800px] flex flex-col">
+                        {/* Sticky Header: Fixed at top, and moves horizontally with ScrollArea */}
+                        <div className="sticky top-0 z-20 p-4 border-b bg-muted/80 backdrop-blur-md grid grid-cols-[40px_1fr_120px] md:grid-cols-[40px_minmax(120px,1.5fr)_minmax(180px,2fr)_minmax(180px,2fr)_minmax(140px,1.2fr)] gap-2 md:gap-4 items-center text-xs font-bold text-muted-foreground uppercase tracking-wider">
                             <Checkbox
                                 checked={selectedMembers.size === afiliados.length && afiliados.length > 0}
                                 onCheckedChange={(checked) => toggleAll(!!checked)}
                             />
-                            <span className="truncate">Nombre</span>
-                            <span className="truncate">Costo (Nivel)</span>
-                            <span className="truncate">Aparatos</span>
-                            <span className="truncate">Dcto.</span>
+                            <span className="truncate">Miembro</span>
+                            <span className="truncate hidden md:block">Costo (Nivel)</span>
+                            <span className="truncate hidden md:block">Aparatos</span>
+                            <span className="truncate">Descuento</span>
                         </div>
-                        <ScrollArea className="flex-1">
-                            <div className="p-4 min-w-[700px]"> {/* Robust min width for scrolling content */}
-                                <div className="space-y-4">
-                                    {afiliados.map((member) => {
-                                        const memberId = String(member.id_afiliado);
-                                        const fullName = `${member.Nombre} ${member.Paterno} ${member.Materno || ""}`.trim();
-                                        const isSelected = selectedMembers.has(memberId);
-                                        const config = memberConfigs[memberId];
+                        <div className="p-4 space-y-0">
+                            {afiliados.map((member) => {
+                                const memberId = String(member.id_afiliado);
+                                const fullName = `${member.Nombre} ${member.Paterno} ${member.Materno || ""}`.trim();
+                                const isSelected = selectedMembers.has(memberId);
+                                const config = memberConfigs[memberId];
 
-                                        return (
-                                            <div key={memberId} className="grid grid-cols-[40px_minmax(100px,1.2fr)_minmax(150px,1.5fr)_minmax(150px,1.5fr)_minmax(120px,1fr)] gap-4 items-center py-1">
+                                return (
+                                    <div key={memberId} className="grid grid-cols-[40px_1fr_120px] md:grid-cols-[40px_minmax(120px,1.5fr)_minmax(180px,2fr)_minmax(180px,2fr)_minmax(140px,1.2fr)] gap-2 md:gap-4 items-center py-2 px-1 hover:bg-muted/5 rounded-lg transition-colors">
+                                        <Checkbox
+                                            checked={isSelected}
+                                            onCheckedChange={(checked) => handleSelectMember(memberId, !!checked)}
+                                        />
+                                        <span className="text-sm font-medium truncate" title={fullName}>{fullName}</span>
+
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    className="hidden md:flex min-h-8 h-auto w-full justify-between font-normal"
+                                                    disabled={!isSelected || niveles.length === 0 || loadingNiveles}
+                                                >
+                                                    {niveles.length === 0 ? (
+                                                        <div className="flex justify-between w-full gap-2">
+                                                            <span>{modalidad}</span>
+                                                            <span className="text-muted-foreground">{formatCurrency(parseFloat(costo) || 0)}</span>
+                                                        </div>
+                                                    ) : memberConfigs[memberId]?.selectedNivelId && memberConfigs[memberId]?.selectedCategoryId ? (
+                                                        <div className="flex justify-between w-full gap-2 text-xs">
+                                                            <span className="truncate max-w-[120px]">
+                                                                {(() => {
+                                                                    const nivelDesc = Niveles_tecnicos.find(nt => nt.id === Number(memberConfigs[memberId].selectedNivelId))?.Descripcion || "Nivel"
+                                                                    const catTitle = View_Modalidades_detalle.find(d => d.id_categoria === Number(memberConfigs[memberId].selectedCategoryId))?.titulo || "Cat"
+                                                                    return `${catTitle}`
+                                                                })()}
+                                                            </span>
+                                                            <span className="text-teal-600 font-semibold shrink-0">
+                                                                {(() => {
+                                                                    const n = niveles.find(l =>
+                                                                        String(l.id_nivel) === memberConfigs[memberId].selectedNivelId &&
+                                                                        String(l.id_categoria) === memberConfigs[memberId].selectedCategoryId
+                                                                    );
+                                                                    const nivelCost = typeof n?.costo === 'string' ? parseFloat(n.costo) : (n?.costo || 0)
+                                                                    return formatCurrency((parseFloat(costo) || 0) + nivelCost);
+                                                                })()}
+                                                            </span>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="text-muted-foreground">Seleccionar</span>
+                                                    )}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[350px] p-0" align="start" side="bottom">
+                                                <Command>
+                                                    <CommandInput placeholder="Buscar nivel/categoria..." />
+                                                    <CommandList>
+                                                        <CommandEmpty>No se encontraron niveles.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {niveles.map((item) => {
+                                                                const nivelDesc = Niveles_tecnicos.find(nt => nt.id === item.id_nivel)?.Descripcion || `Nivel ${item.id_nivel}`;
+                                                                const catTitle = View_Modalidades_detalle.find(d => d.id_categoria === item.id_categoria)?.titulo || `Categoria ${item.id_categoria}`;
+                                                                const fullDesc = `${nivelDesc} - ${catTitle}`;
+                                                                const itemKey = `${item.id_nivel}-${item.id_categoria}`;
+                                                                const isSelected = memberConfigs[memberId]?.selectedNivelId === String(item.id_nivel) &&
+                                                                    memberConfigs[memberId]?.selectedCategoryId === String(item.id_categoria);
+
+                                                                return (
+                                                                    <CommandItem
+                                                                        key={itemKey}
+                                                                        value={fullDesc}
+                                                                        onSelect={() => handleNivelSelect(memberId, String(item.id_nivel), String(item.id_categoria))}
+                                                                    >
+                                                                        <Check
+                                                                            className={cn(
+                                                                                "mr-2 h-4 w-4",
+                                                                                isSelected ? "opacity-100" : "opacity-0"
+                                                                            )}
+                                                                        />
+                                                                        <div className="flex justify-between w-full gap-2">
+                                                                            <span className="truncate">{fullDesc}</span>
+                                                                            <span className="text-muted-foreground shrink-0">{formatCurrency(typeof item.costo === 'string' ? parseFloat(item.costo) : item.costo)}</span>
+                                                                        </div>
+                                                                    </CommandItem>
+                                                                );
+                                                            })}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+
+                                        <Popover>
+                                            <PopoverTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    role="combobox"
+                                                    className="hidden md:flex min-h-8 h-auto w-full justify-between font-normal"
+                                                    disabled={!isSelected || adicionales.length === 0 || loadingAdicionales}
+                                                >
+                                                    {adicionales.length === 0 ? (
+                                                        <span className="text-muted-foreground italic">Sin adicionales</span>
+                                                    ) : memberConfigs[memberId]?.additionalItemIds?.length > 0 ? (
+                                                        <span className="truncate text-xs">
+                                                            {memberConfigs[memberId].additionalItemIds.length > 1
+                                                                ? `${memberConfigs[memberId].additionalItemIds.length} seleccionados`
+                                                                : adicionales.find(i => String(i.id_aparato) === memberConfigs[memberId].additionalItemIds[0])?.Descripcion
+                                                            }
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-muted-foreground">Elegir</span>
+                                                    )}
+                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[300px] p-0" align="start" side="bottom">
+                                                <Command>
+                                                    <CommandInput placeholder="Buscar aparato..." />
+                                                    <CommandList>
+                                                        <CommandEmpty>No se encontraron aparatos.</CommandEmpty>
+                                                        <CommandGroup>
+                                                            {adicionales.map((item) => (
+                                                                <CommandItem
+                                                                    key={String(item.id_aparato)}
+                                                                    value={item.Descripcion}
+                                                                    onSelect={() => handleAdditionalItemToggle(memberId, String(item.id_aparato))}
+                                                                >
+                                                                    <Check
+                                                                        className={cn(
+                                                                            "mr-2 h-4 w-4",
+                                                                            memberConfigs[memberId]?.additionalItemIds?.includes(String(item.id_aparato))
+                                                                                ? "opacity-100"
+                                                                                : "opacity-0"
+                                                                        )}
+                                                                    />
+                                                                    <div className="flex justify-between w-full">
+                                                                        <span>{item.Descripcion}</span>
+                                                                        <span className="text-muted-foreground">{formatCurrency(item.Costo)}</span>
+                                                                    </div>
+                                                                </CommandItem>
+                                                            ))}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+
+                                        <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1.5 shrink-0">
                                                 <Checkbox
-                                                    checked={isSelected}
-                                                    onCheckedChange={(checked) => handleSelectMember(memberId, !!checked)}
+                                                    id={`full-discount-${memberId}`}
+                                                    checked={config?.isFullDiscount || false}
+                                                    onCheckedChange={(checked) => handleFullDiscountToggle(memberId, !!checked)}
+                                                    disabled={!isSelected}
                                                 />
-                                                <span className="text-sm font-medium truncate" title={fullName}>{fullName}</span>
-
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            role="combobox"
-                                                            className="min-h-8 h-auto w-full justify-between"
-                                                            disabled={!isSelected || niveles.length === 0 || loadingNiveles}
-                                                        >
-                                                            {niveles.length === 0 ? (
-                                                                <div className="flex justify-between w-full gap-2">
-                                                                    <span>{modalidad}</span>
-                                                                    <span className="text-muted-foreground">{formatCurrency(parseFloat(costo) || 0)}</span>
-                                                                </div>
-                                                            ) : memberConfigs[memberId]?.selectedNivelId && memberConfigs[memberId]?.selectedCategoryId ? (
-                                                                <div className="flex justify-between w-full gap-2">
-                                                                    <span className="truncate">
-                                                                        {(() => {
-                                                                            const nivelDesc = Niveles_tecnicos.find(nt => nt.id === Number(memberConfigs[memberId].selectedNivelId))?.Descripcion || "Nivel"
-                                                                            const catTitle = View_Modalidades_detalle.find(d => d.id_categoria === Number(memberConfigs[memberId].selectedCategoryId))?.titulo || "Cat"
-                                                                            return `${nivelDesc} - ${catTitle}`
-                                                                        })()}
-                                                                    </span>
-                                                                    <span className="text-muted-foreground text-xs shrink-0">
-                                                                        {(() => {
-                                                                            const n = niveles.find(l =>
-                                                                                String(l.id_nivel) === memberConfigs[memberId].selectedNivelId &&
-                                                                                String(l.id_categoria) === memberConfigs[memberId].selectedCategoryId
-                                                                            );
-                                                                            const nivelCost = typeof n?.costo === 'string' ? parseFloat(n.costo) : (n?.costo || 0)
-                                                                            return formatCurrency((parseFloat(costo) || 0) + nivelCost);
-                                                                        })()}
-                                                                    </span>
-                                                                </div>
-                                                            ) : (
-                                                                <span className="text-muted-foreground font-normal">Seleccionar costo/nivel</span>
-                                                            )}
-                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-[350px] p-0" align="start">
-                                                        <Command>
-                                                            <CommandInput placeholder="Buscar nivel/categoria..." />
-                                                            <CommandList>
-                                                                <CommandEmpty>No se encontraron niveles.</CommandEmpty>
-                                                                <CommandGroup>
-                                                                    {niveles.map((item) => {
-                                                                        const nivelDesc = Niveles_tecnicos.find(nt => nt.id === item.id_nivel)?.Descripcion || `Nivel ${item.id_nivel}`;
-                                                                        const catTitle = View_Modalidades_detalle.find(d => d.id_categoria === item.id_categoria)?.titulo || `Categoria ${item.id_categoria}`;
-                                                                        const fullDesc = `${nivelDesc} - ${catTitle}`;
-                                                                        const itemKey = `${item.id_nivel}-${item.id_categoria}`;
-                                                                        const isSelected = memberConfigs[memberId]?.selectedNivelId === String(item.id_nivel) &&
-                                                                            memberConfigs[memberId]?.selectedCategoryId === String(item.id_categoria);
-
-                                                                        return (
-                                                                            <CommandItem
-                                                                                key={itemKey}
-                                                                                value={fullDesc}
-                                                                                onSelect={() => handleNivelSelect(memberId, String(item.id_nivel), String(item.id_categoria))}
-                                                                            >
-                                                                                <Check
-                                                                                    className={cn(
-                                                                                        "mr-2 h-4 w-4",
-                                                                                        isSelected ? "opacity-100" : "opacity-0"
-                                                                                    )}
-                                                                                />
-                                                                                <div className="flex justify-between w-full gap-2">
-                                                                                    <span className="truncate">{fullDesc}</span>
-                                                                                    <span className="text-muted-foreground shrink-0">{formatCurrency(typeof item.costo === 'string' ? parseFloat(item.costo) : item.costo)}</span>
-                                                                                </div>
-                                                                            </CommandItem>
-                                                                        );
-                                                                    })}
-                                                                </CommandGroup>
-                                                            </CommandList>
-                                                        </Command>
-                                                    </PopoverContent>
-                                                </Popover>
-
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            role="combobox"
-                                                            className="min-h-8 h-auto w-full justify-between"
-                                                            disabled={!isSelected || adicionales.length === 0 || loadingAdicionales}
-                                                        >
-                                                            {adicionales.length === 0 ? (
-                                                                <span className="text-muted-foreground font-normal">Sin adicionales</span>
-                                                            ) : memberConfigs[memberId]?.additionalItemIds?.length > 0 ? (
-                                                                <span className="truncate">
-                                                                    {memberConfigs[memberId].additionalItemIds.length > 2
-                                                                        ? `${memberConfigs[memberId].additionalItemIds.length} seleccionados`
-                                                                        : memberConfigs[memberId].additionalItemIds
-                                                                            .map(id => adicionales.find(i => String(i.id_aparato) === id)?.Descripcion)
-                                                                            .join(", ")
-                                                                    }
-                                                                </span>
-                                                            ) : (
-                                                                <span className="text-muted-foreground font-normal">Seleccionar aparatos</span>
-                                                            )}
-                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-[300px] p-0" align="start">
-                                                        <Command>
-                                                            <CommandInput placeholder="Buscar aparato..." />
-                                                            <CommandList>
-                                                                <CommandEmpty>No se encontraron aparatos.</CommandEmpty>
-                                                                <CommandGroup>
-                                                                    {adicionales.map((item) => (
-                                                                        <CommandItem
-                                                                            key={String(item.id_aparato)}
-                                                                            value={item.Descripcion}
-                                                                            onSelect={() => handleAdditionalItemToggle(memberId, String(item.id_aparato))}
-                                                                        >
-                                                                            <Check
-                                                                                className={cn(
-                                                                                    "mr-2 h-4 w-4",
-                                                                                    memberConfigs[memberId]?.additionalItemIds?.includes(String(item.id_aparato))
-                                                                                        ? "opacity-100"
-                                                                                        : "opacity-0"
-                                                                                )}
-                                                                            />
-                                                                            <div className="flex justify-between w-full">
-                                                                                <span>{item.Descripcion}</span>
-                                                                                <span className="text-muted-foreground">{formatCurrency(item.Costo)}</span>
-                                                                            </div>
-                                                                        </CommandItem>
-                                                                    ))}
-                                                                </CommandGroup>
-                                                            </CommandList>
-                                                        </Command>
-                                                    </PopoverContent>
-                                                </Popover>
-
-                                                <div className="flex items-center gap-2">
-                                                    <div className="flex items-center gap-1.5 shrink-0">
-                                                        <Checkbox
-                                                            id={`full-discount-${memberId}`}
-                                                            checked={config?.isFullDiscount || false}
-                                                            onCheckedChange={(checked) => handleFullDiscountToggle(memberId, !!checked)}
-                                                            disabled={!isSelected}
-                                                        />
-                                                        <label htmlFor={`full-discount-${memberId}`} className="text-[10px] leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                                                            Total
-                                                        </label>
-                                                    </div>
-                                                    <Input
-                                                        type="number"
-                                                        placeholder="Monto"
-                                                        className="h-8 text-xs px-2"
-                                                        value={config?.discountAmount || ""}
-                                                        onChange={(e) => handleDiscountAmountChange(memberId, e.target.value)}
-                                                        disabled={!isSelected || config?.isFullDiscount}
-                                                    />
-                                                </div>
+                                                <label htmlFor={`full-discount-${memberId}`} className="text-[10px] leading-none font-medium text-muted-foreground cursor-pointer">
+                                                    Exento
+                                                </label>
                                             </div>
-                                        )
-                                    })}
-                                </div>
-                            </div>
-                        </ScrollArea>
-                    </div>
-
-                    {/* Right Column: Summary */}
-                    <div className="flex-1 lg:max-w-[400px] flex flex-col bg-muted/5 border-t lg:border-t-0 lg:border-l">
-                        <div className="p-4 border-b bg-muted/20 shrink-0">
-                            <h3 className="font-semibold text-base flex items-center gap-2">
-                                <Badge variant="outline" className="rounded-full h-6 w-6 p-0 flex items-center justify-center bg-background">
-                                    {selectedMembers.size}
-                                </Badge>
-                                Resumen de Selección
-                            </h3>
+                                            <Input
+                                                type="number"
+                                                placeholder="0.00"
+                                                className="h-8 text-xs px-2 w-full"
+                                                value={config?.discountAmount || ""}
+                                                onChange={(e) => handleDiscountAmountChange(memberId, e.target.value)}
+                                                disabled={!isSelected || config?.isFullDiscount}
+                                            />
+                                        </div>
+                                    </div>
+                                )
+                            })}
                         </div>
+                    </div>
+                </ScrollArea>
+            </div>
 
-                        <ScrollArea className="flex-1">
-                            <div className="p-6 space-y-6">
-                                {selectedMembers.size === 0 ? (
-                                    <p className="text-sm text-center text-muted-foreground py-10">
-                                        Selecciona miembros para ver el resumen.
-                                    </p>
-                                ) : (
-                                    Array.from(selectedMembers).map((memberId) => {
-                                        const member = afiliados.find((m) => String(m.id_afiliado) === memberId)
-                                        const config = memberConfigs[memberId]
-                                        // const modality = MOCK_MODALITIES.find((m) => m.id === config.modalityId)
-                                        const additionalItems = config?.additionalItemIds
-                                            .map((id) => adicionales.find((i) => String(i.id_aparato) === id))
-                                            .filter((item): item is AdicionalEventoItem => !!item) || []
+            {/* Right Column: Summary */}
+            <div className="flex-1 md:flex-none md:w-[380px] md:shrink-0 lg:w-[420px] flex flex-col min-h-0 bg-muted/5 border-t md:border-t-0 md:border-l">
+                <div className="p-4 border-b bg-muted/20 shrink-0">
+                    <h3 className="font-semibold text-base flex items-center gap-2">
+                        <Badge variant="outline" className="rounded-full h-6 w-6 p-0 flex items-center justify-center bg-background">
+                            {selectedMembers.size}
+                        </Badge>
+                        Resumen de Selección
+                    </h3>
+                </div>
 
-                                        if (!member) return null
-                                        const fullName = `${member.Nombre} ${member.Paterno} ${member.Materno || ""}`.trim();
 
-                                        return (
-                                            <div key={memberId} className="space-y-2">
-                                                <div className="font-semibold text-sm flex items-center gap-2">
-                                                    <Badge variant="outline" className="h-5 w-5 p-0 flex items-center justify-center rounded-full shrink-0">
+                <ScrollArea className="max-h-[calc(100vh-220px)] md:max-h-[600px] lg:max-h-[calc(100vh-280px)]">
+                    <div className="p-6 space-y-6">
+                        {selectedMembers.size === 0 ? (
+                            <div className="flex flex-col items-center justify-center py-12 text-center space-y-3 opacity-60">
+                                <Users className="h-8 w-8 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground max-w-[180px]">
+                                    Selecciona miembros de la lista para ver el resumen de costos.
+                                </p>
+                            </div>
+                        ) : (
+                            <Accordion type="multiple" className="w-full">
+                                {Array.from(selectedMembers).map((memberId) => {
+                                    const member = afiliados.find((m) => String(m.id_afiliado) === memberId)
+                                    const config = memberConfigs[memberId]
+                                    const additionalItems = config?.additionalItemIds
+                                        .map((id) => adicionales.find((i) => String(i.id_aparato) === id))
+                                        .filter((item): item is AdicionalEventoItem => !!item) || []
+
+                                    if (!member) return null
+                                    const fullName = `${member.Nombre} ${member.Paterno} ${member.Materno || ""}`.trim();
+
+                                    return (
+                                        <AccordionItem key={memberId} value={memberId} className="border-b last:border-b">
+                                            <AccordionTrigger className="hover:no-underline py-3">
+                                                <div className="flex items-center gap-2 text-sm font-semibold">
+                                                    <Badge variant="outline" className="h-5 w-5 p-0 flex items-center justify-center rounded-full shrink-0 bg-background">
                                                         <Check className="h-3 w-3" />
                                                     </Badge>
-                                                    {fullName}
+                                                    <span>{fullName}</span>
+                                                    <span className="ml-auto mr-4 text-teal-600 font-bold">
+                                                        {formatCurrency(parseFloat(costo) || 0)}
+                                                    </span>
                                                 </div>
-                                                <div className="pl-7 text-sm space-y-1">
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <div className="pl-7 text-xs space-y-1.5 pt-2 pb-3">
                                                     <div className="flex justify-between text-muted-foreground">
                                                         <span className="truncate pr-2">{modalidad}</span>
                                                         <span className="shrink-0">{formatCurrency(parseFloat(costo) || 0)}</span>
@@ -770,7 +741,7 @@ export function RegisterEventDialog({
                                                         </div>
                                                     ))}
                                                     {(config?.isFullDiscount || (config?.discountAmount || 0) > 0) && (
-                                                        <div className="flex justify-between text-teal-600 font-medium pt-1">
+                                                        <div className="flex justify-between text-teal-600 font-medium pt-1 border-t border-dashed border-teal-100 mt-1">
                                                             <span className="truncate pr-2">- Descuento {config.isFullDiscount ? "Total" : ""}</span>
                                                             <span className="shrink-0">
                                                                 {(() => {
@@ -798,69 +769,178 @@ export function RegisterEventDialog({
                                                         </div>
                                                     )}
                                                 </div>
-                                                <Separator className="my-2 opacity-50" />
-                                            </div>
-                                        )
-                                    })
-                                )}
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    )
+                                })}
+                            </Accordion>
+                        )}
+                    </div>
+
+                    <div className="p-6 bg-background border-t space-y-0">
+                        <div className="space-y-4">
+                            <div className="space-y-0">
+                                <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Método de pago</label>
+                                <Select
+                                    value={selectedPaymentMethod?.toString() || ""}
+                                    onValueChange={(val) => setSelectedPaymentMethod(Number(val))}
+                                >
+                                    <SelectTrigger className="h-10 bg-muted/20">
+                                        <SelectValue placeholder="Seleccionar método..." />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {Catalogo_formas_pago.map((method) => (
+                                            <SelectItem key={method.id} value={method.id.toString()}>
+                                                {method.Nombre}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
-                        </ScrollArea>
 
-                        <div className="p-6 bg-background border-t space-y-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] shrink-0">
-                            <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium text-muted-foreground">Método de pago</label>
-                                    <Select
-                                        value={selectedPaymentMethod?.toString() || ""}
-                                        onValueChange={(val) => setSelectedPaymentMethod(Number(val))}
-                                    >
-                                        <SelectTrigger className="h-11">
-                                            <SelectValue placeholder="Seleccionar método..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {Catalogo_formas_pago.map((method) => (
-                                                <SelectItem key={method.id} value={method.id.toString()}>
-                                                    {method.Nombre}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                            <div className="pt-2 border-t border-dashed space-y-2">
+                                <div className="flex justify-between items-center text-sm">
+                                    <span className="text-muted-foreground">Miembros:</span>
+                                    <span className="font-medium">{totals.itemsCount}</span>
                                 </div>
-
-                                <div className="pt-2 border-t space-y-2">
-                                    <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Items seleccionados:</span>
-                                        <span className="font-medium text-foreground">
-                                            {totals.itemsCount}
+                                <div className="flex justify-between items-end pt-1">
+                                    <span className="font-bold text-base text-foreground">Total:</span>
+                                    <div className="text-right">
+                                        <span className="block text-2xl font-bold text-teal-600 leading-none tabular-nums">
+                                            {formatCurrency(totals.totalCost)}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between items-end pt-1">
-                                        <span className="font-bold text-lg text-foreground">Total a pagar:</span>
-                                        <div className="text-right">
-                                            <span className="block text-2xl font-bold text-teal-600 leading-none">
-                                                {formatCurrency(totals.totalCost)}
-                                            </span>
-                                        </div>
-                                    </div>
                                 </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Button
-                                    className="w-full bg-teal-600 hover:bg-teal-700"
-                                    size="lg"
-                                    onClick={handleRegister}
-                                    disabled={totals.itemsCount === 0 || isRegistrationClosed}
-                                >
-                                    {isRegistrationClosed ? "Inscripciones Cerradas" : "Inscribir"}
-                                </Button>
-                                <DialogClose asChild>
-                                    <Button variant="outline" className="w-full">
-                                        Cancelar
-                                    </Button>
-                                </DialogClose>
                             </div>
                         </div>
                     </div>
+                </ScrollArea>
+
+
+
+            </div>
+        </div>
+    )
+
+    const isMobile = useIsMobile()
+
+    const trigger = (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <DialogTrigger asChild>
+                        {children}
+                    </DialogTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                    <p>Inscribirse</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    )
+
+    const header = (
+        <>
+            <div className="flex flex-wrap gap-x-4 gap-y-2 mt-2 text-xs text-muted-foreground">
+                {fechaFinInscripcion && (
+                    <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded">
+                        <Calendar className="h-3.5 w-3.5 text-teal-600" />
+                        <span>Cierre: {format(new Date(fechaFinInscripcion), "PPP", { locale: es })}</span>
+                    </div>
+                )}
+                {horaLimiteInscripcion && (
+                    <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded">
+                        <Clock className="h-3.5 w-3.5 text-teal-600" />
+                        <span>{horaLimiteInscripcion}</span>
+                    </div>
+                )}
+                <div className="flex items-center gap-1.5 bg-muted/30 px-2 py-1 rounded">
+                    <Users className="h-3.5 w-3.5 text-teal-600" />
+                    <span>Cupo: <span className="font-bold text-foreground">{limiteParticipantes}</span></span>
+                </div>
+            </div>
+            {isRegistrationClosed && (
+                <div className="mt-3 p-3 bg-red-50 text-red-700 rounded-lg text-sm font-medium border border-red-100 flex items-start gap-2">
+                    <span className="shrink-0 mt-0.5"></span>
+                    <span>{closureReason}</span>
+                </div>
+            )}
+        </>
+    )
+
+    const footer = (
+        <div className="flex flex-col sm:flex-row gap-3 w-full">
+            <Button
+                className="bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/20"
+                size="lg"
+                onClick={handleRegister}
+                disabled={totals.itemsCount === 0 || isRegistrationClosed}
+            >
+                {isRegistrationClosed ? "Inscripciones Cerradas" : `Confirmar Inscripción (${formatCurrency(totals.totalCost)})`}
+            </Button>
+            {isMobile ? (
+                <DrawerClose asChild>
+                    <Button variant="outline" size="lg" className="w-full sm:w-auto">
+                        Cerrar
+                    </Button>
+                </DrawerClose>
+            ) : (
+                <DialogClose asChild>
+                    <Button variant="outline" size="lg">
+                        Cancelar
+                    </Button>
+                </DialogClose>
+            )}
+        </div>
+    )
+
+    if (isMobile) {
+        return (
+            <Drawer open={open} onOpenChange={setOpen}>
+                <DrawerTrigger asChild>
+                    {children}
+                </DrawerTrigger>
+                <DrawerContent className="h-[96vh] max-h-[96vh]">
+                    <DrawerHeader>
+                        <DrawerTitle className="text-xl">Inscripción: <span className="text-teal-600">{eventoName}</span></DrawerTitle>
+                        <DrawerDescription className="sr-only">Formulario de inscripción para {eventoName}</DrawerDescription>
+                        {header}
+                    </DrawerHeader>
+                    {/* For Mobile: Unify scroll if preferred or keep columns. 
+                        Usually for complex forms on mobile, we stack them in a single scroll.
+                    */}
+                    <div className="flex-1 overflow-hidden flex flex-col">
+                        {content}
+                    </div>
+                    <DrawerFooter className="border-t bg-background">
+                        {footer}
+                    </DrawerFooter>
+                </DrawerContent>
+            </Drawer>
+        )
+    }
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            {trigger}
+            <DialogContent
+                className="max-w-[95vw] w-full lg:max-w-7xl h-[95vh] max-h-[95vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl"
+                onInteractOutside={(e) => e.preventDefault()}
+            >
+                <DialogHeader className="p-6 pb-2 shrink-0">
+                    <DialogTitle className="text-2xl">Inscripción al evento: <span className="text-teal-600">{eventoName}</span></DialogTitle>
+                    <DialogDescription className="sr-only">
+                        Formulario para seleccionar miembros y configurar los detalles de inscripción para el evento {eventoName}.
+                    </DialogDescription>
+                    {header}
+                </DialogHeader>
+
+                <div className="flex-1 overflow-hidden">
+                    {content}
+                </div>
+
+                <div className="p-6 border-t bg-muted/10 shrink-0">
+                    {footer}
                 </div>
             </DialogContent>
         </Dialog>
