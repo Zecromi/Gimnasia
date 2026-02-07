@@ -132,14 +132,45 @@ export function ReportsTabContent() {
 
     const handleDownload = () => {
         const data = reportType === "club" ? clubReportData : affiliateReportData
+
         if (data.length === 0) {
             toast.warning("No hay datos para exportar")
             return
         }
 
-        const dataToExport = reportType === "club"
-            ? (data as ClubMembershipItem[]).map(formatClubData)
-            : (data as AfiliadoPaymentItem[]).map(formatAffiliateData)
+        let dataToExport: any[] = []
+
+        if (reportType === "club") {
+            const clubData = data as ClubMembershipItem[]
+            dataToExport = clubData.map(formatClubData)
+            const total = clubData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0)
+            dataToExport.push({
+                "Club": "Total General",
+                "Alias": "",
+                "Email": "",
+                "Asociación": "",
+                "Membresía": "",
+                "Estatus": "",
+                "Monto Pago": `$${total.toFixed(2)}`,
+                "F. Pago": "",
+                "Comprobante": "",
+                "Lugar Pago": "",
+                "Fecha Pago": ""
+            })
+        } else {
+            const affiliateData = data as AfiliadoPaymentItem[]
+            dataToExport = affiliateData.map(formatAffiliateData)
+            const total = affiliateData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0)
+            dataToExport.push({
+                "ID Afiliado": "",
+                "Nombre Completo": "",
+                "Club": "",
+                "Importe": `$${total.toFixed(2)}`,
+                "Fecha Pago": "",
+                "Forma Pago": "",
+                "Estatus": ""
+            })
+        }
 
         const worksheet = utils.json_to_sheet(dataToExport)
         const workbook = utils.book_new()
@@ -352,38 +383,47 @@ export function ReportsTabContent() {
                             <TableBody>
                                 {reportType === "club" ? (
                                     clubReportData.length > 0 ? (
-                                        clubReportData.map((item, index) => {
-                                            const formatted = formatClubData(item)
-                                            return (
-                                                <TableRow key={`${item.id}-${index}`}>
-                                                    <TableCell className="whitespace-nowrap">{formatted.Club}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">{formatted.Alias}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">{formatted.Email}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">{formatted.Asociación}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${item.membresia
-                                                            ? 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/20 dark:text-teal-400 dark:border-teal-900/50'
-                                                            : 'bg-slate-50 text-slate-500 border-slate-200'
-                                                            }`}>
-                                                            {formatted.Membresía}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.Estatus
-                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                                                            }`}>
-                                                            {formatted.Estatus}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">{formatted["Monto Pago"]}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">{formatted["F. Pago"]}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">{formatted.Comprobante}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">{formatted["Lugar Pago"]}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">{formatted["Fecha Pago"]}</TableCell>
-                                                </TableRow>
-                                            )
-                                        })
+                                        <>
+                                            {clubReportData.map((item, index) => {
+                                                const formatted = formatClubData(item)
+                                                return (
+                                                    <TableRow key={`${item.id}-${index}`}>
+                                                        <TableCell className="whitespace-nowrap">{formatted.Club}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted.Alias}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted.Email}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted.Asociación}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">
+                                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold border ${item.membresia
+                                                                ? 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/20 dark:text-teal-400 dark:border-teal-900/50'
+                                                                : 'bg-slate-50 text-slate-500 border-slate-200'
+                                                                }`}>
+                                                                {formatted.Membresía}
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell className="whitespace-nowrap">
+                                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.Estatus
+                                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                                }`}>
+                                                                {formatted.Estatus}
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted["Monto Pago"]}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted["F. Pago"]}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted.Comprobante}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted["Lugar Pago"]}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted["Fecha Pago"]}</TableCell>
+                                                    </TableRow>
+                                                )
+                                            })}
+                                            <TableRow className="bg-muted/50 font-medium border-t-2">
+                                                <TableCell colSpan={6} className="text-right pr-4">Total Monto Pago:</TableCell>
+                                                <TableCell className="whitespace-nowrap">
+                                                    ${clubReportData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0).toFixed(2)}
+                                                </TableCell>
+                                                <TableCell colSpan={4}></TableCell>
+                                            </TableRow>
+                                        </>
                                     ) : (
                                         <TableRow>
                                             <TableCell colSpan={11} className="h-24 text-center">
@@ -393,35 +433,44 @@ export function ReportsTabContent() {
                                     )
                                 ) : (
                                     affiliateReportData.length > 0 ? (
-                                        affiliateReportData.map((item, index) => {
-                                            const formatted = formatAffiliateData(item)
-                                            return (
-                                                <TableRow key={`${item.id_Afiliado}-${index}`}>
-                                                    <TableCell className="whitespace-nowrap">{formatted["ID Afiliado"]}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">{formatted["Nombre Completo"]}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">{formatted.Club}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.Estatus === "Activo" || item.Estatus === "1"
-                                                            ? 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/20 dark:text-teal-400 dark:border-teal-900/50'
-                                                            : 'bg-slate-50 text-slate-500 border-slate-200'
-                                                            }`}>
-                                                            {item.M_pago ? "Pagado" : "Pendiente"}
-                                                        </span>
-                                                    </TableCell>
-                                                    <TableCell className="whitespace-nowrap">{formatted.Importe}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">{formatted["Fecha Pago"]}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">{formatted["Forma Pago"]}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.Estatus === "Activo" || item.Estatus === "1" || item.Estatus === "Afiliado"
-                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                                                            }`}>
-                                                            {formatted.Estatus}
-                                                        </span>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )
-                                        })
+                                        <>
+                                            {affiliateReportData.map((item, index) => {
+                                                const formatted = formatAffiliateData(item)
+                                                return (
+                                                    <TableRow key={`${item.id_Afiliado}-${index}`}>
+                                                        <TableCell className="whitespace-nowrap">{formatted["ID Afiliado"]}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted["Nombre Completo"]}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted.Club}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">
+                                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.Estatus === "Activo" || item.Estatus === "1"
+                                                                ? 'bg-teal-50 text-teal-700 border-teal-200 dark:bg-teal-900/20 dark:text-teal-400 dark:border-teal-900/50'
+                                                                : 'bg-slate-50 text-slate-500 border-slate-200'
+                                                                }`}>
+                                                                {item.M_pago ? "Pagado" : "Pendiente"}
+                                                            </span>
+                                                        </TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted.Importe}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted["Fecha Pago"]}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted["Forma Pago"]}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">
+                                                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.Estatus === "Activo" || item.Estatus === "1" || item.Estatus === "Afiliado"
+                                                                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                                                : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                                }`}>
+                                                                {formatted.Estatus}
+                                                            </span>
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )
+                                            })}
+                                            <TableRow className="bg-muted/50 font-medium border-t-2">
+                                                <TableCell colSpan={4} className="text-right pr-4">Total Importe:</TableCell>
+                                                <TableCell className="whitespace-nowrap">
+                                                    ${affiliateReportData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0).toFixed(2)}
+                                                </TableCell>
+                                                <TableCell colSpan={3}></TableCell>
+                                            </TableRow>
+                                        </>
                                     ) : (
                                         <TableRow>
                                             <TableCell colSpan={8} className="h-24 text-center">
