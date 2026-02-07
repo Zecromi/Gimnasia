@@ -11,8 +11,19 @@ import {
     DialogHeader,
     DialogTitle,
     DialogTrigger,
-    DialogClose
+    DialogClose,
+    DialogDescription
 } from "@/components/ui/dialog"
+import {
+    Drawer,
+    DrawerContent,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerTrigger,
+    DrawerClose,
+    DrawerDescription
+} from "@/components/ui/drawer"
+import { useIsMobile } from "@/hooks/use-mobile"
 import {
     Tooltip,
     TooltipContent,
@@ -21,6 +32,7 @@ import {
 } from "@/components/ui/tooltip"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Input } from "@/components/ui/input"
 import {
     Select,
     SelectContent,
@@ -46,9 +58,10 @@ import { Separator } from "@/components/ui/separator"
 import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { useCatalogPayStore } from "@/lib/store/catalog-pay-store"
+import { useCatalogStore } from "@/lib/store/catalog-store"
 import { useAfiliadosEventosStore } from "@/lib/store/afiliados-eventos-store"
 import { useAuthStore } from "@/lib/store/auth-store"
-import { postInscripcion, getAdicionales, AdicionalEventoItem } from "@/lib/evento-service"
+import { postInscripcion, getAdicionales, AdicionalEventoItem, getNiveles, NivelConfiguradoItem } from "@/lib/evento-service"
 
 // Mock data removed for additional items as they are now dynamic
 
@@ -56,6 +69,10 @@ import { postInscripcion, getAdicionales, AdicionalEventoItem } from "@/lib/even
 
 interface MemberConfig {
     additionalItemIds: string[]
+    selectedNivelId?: string
+    selectedCategoryId?: string
+    isFullDiscount?: boolean
+    discountAmount?: number
 }
 
 interface RegisterEventDialogProps {
@@ -86,19 +103,23 @@ export function RegisterEventDialog({
     const { authData } = useAuthStore()
     const clubIdToUse = id_Club || authData?.id?.toString()
 
-    const { Catalogo_formas_pago, fetchCatalogs } = useCatalogPayStore()
+    const { Catalogo_formas_pago, Niveles_tecnicos, fetchCatalogs: fetchPayCatalogs } = useCatalogPayStore()
+    const { View_Modalidades_detalle, fetchCatalogs: fetchGlobalCatalogs } = useCatalogStore()
     const { afiliados, fetchAfiliadosEventos } = useAfiliadosEventosStore()
     const [open, setOpen] = useState(false)
     const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number | null>(null)
     const [memberConfigs, setMemberConfigs] = useState<Record<string, MemberConfig>>({})
     const [adicionales, setAdicionales] = useState<AdicionalEventoItem[]>([])
+    const [niveles, setNiveles] = useState<NivelConfiguradoItem[]>([])
     const [loadingAdicionales, setLoadingAdicionales] = useState(true)
+    const [loadingNiveles, setLoadingNiveles] = useState(true)
 
     useEffect(() => {
         if (!open) return
 
-        fetchCatalogs()
+        fetchPayCatalogs()
+        fetchGlobalCatalogs()
         if (clubIdToUse) {
             fetchAfiliadosEventos(clubIdToUse)
         }
@@ -116,8 +137,28 @@ export function RegisterEventDialog({
             }
         }
 
+        const fetchNiveles = async () => {
+            if (!eventoId) return
+            try {
+                setLoadingNiveles(true)
+                const data = await getNiveles(eventoId)
+                // Filter out levels where id_categoria is null or "null" or 0 as requested
+                const validNiveles = (data.Niveles || []).filter(n =>
+                    n.id_categoria !== null &&
+                    String(n.id_categoria) !== "null" &&
+                    n.id_categoria !== 0
+                )
+                setNiveles(validNiveles)
+            } catch (error) {
+                console.error("Error fetching niveles:", error)
+            } finally {
+                setLoadingNiveles(false)
+            }
+        }
+
         fetchAdicionales()
-    }, [open, fetchCatalogs, fetchAfiliadosEventos, clubIdToUse, eventoId])
+        fetchNiveles()
+    }, [open, fetchAfiliadosEventos, clubIdToUse, eventoId])
 
     // Initialize config for new members
     useEffect(() => {
@@ -128,7 +169,11 @@ export function RegisterEventDialog({
                     const memberId = String(member.id_afiliado)
                     if (!newConfigs[memberId]) {
                         newConfigs[memberId] = {
-                            additionalItemIds: []
+                            additionalItemIds: [],
+                            selectedNivelId: undefined,
+                            selectedCategoryId: undefined,
+                            isFullDiscount: false,
+                            discountAmount: 0
                         }
                     }
                 })
@@ -153,11 +198,33 @@ export function RegisterEventDialog({
         setMemberConfigs(prev => {
             const resetConfigs: Record<string, MemberConfig> = {}
             Object.keys(prev).forEach(key => {
-                resetConfigs[key] = { additionalItemIds: [] }
+                resetConfigs[key] = {
+                    additionalItemIds: [],
+                    selectedNivelId: undefined,
+                    selectedCategoryId: undefined,
+                    isFullDiscount: false,
+                    discountAmount: 0
+                }
             })
             return resetConfigs
         })
     }, [])
+
+    const handleNivelSelect = (memberId: string, nivelId: string, categoryId: string) => {
+        setMemberConfigs(prev => {
+            const isCurrent = prev[memberId]?.selectedNivelId === nivelId &&
+                prev[memberId]?.selectedCategoryId === categoryId
+
+            return {
+                ...prev,
+                [memberId]: {
+                    ...prev[memberId],
+                    selectedNivelId: isCurrent ? undefined : nivelId,
+                    selectedCategoryId: isCurrent ? undefined : categoryId
+                }
+            }
+        })
+    }
 
     const handleAdditionalItemToggle = (memberId: string, itemId: string) => {
         setMemberConfigs(prev => {
@@ -174,6 +241,29 @@ export function RegisterEventDialog({
                 }
             }
         })
+    }
+
+    const handleFullDiscountToggle = (memberId: string, checked: boolean) => {
+        setMemberConfigs(prev => ({
+            ...prev,
+            [memberId]: {
+                ...prev[memberId],
+                isFullDiscount: checked,
+                discountAmount: checked ? 0 : prev[memberId]?.discountAmount || 0
+            }
+        }))
+    }
+
+    const handleDiscountAmountChange = (memberId: string, value: string) => {
+        const amount = parseFloat(value) || 0
+        setMemberConfigs(prev => ({
+            ...prev,
+            [memberId]: {
+                ...prev[memberId],
+                discountAmount: amount,
+                isFullDiscount: amount > 0 ? false : prev[memberId]?.isFullDiscount
+            }
+        }))
     }
 
     // Validation State
@@ -222,6 +312,19 @@ export function RegisterEventDialog({
         } else {
             setSelectedMembers(new Set())
         }
+
+        // Also clear all discounts when toggling Select All
+        setMemberConfigs(prev => {
+            const newConfigs = { ...prev }
+            Object.keys(newConfigs).forEach(key => {
+                newConfigs[key] = {
+                    ...newConfigs[key],
+                    isFullDiscount: false,
+                    discountAmount: 0
+                }
+            })
+            return newConfigs
+        })
     }
 
     // Calculations
@@ -235,8 +338,18 @@ export function RegisterEventDialog({
             itemsCount++
             const config = memberConfigs[memberId]
 
-            // Cost is now fixed from prop
-            const modCost = numericCost
+            // If a level and category are selected, ADD that specific cost to base
+            let modCost = numericCost
+            if (config?.selectedNivelId && config?.selectedCategoryId) {
+                const selectedNivel = niveles.find(n =>
+                    String(n.id_nivel) === config.selectedNivelId &&
+                    String(n.id_categoria) === config.selectedCategoryId
+                )
+                if (selectedNivel) {
+                    const nivelCost = typeof selectedNivel.costo === 'string' ? parseFloat(selectedNivel.costo) : (selectedNivel.costo || 0)
+                    modCost += nivelCost
+                }
+            }
 
             let itemsCost = 0
             if (config) {
@@ -247,11 +360,19 @@ export function RegisterEventDialog({
             }
 
             additionalItemsCost += itemsCost
-            totalCost += (modCost + itemsCost)
+
+            let finalCost = (modCost + itemsCost)
+            if (config?.isFullDiscount) {
+                finalCost = 0
+            } else if (config?.discountAmount) {
+                finalCost = Math.max(0, finalCost - config.discountAmount)
+            }
+
+            totalCost += finalCost
         })
 
         return { itemsCount, additionalItemsCost, totalCost }
-    }, [selectedMembers, memberConfigs, costo])
+    }, [selectedMembers, memberConfigs, costo, niveles, adicionales])
 
     const handleRegister = async () => {
         if (!selectedPaymentMethod) {
@@ -268,8 +389,39 @@ export function RegisterEventDialog({
                     id_aparato: itemId
                 })) || []
 
+                // Calculate base cost for this member (Base Cost + Level Cost)
+                let modCost = parseFloat(costo) || 0
+                if (config?.selectedNivelId && config?.selectedCategoryId) {
+                    const selectedNivel = niveles.find(n =>
+                        String(n.id_nivel) === config.selectedNivelId &&
+                        String(n.id_categoria) === config.selectedCategoryId
+                    )
+                    if (selectedNivel) {
+                        const nivelCost = typeof selectedNivel.costo === 'string' ? parseFloat(selectedNivel.costo) : (selectedNivel.costo || 0)
+                        modCost += nivelCost
+                    }
+                }
+
+                let itemsCost = 0
+                config?.additionalItemIds.forEach(itemId => {
+                    const item = adicionales.find(i => String(i.id_aparato) === itemId)
+                    if (item) itemsCost += item.Costo
+                })
+
+                const memberSubtotal = modCost + itemsCost
+                let memberDiscount = 0
+                if (config?.isFullDiscount) {
+                    memberDiscount = memberSubtotal
+                } else if (config?.discountAmount) {
+                    memberDiscount = Math.min(memberSubtotal, config.discountAmount)
+                }
+
                 return {
-                    id_afiliado: memberId,
+                    id_afiliado: String(memberId),
+                    costo: memberSubtotal.toString(),
+                    descuento: memberDiscount.toString(),
+                    id_categoria: String(config?.selectedCategoryId || "0"),
+                    id_nivel: String(config?.selectedNivelId || "0"),
                     aparatos
                 }
             })
@@ -324,7 +476,7 @@ export function RegisterEventDialog({
             </TooltipProvider>
 
             <DialogContent
-                className="max-w-[95vw] w-full lg:max-w-7xl max-h-[95vh] h-fit gap-0 p-0 flex flex-col overflow-hidden"
+                className="max-w-[95vw] w-full lg:max-w-7xl max-h-[95vh] flex flex-col p-0 overflow-hidden border-none shadow-2xl"
                 onInteractOutside={(e) => e.preventDefault()}
             >
                 <DialogHeader className="p-6 pb-4">
@@ -354,38 +506,35 @@ export function RegisterEventDialog({
                     )}
                 </DialogHeader>
 
-                <div className="flex flex-col lg:flex-row flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden flex flex-col lg:flex-row min-h-0">
                     {/* Left Column: Member Table */}
-                    <div className="flex-1 border-r flex flex-col min-w-0">
-                        <div className="p-4 border-b bg-muted/30 grid grid-cols-[40px_minmax(100px,1.2fr)_minmax(150px,1.5fr)_minmax(150px,1.5fr)] gap-4 items-center text-sm font-medium text-muted-foreground">
+                    <div className="flex-[1.5] flex flex-col min-w-0 bg-background border-r">
+                        <div className="p-4 border-b bg-muted/30 grid grid-cols-[40px_minmax(100px,1.2fr)_minmax(150px,1.5fr)_minmax(150px,1.5fr)_minmax(120px,1fr)] gap-4 items-center text-sm font-medium text-muted-foreground">
                             <Checkbox
                                 checked={selectedMembers.size === afiliados.length && afiliados.length > 0}
                                 onCheckedChange={(checked) => toggleAll(!!checked)}
                             />
                             <span className="truncate">Nombre</span>
-                            <span className="truncate">Costo (Modalidad)</span>
-                            <span className="truncate">Aparatos Adicionales</span>
+                            <span className="truncate">Costo (Nivel)</span>
+                            <span className="truncate">Aparatos</span>
+                            <span className="truncate">Dcto.</span>
                         </div>
-                        <div className="flex-1 overflow-y-auto custom-scrollbar">
-                            <div className="p-4 min-w-[600px]"> {/* Ensure min width for table content */}
+                        <ScrollArea className="flex-1">
+                            <div className="p-4 min-w-[700px]"> {/* Robust min width for scrolling content */}
                                 <div className="space-y-4">
                                     {afiliados.map((member) => {
                                         const memberId = String(member.id_afiliado);
                                         const fullName = `${member.Nombre} ${member.Paterno} ${member.Materno || ""}`.trim();
+                                        const isSelected = selectedMembers.has(memberId);
+                                        const config = memberConfigs[memberId];
+
                                         return (
-                                            <div key={memberId} className="grid grid-cols-[40px_minmax(100px,1.2fr)_minmax(150px,1.5fr)_minmax(150px,1.5fr)] gap-4 items-center py-1">
+                                            <div key={memberId} className="grid grid-cols-[40px_minmax(100px,1.2fr)_minmax(150px,1.5fr)_minmax(150px,1.5fr)_minmax(120px,1fr)] gap-4 items-center py-1">
                                                 <Checkbox
-                                                    checked={selectedMembers.has(memberId)}
+                                                    checked={isSelected}
                                                     onCheckedChange={(checked) => handleSelectMember(memberId, !!checked)}
                                                 />
                                                 <span className="text-sm font-medium truncate" title={fullName}>{fullName}</span>
-
-                                                <div className="flex flex-col justify-center h-8 px-3 border rounded-md bg-muted/50 text-sm">
-                                                    <div className="flex justify-between w-full gap-2">
-                                                        <span>{modalidad}</span>
-                                                        <span className="text-muted-foreground">{formatCurrency(parseFloat(costo) || 0)}</span>
-                                                    </div>
-                                                </div>
 
                                                 <Popover>
                                                     <PopoverTrigger asChild>
@@ -393,7 +542,85 @@ export function RegisterEventDialog({
                                                             variant="outline"
                                                             role="combobox"
                                                             className="min-h-8 h-auto w-full justify-between"
-                                                            disabled={adicionales.length === 0 || loadingAdicionales}
+                                                            disabled={!isSelected || niveles.length === 0 || loadingNiveles}
+                                                        >
+                                                            {niveles.length === 0 ? (
+                                                                <div className="flex justify-between w-full gap-2">
+                                                                    <span>{modalidad}</span>
+                                                                    <span className="text-muted-foreground">{formatCurrency(parseFloat(costo) || 0)}</span>
+                                                                </div>
+                                                            ) : memberConfigs[memberId]?.selectedNivelId && memberConfigs[memberId]?.selectedCategoryId ? (
+                                                                <div className="flex justify-between w-full gap-2">
+                                                                    <span className="truncate">
+                                                                        {(() => {
+                                                                            const nivelDesc = Niveles_tecnicos.find(nt => nt.id === Number(memberConfigs[memberId].selectedNivelId))?.Descripcion || "Nivel"
+                                                                            const catTitle = View_Modalidades_detalle.find(d => d.id_categoria === Number(memberConfigs[memberId].selectedCategoryId))?.titulo || "Cat"
+                                                                            return `${nivelDesc} - ${catTitle}`
+                                                                        })()}
+                                                                    </span>
+                                                                    <span className="text-muted-foreground text-xs shrink-0">
+                                                                        {(() => {
+                                                                            const n = niveles.find(l =>
+                                                                                String(l.id_nivel) === memberConfigs[memberId].selectedNivelId &&
+                                                                                String(l.id_categoria) === memberConfigs[memberId].selectedCategoryId
+                                                                            );
+                                                                            const nivelCost = typeof n?.costo === 'string' ? parseFloat(n.costo) : (n?.costo || 0)
+                                                                            return formatCurrency((parseFloat(costo) || 0) + nivelCost);
+                                                                        })()}
+                                                                    </span>
+                                                                </div>
+                                                            ) : (
+                                                                <span className="text-muted-foreground font-normal">Seleccionar costo/nivel</span>
+                                                            )}
+                                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                    <PopoverContent className="w-[350px] p-0" align="start">
+                                                        <Command>
+                                                            <CommandInput placeholder="Buscar nivel/categoria..." />
+                                                            <CommandList>
+                                                                <CommandEmpty>No se encontraron niveles.</CommandEmpty>
+                                                                <CommandGroup>
+                                                                    {niveles.map((item) => {
+                                                                        const nivelDesc = Niveles_tecnicos.find(nt => nt.id === item.id_nivel)?.Descripcion || `Nivel ${item.id_nivel}`;
+                                                                        const catTitle = View_Modalidades_detalle.find(d => d.id_categoria === item.id_categoria)?.titulo || `Categoria ${item.id_categoria}`;
+                                                                        const fullDesc = `${nivelDesc} - ${catTitle}`;
+                                                                        const itemKey = `${item.id_nivel}-${item.id_categoria}`;
+                                                                        const isSelected = memberConfigs[memberId]?.selectedNivelId === String(item.id_nivel) &&
+                                                                            memberConfigs[memberId]?.selectedCategoryId === String(item.id_categoria);
+
+                                                                        return (
+                                                                            <CommandItem
+                                                                                key={itemKey}
+                                                                                value={fullDesc}
+                                                                                onSelect={() => handleNivelSelect(memberId, String(item.id_nivel), String(item.id_categoria))}
+                                                                            >
+                                                                                <Check
+                                                                                    className={cn(
+                                                                                        "mr-2 h-4 w-4",
+                                                                                        isSelected ? "opacity-100" : "opacity-0"
+                                                                                    )}
+                                                                                />
+                                                                                <div className="flex justify-between w-full gap-2">
+                                                                                    <span className="truncate">{fullDesc}</span>
+                                                                                    <span className="text-muted-foreground shrink-0">{formatCurrency(typeof item.costo === 'string' ? parseFloat(item.costo) : item.costo)}</span>
+                                                                                </div>
+                                                                            </CommandItem>
+                                                                        );
+                                                                    })}
+                                                                </CommandGroup>
+                                                            </CommandList>
+                                                        </Command>
+                                                    </PopoverContent>
+                                                </Popover>
+
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button
+                                                            variant="outline"
+                                                            role="combobox"
+                                                            className="min-h-8 h-auto w-full justify-between"
+                                                            disabled={!isSelected || adicionales.length === 0 || loadingAdicionales}
                                                         >
                                                             {adicionales.length === 0 ? (
                                                                 <span className="text-muted-foreground font-normal">Sin adicionales</span>
@@ -443,21 +670,48 @@ export function RegisterEventDialog({
                                                         </Command>
                                                     </PopoverContent>
                                                 </Popover>
+
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex items-center gap-1.5 shrink-0">
+                                                        <Checkbox
+                                                            id={`full-discount-${memberId}`}
+                                                            checked={config?.isFullDiscount || false}
+                                                            onCheckedChange={(checked) => handleFullDiscountToggle(memberId, !!checked)}
+                                                            disabled={!isSelected}
+                                                        />
+                                                        <label htmlFor={`full-discount-${memberId}`} className="text-[10px] leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                                            Total
+                                                        </label>
+                                                    </div>
+                                                    <Input
+                                                        type="number"
+                                                        placeholder="Monto"
+                                                        className="h-8 text-xs px-2"
+                                                        value={config?.discountAmount || ""}
+                                                        onChange={(e) => handleDiscountAmountChange(memberId, e.target.value)}
+                                                        disabled={!isSelected || config?.isFullDiscount}
+                                                    />
+                                                </div>
                                             </div>
                                         )
                                     })}
                                 </div>
                             </div>
-                        </div>
+                        </ScrollArea>
                     </div>
 
                     {/* Right Column: Summary */}
-                    <div className="w-full lg:w-[400px] bg-muted/10 flex flex-col border-t lg:border-t-0 lg:border-l">
-                        <div className="p-4 border-b bg-muted/20">
-                            <h3 className="font-semibold text-lg">Resumen</h3>
+                    <div className="flex-1 lg:max-w-[400px] flex flex-col bg-muted/5 border-t lg:border-t-0 lg:border-l">
+                        <div className="p-4 border-b bg-muted/20 shrink-0">
+                            <h3 className="font-semibold text-base flex items-center gap-2">
+                                <Badge variant="outline" className="rounded-full h-6 w-6 p-0 flex items-center justify-center bg-background">
+                                    {selectedMembers.size}
+                                </Badge>
+                                Resumen de Selección
+                            </h3>
                         </div>
 
-                        <div className="flex-1 overflow-y-auto custom-scrollbar">
+                        <ScrollArea className="flex-1">
                             <div className="p-6 space-y-6">
                                 {selectedMembers.size === 0 ? (
                                     <p className="text-sm text-center text-muted-foreground py-10">
@@ -488,12 +742,61 @@ export function RegisterEventDialog({
                                                         <span className="truncate pr-2">{modalidad}</span>
                                                         <span className="shrink-0">{formatCurrency(parseFloat(costo) || 0)}</span>
                                                     </div>
+                                                    {config?.selectedNivelId && config?.selectedCategoryId && (
+                                                        <div className="flex justify-between text-muted-foreground">
+                                                            <span className="truncate pr-2 italic">
+                                                                {(() => {
+                                                                    const nivelDesc = Niveles_tecnicos.find(nt => nt.id === Number(config.selectedNivelId))?.Descripcion || "Nivel"
+                                                                    const catTitle = View_Modalidades_detalle.find(d => d.id_categoria === Number(config.selectedCategoryId))?.titulo || "Cat"
+                                                                    return `+ ${nivelDesc} - ${catTitle}`
+                                                                })()}
+                                                            </span>
+                                                            <span className="shrink-0">
+                                                                {(() => {
+                                                                    const n = niveles.find(l =>
+                                                                        String(l.id_nivel) === config.selectedNivelId &&
+                                                                        String(l.id_categoria) === config.selectedCategoryId
+                                                                    );
+                                                                    const nivelCost = typeof n?.costo === 'string' ? parseFloat(n.costo) : (n?.costo || 0)
+                                                                    return formatCurrency(nivelCost);
+                                                                })()}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                     {additionalItems.map((item) => (
                                                         <div key={String(item.id_aparato)} className="flex justify-between text-muted-foreground">
                                                             <span className="truncate pr-2">+ {item.Descripcion}</span>
                                                             <span className="shrink-0">{formatCurrency(item.Costo)}</span>
                                                         </div>
                                                     ))}
+                                                    {(config?.isFullDiscount || (config?.discountAmount || 0) > 0) && (
+                                                        <div className="flex justify-between text-teal-600 font-medium pt-1">
+                                                            <span className="truncate pr-2">- Descuento {config.isFullDiscount ? "Total" : ""}</span>
+                                                            <span className="shrink-0">
+                                                                {(() => {
+                                                                    let d = 0;
+                                                                    if (config.isFullDiscount) {
+                                                                        const modCost = (() => {
+                                                                            let mc = parseFloat(costo) || 0;
+                                                                            if (config.selectedNivelId && config.selectedCategoryId) {
+                                                                                const n = niveles.find(l => String(l.id_nivel) === config.selectedNivelId && String(l.id_categoria) === config.selectedCategoryId);
+                                                                                if (n) {
+                                                                                    const nc = typeof n?.costo === 'string' ? parseFloat(n.costo) : (n?.costo || 0);
+                                                                                    mc += nc;
+                                                                                }
+                                                                            }
+                                                                            return mc;
+                                                                        })();
+                                                                        const addonsCost = additionalItems.reduce((acc, it) => acc + it.Costo, 0);
+                                                                        d = modCost + addonsCost;
+                                                                    } else {
+                                                                        d = config.discountAmount || 0;
+                                                                    }
+                                                                    return formatCurrency(d);
+                                                                })()}
+                                                            </span>
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <Separator className="my-2 opacity-50" />
                                             </div>
@@ -501,18 +804,18 @@ export function RegisterEventDialog({
                                     })
                                 )}
                             </div>
-                        </div>
+                        </ScrollArea>
 
-                        <div className="p-6 bg-background border-t space-y-4 shadow-sm">
+                        <div className="p-6 bg-background border-t space-y-4 shadow-[0_-4px_12px_rgba(0,0,0,0.05)] shrink-0">
                             <div className="space-y-4">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-medium">Método de pago</label>
+                                    <label className="text-sm font-medium text-muted-foreground">Método de pago</label>
                                     <Select
                                         value={selectedPaymentMethod?.toString() || ""}
                                         onValueChange={(val) => setSelectedPaymentMethod(Number(val))}
                                     >
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Seleccionar..." />
+                                        <SelectTrigger className="h-11">
+                                            <SelectValue placeholder="Seleccionar método..." />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {Catalogo_formas_pago.map((method) => (
@@ -524,18 +827,20 @@ export function RegisterEventDialog({
                                     </Select>
                                 </div>
 
-                                <div className="space-y-2 pt-2 border-t">
+                                <div className="pt-2 border-t space-y-2">
                                     <div className="flex justify-between items-center text-sm">
-                                        <span className="text-muted-foreground">Miembros:</span>
-                                        <Badge variant="secondary" className="px-2">
+                                        <span className="text-muted-foreground">Items seleccionados:</span>
+                                        <span className="font-medium text-foreground">
                                             {totals.itemsCount}
-                                        </Badge>
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="font-bold text-lg">Total:</span>
-                                        <span className="font-bold text-xl text-teal-600">
-                                            {formatCurrency(totals.totalCost)}
                                         </span>
+                                    </div>
+                                    <div className="flex justify-between items-end pt-1">
+                                        <span className="font-bold text-lg text-foreground">Total a pagar:</span>
+                                        <div className="text-right">
+                                            <span className="block text-2xl font-bold text-teal-600 leading-none">
+                                                {formatCurrency(totals.totalCost)}
+                                            </span>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
