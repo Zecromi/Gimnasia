@@ -88,9 +88,18 @@ export function ReportsTabContent() {
                 setAffiliateReportData(data.resultados || [])
                 if (!data.resultados || data.resultados.length === 0) toast.info("No se encontraron resultados.")
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Error fetching report:", error)
-            toast.error("Error al generar el reporte")
+            if (error.response && error.response.status === 400) {
+                toast.info("No se encontraron resultados con los filtros aplicados.")
+                if (reportType === "club") {
+                    setClubReportData([])
+                } else {
+                    setAffiliateReportData([])
+                }
+            } else {
+                toast.error("Error al generar el reporte")
+            }
         } finally {
             setIsLoading(false)
         }
@@ -220,7 +229,7 @@ export function ReportsTabContent() {
                     </div>
                     <Button onClick={handleDownload} disabled={(reportType === "club" ? clubReportData : affiliateReportData).length === 0} className="bg-green-600 hover:bg-green-700 text-white">
                         <Download className="mr-2 h-4 w-4" />
-                        Descargar Excel
+                        Descargar Reporte
                     </Button>
                 </div>
 
