@@ -80,7 +80,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         }
         if (item.title === "Admin") {
             if (!isMounted) return false
-            return authData?.id === 1 && authData?.tipo_registro === 1
+            return authData?.tipo_registro === 1
         }
         return true
     })
