@@ -16,6 +16,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EditAdminDialog, AdminUser } from "@/components/dashboard/edit-admin-dialog"
 import { ReportsTabContent } from "@/components/dashboard/super-admin/reports-tab-content"
+import { useRouter } from "next/navigation"
+import { useAuthStore } from "@/lib/store/auth-store"
 
 // Mock data type (now imported from dialog or defined there to avoid dup)
 // interface AdminUser {
@@ -37,6 +39,32 @@ const MOCK_USERS: AdminUser[] = [
 ]
 
 export default function SuperUsuarioPage() {
+    const router = useRouter()
+    const authData = useAuthStore((state) => state.authData)
+    const [isAuthorized, setIsAuthorized] = React.useState(false)
+
+    const [isMounted, setIsMounted] = React.useState(false)
+
+    React.useEffect(() => {
+        setIsMounted(true)
+    }, [])
+
+    React.useEffect(() => {
+        if (!isMounted) return // Wait for hydration
+
+        if (authData) {
+            // Use loose comparison or Number() cast to handle string/number differences
+            if (Number(authData.id) === 1 && Number(authData.tipo_registro) === 1) {
+                setIsAuthorized(true)
+            } else {
+                router.push("/dashboard")
+            }
+        } else {
+            // If no auth data after mount, redirect to login
+            router.push("/")
+        }
+    }, [authData, router, isMounted])
+
     const [searchId, setSearchId] = React.useState("")
     const [searchName, setSearchName] = React.useState("")
     const [users, setUsers] = React.useState<AdminUser[]>(MOCK_USERS)
@@ -81,6 +109,10 @@ export default function SuperUsuarioPage() {
         if (e.key === 'Enter') {
             handleSearch()
         }
+    }
+
+    if (!isAuthorized) {
+        return null
     }
 
     return (

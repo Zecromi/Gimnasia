@@ -53,11 +53,11 @@ const items = [
         url: "/dashboard/inscripciones/eventos",
         icon: Ticket,
     },
-     {
-       title: "Admin",
+    {
+        title: "Admin",
         url: "/dashboard/super-admin",
         icon: Users,
- },
+    },
 
 ]
 
@@ -73,11 +73,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     }, [])
 
     const filteredItems = items.filter(item => {
-        console.log(authData)
         if (item.title === "Eventos") {
             // During SSR and hydration, emulate the server state (authData is undefined/null)
             if (!isMounted) return false
             return authData?.tipo_registro === 1
+        }
+        if (item.title === "Admin") {
+            if (!isMounted) return false
+            return authData?.id === 1 && authData?.tipo_registro === 1
         }
         return true
     })
