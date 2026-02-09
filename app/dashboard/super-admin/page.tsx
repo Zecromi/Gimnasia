@@ -19,15 +19,6 @@ import { ReportsTabContent } from "@/components/dashboard/super-admin/reports-ta
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/lib/store/auth-store"
 
-// Mock data type (now imported from dialog or defined there to avoid dup)
-// interface AdminUser {
-//     id: string
-//     nombre: string
-//     rol: string
-//     estado: string
-//     club?: string
-//     usuario?: string
-// }
 
 // Mock data
 const MOCK_USERS: AdminUser[] = [
