@@ -52,9 +52,9 @@ export default function SuperUsuarioPage() {
     React.useEffect(() => {
         if (!isMounted) return // Wait for hydration
 
-        if (authData) {
+           if (authData) {
             // Use loose comparison or Number() cast to handle string/number differences
-            if (Number(authData.id) === 1 && Number(authData.tipo_registro) === 1) {
+            if (Number(authData.tipo_registro) === 1) {
                 setIsAuthorized(true)
             } else {
                 router.push("/dashboard")
