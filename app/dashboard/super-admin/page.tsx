@@ -86,23 +86,19 @@ export default function SuperUsuarioPage() {
     return (
         <div className="flex-1 space-y-4 p-8 pt-6">
 
-            <Tabs defaultValue="super-admin" className="space-y-4">
+            <Tabs defaultValue="reportes" className="space-y-4">
                 <TabsList>
-                    <TabsTrigger value="super-admin">
-                        <Users className="mr-2 h-4 w-4" />
-                        Super Admin
-                    </TabsTrigger>
-                    <TabsTrigger value="pagos">
-                        <CreditCard className="mr-2 h-4 w-4" />
-                        Pagos
-                    </TabsTrigger>
                     <TabsTrigger value="reportes">
                         <FileText className="mr-2 h-4 w-4" />
                         Reportes
                     </TabsTrigger>
+                    {/* <TabsTrigger value="super-admin">
+                        <Users className="mr-2 h-4 w-4" />
+                        Super Admin
+                    </TabsTrigger> */}
                 </TabsList>
 
-                <TabsContent value="super-admin" className="space-y-4">
+                {/* <TabsContent value="super-admin" className="space-y-4">
                     <Card className="">
                         <CardHeader className="pt-4">
                             <CardTitle className="flex items-center gap-2">
@@ -199,22 +195,7 @@ export default function SuperUsuarioPage() {
                             </div>
                         </CardContent>
                     </Card>
-                </TabsContent>
-
-                <TabsContent value="pagos">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Gestión de Pagos</CardTitle>
-                            <CardDescription>
-                                Sección para la administración de pagos y transacciones del sistema.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="h-[400px] flex flex-col items-center justify-center text-muted-foreground">
-                            <CreditCard className="h-16 w-16 mb-4 opacity-20" />
-                            <p>Contenido de pagos próximamente...</p>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
+                </TabsContent> */}
 
                 <TabsContent value="reportes">
                     <ReportsTabContent />

@@ -127,3 +127,37 @@ export const updateAfiliado = async (id: number, payload: UpdateAfiliadoPayload)
     });
     return response.data;
 };
+
+
+export interface AfiliadoPaymentReportParams {
+    id_afilido?: string;
+    nombre?: string;
+    status?: string;
+    forma_pago?: string;
+    fecha_ini?: string;
+    fecha_fin?: string;
+}
+
+export interface AfiliadoPaymentItem {
+    id_Afiliado: number;
+    Nombre: string;
+    Paterno: string;
+    Materno: string;
+    Club: string;
+    Estatus: string;
+    M_pago: number;
+    F_pago: string;
+    Comprobante: string;
+    Lugar_p: string;
+    fecha_p: string | null;
+}
+
+export interface GetAffiliatePaymentReportResponse {
+    resultados: AfiliadoPaymentItem[];
+}
+
+export const getAffiliatePaymentReport = async (params: AfiliadoPaymentReportParams) => {
+    console.log("getAffiliatePaymentReport params:", params);
+    const response = await api.get<GetAffiliatePaymentReportResponse>("/GetRepo_afil_pago", { params });
+    return response.data;
+};
