@@ -2,7 +2,9 @@
 
 import * as React from "react"
 import { utils, write } from "xlsx"
-import { Download, Loader2, Search } from "lucide-react"
+import { Download, Loader2, Search, FileText, Printer } from "lucide-react"
+import jsPDF from "jspdf"
+import autoTable from "jspdf-autotable"
 import { getClubMembershipReport, ClubMembershipItem, ClubMembershipReportParams } from "@/lib/club-service"
 import { getAffiliatePaymentReport, AfiliadoPaymentReportParams, AfiliadoPaymentItem } from "@/lib/afiliados-service"
 import { Button } from "@/components/ui/button"
@@ -28,6 +30,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { InputGroup } from "@/components/ui/input-group"
 import { toast } from "sonner"
@@ -57,6 +66,11 @@ export function ReportsTabContent() {
         fecha_ini: "",
         fecha_fin: ""
     })
+
+    // PDF Preview State
+    const [showPdfPreview, setShowPdfPreview] = React.useState(false)
+    const [pdfUrl, setPdfUrl] = React.useState<string | null>(null)
+    const [pdfFileName, setPdfFileName] = React.useState("")
 
     const fetchReport = async () => {
         setIsLoading(true)
@@ -197,6 +211,93 @@ export function ReportsTabContent() {
         URL.revokeObjectURL(url)
     }
 
+    const generatePdf = () => {
+        const doc = new jsPDF()
+        const data = reportType === "club" ? clubReportData : affiliateReportData
+
+        if (data.length === 0) {
+            toast.warning("No hay datos para generar el PDF")
+            return null
+        }
+
+        const title = reportType === "club" ? "Reporte de Membresías de Clubes" : "Reporte de Pagos de Afiliados"
+        const formattedDate = new Date().toLocaleDateString("es-MX", { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
+        const fileName = `${title}-${formattedDate}`
+
+        doc.setProperties({
+            title: fileName
+        })
+
+        doc.text(title, 14, 15)
+        doc.setFontSize(10)
+        doc.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 14, 22)
+
+        if (reportType === "club") {
+            const clubData = data as ClubMembershipItem[]
+            const tableData = clubData.map(item => {
+                const f = formatClubData(item)
+                return [
+                    String(f.Club || ""),
+                    String(f.Alias || ""),
+                    String(f.Membresía || ""),
+                    String(f.Estatus || ""),
+                    String(f["Monto Pago"] || ""),
+                    String(f["F. Pago"] || ""),
+                    String(f["Fecha Pago"] || "")
+                ]
+            })
+
+            const total = clubData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0)
+            tableData.push(["", "", "", "Total General:", `$${total.toFixed(2)}`, "", ""])
+
+            autoTable(doc, {
+                startY: 25,
+                head: [["Club", "Alias", "Membresía", "Estatus", "Monto", "Forma Pago", "Fecha Pago"]],
+                body: tableData,
+                theme: 'grid',
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [22, 163, 74] } // Green color
+            })
+        } else {
+            const affiliateData = data as AfiliadoPaymentItem[]
+            const tableData = affiliateData.map(item => {
+                const f = formatAffiliateData(item)
+                return [
+                    String(f["ID Afiliado"] || ""),
+                    String(f["Nombre Completo"] || ""),
+                    String(f.Club || ""),
+                    String(f.Estatus || ""),
+                    String(f.Importe || ""),
+                    String(f["Forma Pago"] || ""),
+                    String(f["Fecha Pago"] || "")
+                ]
+            })
+
+            const total = affiliateData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0)
+            tableData.push(["", "", "", "Total General:", `$${total.toFixed(2)}`, "", ""])
+
+            autoTable(doc, {
+                startY: 25,
+                head: [["ID", "Nombre", "Club", "Estatus", "Importe", "Forma Pago", "Fecha Pago"]],
+                body: tableData,
+                theme: 'grid',
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [22, 163, 74] }
+            })
+        }
+
+        return { url: String(doc.output('bloburl')), fileName }
+    }
+
+    const handlePreviewPdf = () => {
+        const result = generatePdf()
+        if (result) {
+            setPdfUrl(result.url)
+            setPdfFileName(result.fileName)
+            setShowPdfPreview(true)
+        }
+    }
+
     const handleFilterChange = (key: string, value: string) => {
         if (reportType === "club") {
             setClubFilters(prev => ({ ...prev, [key]: value }))
@@ -227,10 +328,16 @@ export function ReportsTabContent() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <Button onClick={handleDownload} disabled={(reportType === "club" ? clubReportData : affiliateReportData).length === 0} className="bg-green-600 hover:bg-green-700 text-white">
-                        <Download className="mr-2 h-4 w-4" />
-                        Descargar Reporte
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button onClick={handlePreviewPdf} disabled={(reportType === "club" ? clubReportData : affiliateReportData).length === 0} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                            <Printer className="mr-2 h-4 w-4" />
+                            Imprimir PDF
+                        </Button>
+                        <Button onClick={handleDownload} disabled={(reportType === "club" ? clubReportData : affiliateReportData).length === 0} className="bg-green-600 hover:bg-green-700 text-white">
+                            <Download className="mr-2 h-4 w-4" />
+                            Descargar Excel
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Filters */}
@@ -493,6 +600,33 @@ export function ReportsTabContent() {
                     )}
                 </div>
             </CardContent>
+
+            <Dialog open={showPdfPreview} onOpenChange={setShowPdfPreview}>
+                <DialogContent
+                    className="max-w-[95vw] w-[95vw] h-[75vh] sm:max-w-[95vw]"
+                    onInteractOutside={(e) => e.preventDefault()}
+                >
+                    <DialogHeader className="">
+                        <DialogTitle>Vista Previa del Reporte</DialogTitle>
+                    </DialogHeader>
+                    {pdfUrl && (
+                        <iframe
+                            src={pdfUrl}
+                            className="w-full h-[60vh] rounded-md border"
+                            title="Vista previa del PDF"
+                        />
+                    )}
+                    <DialogFooter className="mr-6">
+                        <Button variant="secondary" onClick={() => setShowPdfPreview(false)}>Cerrar</Button>
+                        <Button asChild className="bg-green-600 hover:bg-green-700 text-white">
+                            <a href={pdfUrl || ""} download={pdfFileName}>
+                                <Download className="mr-2 h-4 w-4" />
+                                Descargar PDF
+                            </a>
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </Card>
     )
 }
