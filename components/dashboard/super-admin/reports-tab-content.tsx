@@ -331,7 +331,7 @@ export function ReportsTabContent() {
                     <div className="flex gap-2">
                         <Button onClick={handlePreviewPdf} disabled={(reportType === "club" ? clubReportData : affiliateReportData).length === 0} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
                             <Printer className="mr-2 h-4 w-4" />
-                            Imprimir PDF
+                            Ver PDF
                         </Button>
                         <Button onClick={handleDownload} disabled={(reportType === "club" ? clubReportData : affiliateReportData).length === 0} className="bg-green-600 hover:bg-green-700 text-white">
                             <Download className="mr-2 h-4 w-4" />
