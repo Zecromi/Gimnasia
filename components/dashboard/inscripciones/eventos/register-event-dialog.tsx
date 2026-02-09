@@ -520,9 +520,12 @@ export function RegisterEventDialog({
                                                         <div className="flex justify-between w-full gap-2 text-xs">
                                                             <span className="truncate max-w-[120px]">
                                                                 {(() => {
-                                                                    const nivelDesc = Niveles_tecnicos.find(nt => nt.id === Number(memberConfigs[memberId].selectedNivelId))?.Descripcion || "Nivel"
-                                                                    const catTitle = View_Modalidades_detalle.find(d => d.id_categoria === Number(memberConfigs[memberId].selectedCategoryId))?.titulo || "Cat"
-                                                                    return `${catTitle}`
+                                                                    const match = View_Modalidades_detalle.find(d =>
+                                                                        d.id_nivel === Number(memberConfigs[memberId].selectedNivelId) &&
+                                                                        d.id_categoria === Number(memberConfigs[memberId].selectedCategoryId)
+                                                                    );
+                                                                    if (!match) return "Seleccionado";
+                                                                    return `${match.titulo} (Edad: ${match.edad_ini}-${match.edad_fin})`;
                                                                 })()}
                                                             </span>
                                                             <span className="text-teal-600 font-semibold shrink-0">
@@ -549,9 +552,11 @@ export function RegisterEventDialog({
                                                         <CommandEmpty>No se encontraron niveles.</CommandEmpty>
                                                         <CommandGroup>
                                                             {niveles.map((item) => {
-                                                                const nivelDesc = Niveles_tecnicos.find(nt => nt.id === item.id_nivel)?.Descripcion || `Nivel ${item.id_nivel}`;
-                                                                const catTitle = View_Modalidades_detalle.find(d => d.id_categoria === item.id_categoria)?.titulo || `Categoria ${item.id_categoria}`;
-                                                                const fullDesc = `${nivelDesc} - ${catTitle}`;
+                                                                const match = View_Modalidades_detalle.find(d =>
+                                                                    d.id_nivel === item.id_nivel &&
+                                                                    d.id_categoria === item.id_categoria
+                                                                );
+                                                                const fullDesc = match ? `${match.titulo} (Edad: ${match.edad_ini}-${match.edad_fin})` : `Nivel ${item.id_nivel} - Cat ${item.id_categoria}`;
                                                                 const itemKey = `${item.id_nivel}-${item.id_categoria}`;
                                                                 const isSelected = memberConfigs[memberId]?.selectedNivelId === String(item.id_nivel) &&
                                                                     memberConfigs[memberId]?.selectedCategoryId === String(item.id_categoria);
@@ -721,9 +726,11 @@ export function RegisterEventDialog({
                                                         <div className="flex justify-between text-muted-foreground">
                                                             <span className="truncate pr-2 italic">
                                                                 {(() => {
-                                                                    const nivelDesc = Niveles_tecnicos.find(nt => nt.id === Number(config.selectedNivelId))?.Descripcion || "Nivel"
-                                                                    const catTitle = View_Modalidades_detalle.find(d => d.id_categoria === Number(config.selectedCategoryId))?.titulo || "Cat"
-                                                                    return `+ ${nivelDesc} - ${catTitle}`
+                                                                    const match = View_Modalidades_detalle.find(d =>
+                                                                        d.id_nivel === Number(config.selectedNivelId) &&
+                                                                        d.id_categoria === Number(config.selectedCategoryId)
+                                                                    );
+                                                                    return `+ ${match ? `${match.titulo} (Edad: ${match.edad_ini}-${match.edad_fin})` : "Nivel/Cat"}`;
                                                                 })()}
                                                             </span>
                                                             <span className="shrink-0">
