@@ -213,7 +213,7 @@ export function AffiliateMembershipDialog({ afiliado, open: controlledOpen, onOp
     )
 }
 
-function MembershipForm({ Catalogo_formas_pago, formValues, setFormValues, handleSubmit, isSubmitting, isAlreadyPaid }: any) {
+const MembershipForm = React.memo(({ Catalogo_formas_pago, formValues, setFormValues, handleSubmit, isSubmitting, isAlreadyPaid }: any) => {
     return (
         <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
@@ -335,9 +335,9 @@ function MembershipForm({ Catalogo_formas_pago, formValues, setFormValues, handl
             </DialogFooter>
         </form>
     )
-}
+});
 
-function AfiliadoInfoPanel({ afiliado, className }: { afiliado: Afiliado, className?: string }) {
+const AfiliadoInfoPanel = React.memo(({ afiliado, className }: { afiliado: Afiliado, className?: string }) => {
     return (
         <div className={className}>
             <div className="flex flex-col items-center text-center mb-8">
@@ -384,9 +384,9 @@ function AfiliadoInfoPanel({ afiliado, className }: { afiliado: Afiliado, classN
             </ScrollArea>
         </div>
     )
-}
+});
 
-function InfoSection({ title, children }: { title: string, children: React.ReactNode }) {
+const InfoSection = React.memo(({ title, children }: { title: string, children: React.ReactNode }) => {
     return (
         <div className="space-y-3">
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/80 pl-1">{title}</h4>
@@ -395,9 +395,9 @@ function InfoSection({ title, children }: { title: string, children: React.React
             </div>
         </div>
     )
-}
+});
 
-function InfoItem({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
+const InfoItem = React.memo(({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) => {
     return (
         <div className="group flex items-start gap-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800/50 transition-colors">
             <div className="p-1.5 rounded-md bg-white dark:bg-slate-800 text-slate-500 shadow-sm border border-slate-200 dark:border-slate-700 group-hover:text-blue-600 dark:group-hover:text-blue-400 group-hover:border-blue-200 dark:group-hover:border-blue-900 transition-all">
@@ -413,4 +413,9 @@ function InfoItem({ icon, label, value }: { icon: React.ReactNode, label: string
             </div>
         </div>
     )
-}
+});
+
+MembershipForm.displayName = "MembershipForm";
+AfiliadoInfoPanel.displayName = "AfiliadoInfoPanel";
+InfoSection.displayName = "InfoSection";
+InfoItem.displayName = "InfoItem";

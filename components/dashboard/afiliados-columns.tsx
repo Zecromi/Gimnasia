@@ -1,19 +1,18 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Edit, ArrowUpDown, CreditCard } from "lucide-react"
+import { ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip"
 import { Afiliado } from "@/lib/afiliados-service"
-
 import { ViewClubGral, CatalogoItem, Estado } from "@/lib/club-service"
 import { AuthData } from "@/lib/store/auth-store"
 import { Checkbox } from "@/components/ui/checkbox"
+import dynamic from "next/dynamic"
+
+const AffiliateActions = dynamic(() => import("./afiliados-actions").then(mod => mod.AffiliateActions), {
+    ssr: false,
+    loading: () => <div className="w-16 h-8 animate-pulse bg-muted rounded-md" />
+})
 
 export const getColumns = (
     onSuccess: () => void,
@@ -24,7 +23,8 @@ export const getColumns = (
     estadosList: Estado[] = [],
     nivelesTecnicosList: { id: number; Descripcion: string }[] = [],
     authData: AuthData | null = null
-): ColumnDef<Afiliado>[] => [
+): ColumnDef<Afiliado>[] => {
+    const columns: ColumnDef<Afiliado>[] = [
         {
             id: "select",
             header: ({ table }) => (
@@ -54,47 +54,14 @@ export const getColumns = (
         {
             id: "detalle",
             header: "Detalle",
-            cell: ({ row }) => {
-                return (
-                    <div className="flex items-center gap-1">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 hover:bg-green-200 dark:hover:bg-green-800 text-green-600"
-                                    onClick={() => onEdit(row.original)}
-                                >
-                                    <Edit className="h-4 w-4" />
-                                    <span className="sr-only">Editar</span>
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Editar Afiliado</p>
-                            </TooltipContent>
-                        </Tooltip>
-
-                        {(authData?.tipo_registro === 1 || authData?.tipo_registro === 3) && (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600"
-                                        onClick={() => onPayment(row.original)}
-                                    >
-                                        <CreditCard className="h-4 w-4" />
-                                        <span className="sr-only">Pago</span>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Pago de Afiliación</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        )}
-                    </div>
-                )
-            },
+            cell: ({ row }) => (
+                <AffiliateActions
+                    afiliado={row.original}
+                    onEdit={onEdit}
+                    onPayment={onPayment}
+                    authData={authData}
+                />
+            ),
         },
         {
             accessorKey: "id",
@@ -303,3 +270,12 @@ export const getColumns = (
             }
         },
     ]
+
+    // Only Admin (tipo_registro === 1) should see the selection checkboxes
+    // eslint-disable-next-line eqeqeq
+    if (authData?.tipo_registro != 1) {
+        return columns.filter(col => col.id !== "select")
+    }
+
+    return columns
+}

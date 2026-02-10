@@ -21,11 +21,16 @@ import {
     TooltipProvider,
 } from "@/components/ui/tooltip"
 
+import dynamic from "next/dynamic"
 import { getColumns } from "./afiliados-columns"
-import { DataTable } from "./data-table"
-const AfiliadosDialog = lazy(() => import("./afiliados-dialog").then(module => ({ default: module.AfiliadosDialog })))
-const AffiliateMembershipDialog = lazy(() => import("./afiliado-membership-dialog").then(module => ({ default: module.AffiliateMembershipDialog })))
-const BulkMembershipDialog = lazy(() => import("./bulk-membership-dialog").then(module => ({ default: module.BulkMembershipDialog })))
+
+const DataTable = dynamic<any>(() => import("./data-table").then(mod => mod.DataTable), {
+    ssr: false,
+    loading: () => <Skeleton className="h-[700px] w-full" />
+})
+const AfiliadosDialog = dynamic(() => import("./afiliados-dialog").then(module => module.AfiliadosDialog), { ssr: false })
+const AffiliateMembershipDialog = dynamic(() => import("./afiliado-membership-dialog").then(module => module.AffiliateMembershipDialog), { ssr: false })
+const BulkMembershipDialog = dynamic(() => import("./bulk-membership-dialog").then(module => module.BulkMembershipDialog), { ssr: false })
 import { getClubs, ViewClubGral } from "@/lib/club-service"
 import { getAfiliadosCatalogs, Afiliado, AfiliadosCatalogsResponse } from "@/lib/afiliados-service"
 

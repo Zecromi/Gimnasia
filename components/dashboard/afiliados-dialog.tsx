@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Plus, Save } from "lucide-react"
 import { toast } from "sonner"
-import { AfiliadosCatalogsResponse, getAfiliadosCatalogs, createAfiliado, updateAfiliado, CreateAfiliadoPayload } from "@/lib/afiliados-service"
+import { AfiliadosCatalogsResponse, getAfiliadosCatalogs, createAfiliado, updateAfiliado, CreateAfiliadoPayload, Afiliado } from "@/lib/afiliados-service"
 import { useCatalogStore } from "@/lib/store/catalog-store"
 import { useAuthStore } from "@/lib/store/auth-store"
 import { CatalogoItem, Estado, getClubs, ViewClubGral } from "@/lib/club-service"
@@ -155,7 +155,7 @@ export function AfiliadosDialog({ afiliado, trigger, onSuccess, open: controlled
     )
 }
 
-import { Afiliado } from "@/lib/afiliados-service"
+
 
 interface AfiliadosFormProps extends React.ComponentProps<"form"> {
     afiliado?: Afiliado
@@ -164,11 +164,239 @@ interface AfiliadosFormProps extends React.ComponentProps<"form"> {
     catalogs?: AfiliadosCatalogsResponse
 }
 
+// --- Sub-components for Form Sections (Memoized for performance) ---
+
+const PersonalDataSection = React.memo(({ afiliado, activeCatalogs }: { afiliado?: Afiliado, activeCatalogs: any }) => (
+    <div className="grid gap-6">
+        <div className="grid grid-cols-12 gap-6">
+            <InputGroup label="Nombre : *" htmlFor="nombre" className="col-span-12 md:col-span-4">
+                <Input id="nombre" name="nombre" defaultValue={afiliado?.Nombre} />
+            </InputGroup>
+            <InputGroup label="Apellido Paterno : *" htmlFor="apellidoPaterno" className="col-span-12 md:col-span-4">
+                <Input id="apellidoPaterno" name="apellidoPaterno" defaultValue={afiliado?.Paterno} />
+            </InputGroup>
+            <InputGroup label="Apellido Materno :" htmlFor="apellidoMaterno" className="col-span-12 md:col-span-4">
+                <Input id="apellidoMaterno" name="apellidoMaterno" defaultValue={afiliado?.Materno} />
+            </InputGroup>
+        </div>
+
+        <div className="grid grid-cols-12 gap-6">
+            <InputGroup label="Fecha de Nacimiento : *" htmlFor="fechaNacimiento" className="col-span-12 md:col-span-4">
+                <Input id="fechaNacimiento" name="fechaNacimiento" type="date" defaultValue={afiliado?.Fecha_nacimiento ? afiliado.Fecha_nacimiento.split('T')[0] : ''} />
+            </InputGroup>
+            <InputGroup label="CURP : *" htmlFor="curp" className="col-span-12 md:col-span-4">
+                <Input id="curp" name="curp" defaultValue={afiliado?.Curp} />
+            </InputGroup>
+            <div className="col-span-12 md:col-span-4 space-y-3">
+                <Label>Género : *</Label>
+                <RadioGroup
+                    defaultValue={afiliado?.Genero === "M" ? "masculino" : "femenino"}
+                    className="flex gap-4"
+                    name="genero"
+                >
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="femenino" id="femenino" />
+                        <Label htmlFor="femenino">Femenino</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="masculino" id="masculino" />
+                        <Label htmlFor="masculino">Masculino</Label>
+                    </div>
+                </RadioGroup>
+            </div>
+        </div>
+
+        <div className="grid grid-cols-12 gap-6">
+            <InputGroup label="Escolaridad : *" className="col-span-12 md:col-span-6">
+                <Select name="escolaridad" defaultValue={afiliado?.id_Escolaridad?.toString()}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Seleccione una opción" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {activeCatalogs.Escolaridad.map((item: any) => (
+                            <SelectItem key={item.id} value={item.id.toString()}>
+                                {item.Nombre}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </InputGroup>
+        </div>
+    </div>
+));
+
+const AffiliationSection = React.memo(({ afiliado, activeCatalogs, uniqueClubs, selectedClubId, setSelectedClubId, authData }: any) => (
+    <div className="grid gap-6">
+        <div className="grid grid-cols-12 gap-6">
+            <InputGroup label="Asociación : *" className="col-span-12 md:col-span-6">
+                <Input value="ESTADO DE MÉXICO" disabled className="bg-muted/50" name="asociacion" />
+            </InputGroup>
+            <InputGroup label="Club : *" className="col-span-12 md:col-span-6">
+                <Select
+                    key={selectedClubId || "empty"}
+                    value={selectedClubId}
+                    onValueChange={setSelectedClubId}
+                    disabled={authData?.tipo_registro != 1 && !afiliado}
+                >
+                    <SelectTrigger>
+                        <SelectValue placeholder="Selecciona una opción" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {uniqueClubs.map((club: any) => (
+                            <SelectItem key={club.id} value={club.id.toString()}>
+                                {club.Club}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </InputGroup>
+        </div>
+
+        <div className="grid grid-cols-12 gap-6">
+            <InputGroup label="Tipo de Afiliado Principal : *" className="col-span-12 md:col-span-6">
+                <Select name="tipoAfiliadoPrincipal" defaultValue={afiliado?.Afiliacion_1?.toString()}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Seleccione una opción" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {activeCatalogs.Catalogo_afiliaciones.map((item: any) => (
+                            <SelectItem key={item.id} value={item.id.toString()}>
+                                {item.Nombre}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </InputGroup>
+            <InputGroup label="Tipo de Afiliado Secundario :" className="col-span-12 md:col-span-6">
+                <Select name="tipoAfiliadoSecundario" defaultValue={afiliado?.Afiliacion_2?.toString() || "none"}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Seleccione una opción" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {activeCatalogs.Catalogo_afiliaciones.map((item: any) => (
+                            <SelectItem key={item.id} value={item.id.toString()}>
+                                {item.Nombre}
+                            </SelectItem>
+                        ))}
+                        <SelectItem value="none">Ninguno</SelectItem>
+                    </SelectContent>
+                </Select>
+            </InputGroup>
+        </div>
+
+        <div className="grid grid-cols-12 gap-6">
+            <InputGroup label="Tipo de Afiliado Tercero :" className="col-span-12 md:col-span-6">
+                <Select name="tipoAfiliadoTercero" defaultValue={afiliado?.Afiliacion_3?.toString() || "none"}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Seleccione una opción" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {activeCatalogs.Catalogo_afiliaciones.map((item: any) => (
+                            <SelectItem key={item.id} value={item.id.toString()}>
+                                {item.Nombre}
+                            </SelectItem>
+                        ))}
+                        <SelectItem value="none">Ninguno</SelectItem>
+                    </SelectContent>
+                </Select>
+            </InputGroup>
+            <InputGroup label="Tipo de Afiliado Cuarto :" className="col-span-12 md:col-span-6">
+                <Select name="tipoAfiliadoCuarto" defaultValue={afiliado?.Afiliacion_4?.toString() || "none"}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Seleccione una opción" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {activeCatalogs.Catalogo_afiliaciones.map((item: any) => (
+                            <SelectItem key={item.id} value={item.id.toString()}>
+                                {item.Nombre}
+                            </SelectItem>
+                        ))}
+                        <SelectItem value="none">Ninguno</SelectItem>
+                    </SelectContent>
+                </Select>
+            </InputGroup>
+        </div>
+
+        <div className="grid grid-cols-12 gap-6">
+            <InputGroup label="Nivel Tecnico : *" className="col-span-12 md:col-span-6">
+                <Select name="nivelTecnico" defaultValue={afiliado?.id_nivel_tec?.toString()}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Seleccione una opción" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {activeCatalogs.Niveles_tecnicos.map((item: any) => (
+                            <SelectItem key={item.id} value={item.id.toString()}>
+                                {item.Descripcion}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </InputGroup>
+        </div>
+    </div>
+));
+
+const ContactSection = React.memo(({ afiliado, activeCatalogs }: { afiliado?: Afiliado, activeCatalogs: any }) => (
+    <div className="space-y-6">
+        <h3 className="text-lg font-semibold bg-muted py-2 px-4 rounded-md">Contacto :</h3>
+        <div className="grid grid-cols-12 gap-6">
+            <InputGroup label="Calle : *" htmlFor="calle" className="col-span-12 md:col-span-6">
+                <Input id="calle" name="calle" defaultValue={afiliado?.Calle} />
+            </InputGroup>
+            <InputGroup label="# Exterior : *" htmlFor="num-ext" className="col-span-6 md:col-span-3">
+                <Input id="num-ext" name="numExt" defaultValue={afiliado?.Exterior} />
+            </InputGroup>
+            <InputGroup label="# Interior :" htmlFor="num-int" className="col-span-6 md:col-span-3">
+                <Input id="num-int" name="numInt" defaultValue={afiliado?.Interior} />
+            </InputGroup>
+        </div>
+        <div className="grid grid-cols-12 gap-6">
+            <InputGroup label="Colonia : *" htmlFor="colonia" className="col-span-12 md:col-span-4">
+                <Input id="colonia" name="colonia" defaultValue={afiliado?.Colonia} />
+            </InputGroup>
+            <InputGroup label="Ciudad/Delegación/Municipio : *" htmlFor="municipio" className="col-span-12 md:col-span-4">
+                <Input id="municipio" name="municipio" defaultValue={afiliado?.Ciudad} />
+            </InputGroup>
+            <InputGroup label="Estado : *" className="col-span-12 md:col-span-2">
+                <Select name="estado" defaultValue={afiliado?.Estado}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Seleccione una opción" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {activeCatalogs.Estados.map((item: any) => (
+                            <SelectItem key={item.id} value={item.id.toString()}>
+                                {item.Nombre}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </InputGroup>
+            <InputGroup label="C.P. : *" htmlFor="cp" className="col-span-12 md:col-span-2">
+                <Input id="cp" name="cp" defaultValue={afiliado?.CP} />
+            </InputGroup>
+        </div>
+        <div className="grid grid-cols-12 gap-6">
+            <InputGroup label="Email : *" htmlFor="email" className="col-span-12 md:col-span-4">
+                <Input id="email" type="email" name="email" />
+            </InputGroup>
+            <InputGroup label="Teléfono Particular : *" htmlFor="tel-particular" className="col-span-12 md:col-span-4">
+                <Input id="tel-particular" name="telParticular" defaultValue={afiliado?.Telefono_c} />
+            </InputGroup>
+            <InputGroup label="Teléfono Celular :" htmlFor="tel-celular" className="col-span-12 md:col-span-4">
+                <Input id="tel-celular" name="telCelular" defaultValue={afiliado?.Telefono_cel} />
+            </InputGroup>
+        </div>
+    </div>
+));
+
+PersonalDataSection.displayName = "PersonalDataSection";
+AffiliationSection.displayName = "AffiliationSection";
+ContactSection.displayName = "ContactSection";
+
 function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, catalogs: catalogsProp }: AfiliadosFormProps) {
     const { Modalidades, fetchCatalogs, Catalogo_afiliaciones, Niveles_tecnicos, Estados: StoreEstados, Escolaridad: StoreEscolaridad } = useCatalogStore()
 
-    // Prioritize props, fallback to store or empty
-    const activeCatalogs = catalogsProp || {
+    const activeCatalogs = React.useMemo(() => catalogsProp || {
         Catalogo_afiliaciones: Catalogo_afiliaciones,
         Niveles_tecnicos: Niveles_tecnicos,
         Estados: StoreEstados,
@@ -177,7 +405,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
         Modalidades: Modalidades,
         View_Modalidades_detalle: [],
         Catalogo_eventos: []
-    }
+    }, [catalogsProp, Catalogo_afiliaciones, Niveles_tecnicos, StoreEstados, StoreEscolaridad, Modalidades])
 
     const [isLoading, setIsLoading] = React.useState(false)
     const [clubs, setClubs] = React.useState<ViewClubGral[]>(clubsProp || [])
@@ -186,27 +414,19 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
         afiliado?.id_Club?.toString() || ""
     )
 
-    // Memoize the unique clubs list
     const uniqueClubs = React.useMemo(() => {
         return Array.from(new Map(clubs.map(club => [club.id, club])).values())
     }, [clubs])
 
     React.useEffect(() => {
         const initData = async () => {
-            // If props are provided, use them and filtering logic
             if (clubsProp) {
                 let loadedClubs = clubsProp
                 if (authData && authData.tipo_registro != 1) {
                     loadedClubs = loadedClubs.filter(c => c.id.toString() === authData.id.toString())
-                    if (loadedClubs.length === 1 && !afiliado) {
-                        // Logic to auto-select club handled via default value or effect below, 
-                        // but avoiding state updates during render is better.
-                        // We'll handle selection separately.
-                    }
                 }
                 setClubs(loadedClubs)
             } else {
-                // If no props, fetch
                 setIsLoading(true)
                 try {
                     const clubsData = await getClubs()
@@ -222,7 +442,6 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 }
             }
 
-            // Always ensure catalogs are loaded if not passed
             if (!catalogsProp) {
                 await fetchCatalogs()
             }
@@ -231,37 +450,17 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
         initData()
     }, [clubsProp, catalogsProp, fetchCatalogs, authData])
 
-    // Auto-select club effect
     React.useEffect(() => {
-        if (!afiliado && clubs.length === 1 && selectedClubId === "") {
-            setSelectedClubId(clubs[0].id.toString())
+        if (!afiliado && uniqueClubs.length === 1 && selectedClubId === "") {
+            setSelectedClubId(uniqueClubs[0].id.toString())
         }
-    }, [clubs, afiliado, selectedClubId])
+    }, [uniqueClubs, afiliado, selectedClubId])
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         const formData = new FormData(e.currentTarget)
         const data = Object.fromEntries(formData.entries()) as Record<string, string>
 
-
-
-        // Validate unique affiliation types
-        const affiliations = [
-            data.tipoAfiliadoPrincipal,
-            data.tipoAfiliadoSecundario,
-            data.tipoAfiliadoTercero,
-            data.tipoAfiliadoCuarto
-        ].filter(val => val && val.trim() !== "" && val !== "none") // Filter out empty selections and "none"
-
-        // const uniqueAffiliations = new Set(affiliations)
-        // // if (uniqueAffiliations.size !== affiliations.length) {
-        // //     toast.error("No se pueden repetir los tipos de afiliación")
-        // //     return
-        // // }
-
-
-
-        // Validate required fields
         const requiredFields: Record<string, string> = {
             club: "Club",
             nombre: "Nombre",
@@ -295,10 +494,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
         const defaultModalidad = afiliado?.Modalidad?.toString() || Modalidades?.[0]?.id?.toString() || "1"
 
         if (afiliado) {
-            // Edit Mode
             const changes: { campo: string; valor: string }[] = []
-
-            // Field mapping: Form Name -> Backend Column Name
             const fieldMap: Record<string, string> = {
                 nombre: "Nombre",
                 apellidoPaterno: "Paterno",
@@ -324,7 +520,6 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 nivelTecnico: "id_nivel_tec"
             }
 
-            // Helper to get original value safely
             const getOriginalValue = (key: string): string => {
                 switch (key) {
                     case "nombre": return afiliado.Nombre;
@@ -355,20 +550,11 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
 
             for (const [formKey, backendField] of Object.entries(fieldMap)) {
                 let newValue = data[formKey] || ""
-                if (newValue === "none") newValue = "" // Convert "none" to empty string
+                if (newValue === "none") newValue = ""
                 const originalValue = getOriginalValue(formKey) || ""
-
-                if (formKey === 'curp') {
-                    newValue = newValue.toUpperCase();
-                }
-
-                if (formKey === 'genero') {
-                    newValue = newValue === "masculino" ? "M" : "F"
-                }
-
-                if (newValue !== originalValue) {
-                    changes.push({ campo: backendField, valor: newValue })
-                }
+                if (formKey === 'curp') newValue = newValue.toUpperCase();
+                if (formKey === 'genero') newValue = newValue === "masculino" ? "M" : "F"
+                if (newValue !== originalValue) changes.push({ campo: backendField, valor: newValue })
             }
 
             if (changes.length === 0) {
@@ -377,7 +563,6 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
             }
 
             try {
-
                 await updateAfiliado(afiliado.id, { uno: changes })
                 toast.success("Afiliado actualizado exitosamente")
                 onSuccess?.()
@@ -385,9 +570,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 console.error("Error updating afiliado:", error)
                 toast.error("Error al actualizar el afiliado")
             }
-
         } else {
-            // Create Mode
             const payload: CreateAfiliadoPayload = {
                 nombre: data.nombre,
                 paterno: data.apellidoPaterno,
@@ -414,17 +597,10 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 modalidad: defaultModalidad
             }
 
-
-
             try {
-
                 await createAfiliado(payload)
                 toast.success("Afiliado creado exitosamente")
-
-                // Small delay to ensure backend consistency before refetching
-                setTimeout(() => {
-                    onSuccess?.()
-                }, 500)
+                setTimeout(() => { onSuccess?.() }, 500)
             } catch (error) {
                 console.error("Error creating afiliado:", error)
                 toast.error("Error al crear el afiliado")
@@ -432,9 +608,6 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
         }
     }
 
-
-
-    // Show loading state only when fetching (not when props provided)
     if (isLoading) {
         return (
             <div className="flex items-center justify-center h-[60vh]">
@@ -448,232 +621,19 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
 
     return (
         <form id={id} className={cn("space-y-6", className)} onSubmit={handleSubmit}>
-            {/* hidden input to ensure club value is submitted even if disabled select doesn't submit it (though ShadCN Select usually works differently, disabled inputs typically don't send values in native forms) */}
-            {/* Safe bet: always keep the Select enabled but visually 'disabled' or just ensure we pass it.
-                Actually, controlled components in Shadcn/Radix might not pass name if disabled.
-                Let's use a hidden input just in case if it's restricted.
-            */}
             <input type="hidden" name="club" value={selectedClubId} />
-
             <ScrollArea className="h-[60vh] pr-4">
                 <div className="space-y-6 p-1">
-                    {/* General Info */}
-                    <div className="grid gap-6">
-                        <div className="grid grid-cols-12 gap-6">
-                            <InputGroup label="Nombre : *" htmlFor="nombre" className="col-span-12 md:col-span-4">
-                                <Input id="nombre" name="nombre" defaultValue={afiliado?.Nombre} />
-                            </InputGroup>
-                            <InputGroup label="Apellido Paterno : *" htmlFor="apellidoPaterno" className="col-span-12 md:col-span-4">
-                                <Input id="apellidoPaterno" name="apellidoPaterno" defaultValue={afiliado?.Paterno} />
-                            </InputGroup>
-                            <InputGroup label="Apellido Materno :" htmlFor="apellidoMaterno" className="col-span-12 md:col-span-4">
-                                <Input id="apellidoMaterno" name="apellidoMaterno" defaultValue={afiliado?.Materno} />
-                            </InputGroup>
-                        </div>
-
-                        <div className="grid grid-cols-12 gap-6">
-                            <InputGroup label="Asociación : *" className="col-span-12 md:col-span-6">
-                                <Input value="ESTADO DE MÉXICO" disabled className="bg-muted/50" name="asociacion" />
-                            </InputGroup>
-                            <InputGroup label="Club : *" className="col-span-12 md:col-span-6">
-                                <Select
-                                    key={selectedClubId || "empty"} // Force re-render to ensure value updates correctly
-                                    name="club_select" // Rename to avoid conflict with hidden input, or just rely on state
-                                    value={selectedClubId}
-                                    onValueChange={setSelectedClubId}
-                                    // eslint-disable-next-line eqeqeq
-                                    disabled={authData?.tipo_registro != 1 && !afiliado}
-                                >
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Selecciona una opción" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {uniqueClubs.map((club) => (
-                                            <SelectItem key={club.id} value={club.id.toString()}>
-                                                {club.Club}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </InputGroup>
-                        </div>
-
-                        <div className="grid grid-cols-12 gap-6">
-                            <InputGroup label="Tipo de Afiliado Principal : *" className="col-span-12 md:col-span-6">
-                                <Select name="tipoAfiliadoPrincipal" defaultValue={afiliado?.Afiliacion_1?.toString()}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccione una opción" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {activeCatalogs.Catalogo_afiliaciones.map((item) => (
-                                            <SelectItem key={item.id} value={item.id.toString()}>
-                                                {item.Nombre}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </InputGroup>
-                            <InputGroup label="Tipo de Afiliado Secundario :" className="col-span-12 md:col-span-6">
-                                <Select name="tipoAfiliadoSecundario" defaultValue={afiliado?.Afiliacion_2?.toString() || "none"}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccione una opción" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {activeCatalogs.Catalogo_afiliaciones.map((item) => (
-                                            <SelectItem key={item.id} value={item.id.toString()}>
-                                                {item.Nombre}
-                                            </SelectItem>
-                                        ))}
-                                        <SelectItem value="none">Ninguno</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </InputGroup>
-                        </div>
-
-                        <div className="grid grid-cols-12 gap-6">
-                            <InputGroup label="Tipo de Afiliado Tercero :" className="col-span-12 md:col-span-6">
-                                <Select name="tipoAfiliadoTercero" defaultValue={afiliado?.Afiliacion_3?.toString() || "none"}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccione una opción" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {activeCatalogs.Catalogo_afiliaciones.map((item) => (
-                                            <SelectItem key={item.id} value={item.id.toString()}>
-                                                {item.Nombre}
-                                            </SelectItem>
-                                        ))}
-                                        <SelectItem value="none">Ninguno</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </InputGroup>
-                            <InputGroup label="Tipo de Afiliado Cuarto :" className="col-span-12 md:col-span-6">
-                                <Select name="tipoAfiliadoCuarto" defaultValue={afiliado?.Afiliacion_4?.toString() || "none"}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccione una opción" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {activeCatalogs.Catalogo_afiliaciones.map((item) => (
-                                            <SelectItem key={item.id} value={item.id.toString()}>
-                                                {item.Nombre}
-                                            </SelectItem>
-                                        ))}
-                                        <SelectItem value="none">Ninguno</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </InputGroup>
-                        </div>
-
-                        <div className="grid grid-cols-12 gap-6">
-                            <InputGroup label="Nivel Tecnico : *" className="col-span-12 md:col-span-6">
-                                <Select name="nivelTecnico" defaultValue={afiliado?.id_nivel_tec?.toString()}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccione una opción" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {activeCatalogs.Niveles_tecnicos.map((item) => (
-                                            <SelectItem key={item.id} value={item.id.toString()}>
-                                                {item.Descripcion}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </InputGroup>
-                            <InputGroup label="Escolaridad : *" className="col-span-12 md:col-span-6">
-                                <Select name="escolaridad" defaultValue={afiliado?.id_Escolaridad?.toString()}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccione una opción" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {activeCatalogs.Escolaridad.map((item) => (
-                                            <SelectItem key={item.id} value={item.id.toString()}>
-                                                {item.Nombre}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </InputGroup>
-                        </div>
-
-                        <div className="grid grid-cols-12 gap-6">
-                            <InputGroup label="Fecha de Nacimiento : *" htmlFor="fechaNacimiento" className="col-span-12 md:col-span-4">
-                                <Input id="fechaNacimiento" name="fechaNacimiento" type="date" defaultValue={afiliado?.Fecha_nacimiento ? afiliado.Fecha_nacimiento.split('T')[0] : ''} />
-                            </InputGroup>
-                            <InputGroup label="CURP : *" htmlFor="curp" className="col-span-12 md:col-span-4">
-                                <Input id="curp" name="curp" defaultValue={afiliado?.Curp} />
-                            </InputGroup>
-                            <div className="col-span-12 md:col-span-4 space-y-3">
-                                <Label>Género : *</Label>
-                                <RadioGroup
-                                    defaultValue={afiliado?.Genero === "M" ? "masculino" : "femenino"}
-                                    className="flex gap-4"
-                                    name="genero"
-                                >
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="femenino" id="femenino" />
-                                        <Label htmlFor="femenino">Femenino</Label>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                        <RadioGroupItem value="masculino" id="masculino" />
-                                        <Label htmlFor="masculino">Masculino</Label>
-                                    </div>
-                                </RadioGroup>
-                            </div>
-
-                        </div>
-                    </div>
-
-                    {/* Contacto */}
-                    <div className="space-y-6">
-                        <h3 className="text-lg font-semibold bg-muted py-2 px-4 rounded-md">Contacto :</h3>
-                        <div className="grid grid-cols-12 gap-6">
-                            <InputGroup label="Calle : *" htmlFor="calle" className="col-span-12 md:col-span-6">
-                                <Input id="calle" name="calle" defaultValue={afiliado?.Calle} />
-                            </InputGroup>
-                            <InputGroup label="# Exterior : *" htmlFor="num-ext" className="col-span-6 md:col-span-3">
-                                <Input id="num-ext" name="numExt" defaultValue={afiliado?.Exterior} />
-                            </InputGroup>
-                            <InputGroup label="# Interior :" htmlFor="num-int" className="col-span-6 md:col-span-3">
-                                <Input id="num-int" name="numInt" defaultValue={afiliado?.Interior} />
-                            </InputGroup>
-                        </div>
-                        <div className="grid grid-cols-12 gap-6">
-                            <InputGroup label="Colonia : *" htmlFor="colonia" className="col-span-12 md:col-span-4">
-                                <Input id="colonia" name="colonia" defaultValue={afiliado?.Colonia} />
-                            </InputGroup>
-                            <InputGroup label="Ciudad/Delegación/Municipio : *" htmlFor="municipio" className="col-span-12 md:col-span-4">
-                                <Input id="municipio" name="municipio" defaultValue={afiliado?.Ciudad} />
-                            </InputGroup>
-                            <InputGroup label="Estado : *" className="col-span-12 md:col-span-2">
-                                <Select name="estado" defaultValue={afiliado?.Estado}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Seleccione una opción" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {activeCatalogs.Estados.map((item) => (
-                                            <SelectItem key={item.id} value={item.id.toString()}>
-                                                {item.Nombre}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </InputGroup>
-                            <InputGroup label="C.P. : *" htmlFor="cp" className="col-span-12 md:col-span-2">
-                                <Input id="cp" name="cp" defaultValue={afiliado?.CP} />
-                            </InputGroup>
-                        </div>
-                        <div className="grid grid-cols-12 gap-6">
-                            <InputGroup label="Email : *" htmlFor="email" className="col-span-12 md:col-span-4">
-                                {/* Note: Email is not in the Afiliado interface provided in the issue description, assuming it might be added or optional, skipping default for now if not present */}
-                                <Input id="email" type="email" name="email" />
-                            </InputGroup>
-                            <InputGroup label="Teléfono Particular : *" htmlFor="tel-particular" className="col-span-12 md:col-span-4">
-                                <Input id="tel-particular" name="telParticular" defaultValue={afiliado?.Telefono_c} />
-                            </InputGroup>
-                            <InputGroup label="Teléfono Celular :" htmlFor="tel-celular" className="col-span-12 md:col-span-4">
-                                <Input id="tel-celular" name="telCelular" defaultValue={afiliado?.Telefono_cel} />
-                            </InputGroup>
-                        </div>
-                    </div>
+                    <PersonalDataSection afiliado={afiliado} activeCatalogs={activeCatalogs} />
+                    <AffiliationSection
+                        afiliado={afiliado}
+                        activeCatalogs={activeCatalogs}
+                        uniqueClubs={uniqueClubs}
+                        selectedClubId={selectedClubId}
+                        setSelectedClubId={setSelectedClubId}
+                        authData={authData}
+                    />
+                    <ContactSection afiliado={afiliado} activeCatalogs={activeCatalogs} />
                 </div>
             </ScrollArea>
         </form>
