@@ -138,6 +138,9 @@ export interface AfiliadoItem {
     Nombre: string;
     Paterno: string;
     Materno: string;
+    id: number;
+    id_nivel: number;
+    id_categoria: number;
 }
 
 export interface AfiliadosEventosResponse {

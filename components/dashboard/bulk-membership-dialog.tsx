@@ -66,17 +66,17 @@ export function BulkMembershipDialog({
                 setCurrentProgress(i + 1)
                 try {
                     await updateClubMembership({
-                        tipo: "2", // 2 for Affiliate
+                        tipo: "2", // 2 para Afiliado
                         id: afiliado.id.toString(),
                         total: costo,
-                        id_forma_pago: "1", // Default to 1 (Generic/Cash)
-                        no_ticket: "MASIVO",
-                        lugar_pago: "MASIVO",
+                        id_forma_pago: "1", // 1 para Efectivo
+                        no_ticket: "NA",
+                        lugar_pago: "NA",
                         fecha_pago: today,
                     })
                     successCount++
                 } catch (err) {
-                    console.error(`Error processing payment for affiliate ${afiliado.id}:`, err)
+                    console.error(`Error al procesar el pago para el afiliado ${afiliado.id}:`, err)
                     errorCount++
                 }
             }

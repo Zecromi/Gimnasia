@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback } from "react"
-import { Check, ChevronsUpDown, Calendar, Clock, Users, Loader2 } from "lucide-react"
+import { Check, ChevronsUpDown, Calendar, Clock, Users, Loader2, Search } from "lucide-react"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
@@ -129,6 +129,7 @@ export function RegisterEventDialog({
     const [loadingAdicionales, setLoadingAdicionales] = useState(true)
     const [loadingNiveles, setLoadingNiveles] = useState(true)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [searchQuery, setSearchQuery] = useState("")
 
     useEffect(() => {
         if (!open) return
@@ -175,18 +176,25 @@ export function RegisterEventDialog({
         fetchNiveles()
     }, [open, fetchAfiliadosEventos, clubIdToUse, eventoId])
 
-    // Initialize config for new members
+    // Initialize config for new members with automatic level matching
     useEffect(() => {
-        if (open && afiliados.length > 0) {
+        if (open && afiliados.length > 0 && niveles.length > 0) {
             setMemberConfigs(prev => {
                 const newConfigs: Record<string, MemberConfig> = { ...prev }
                 afiliados.forEach(member => {
                     const memberId = String(member.id_afiliado)
                     if (!newConfigs[memberId]) {
+                        // Match member's modality(id), level, and category with event's configured levels
+                        const matchingLevel = niveles.find(n =>
+                            n.id_modalidad === member.id &&
+                            n.id_nivel === member.id_nivel &&
+                            n.id_categoria === member.id_categoria
+                        )
+
                         newConfigs[memberId] = {
                             additionalItemIds: [],
-                            selectedNivelId: undefined,
-                            selectedCategoryId: undefined,
+                            selectedNivelId: matchingLevel ? String(matchingLevel.id_nivel) : undefined,
+                            selectedCategoryId: matchingLevel ? String(matchingLevel.id_categoria) : undefined,
                             isFullDiscount: false,
                             discountAmount: 0
                         }
@@ -195,7 +203,7 @@ export function RegisterEventDialog({
                 return newConfigs
             })
         }
-    }, [open, afiliados])
+    }, [open, afiliados, niveles])
 
     const handleSelectMember = (memberId: string, checked: boolean) => {
         const newSelected = new Set(selectedMembers)
@@ -206,6 +214,15 @@ export function RegisterEventDialog({
         }
         setSelectedMembers(newSelected)
     }
+
+    const filteredAfiliados = useMemo(() => {
+        if (!searchQuery) return afiliados;
+        const query = searchQuery.toLowerCase();
+        return afiliados.filter(member => {
+            const fullName = `${member.Nombre} ${member.Paterno} ${member.Materno || ""}`.toLowerCase();
+            return fullName.includes(query);
+        });
+    }, [afiliados, searchQuery]);
 
     const resetForm = useCallback(() => {
         setSelectedMembers(new Set())
@@ -322,20 +339,27 @@ export function RegisterEventDialog({
 
 
     const toggleAll = (checked: boolean) => {
+        const newSelected = new Set(selectedMembers)
+
         if (checked) {
-            setSelectedMembers(new Set(afiliados.map(m => String(m.id_afiliado))))
+            filteredAfiliados.forEach(m => newSelected.add(String(m.id_afiliado)))
         } else {
-            setSelectedMembers(new Set())
+            filteredAfiliados.forEach(m => newSelected.delete(String(m.id_afiliado)))
         }
 
-        // Also clear all discounts when toggling Select All
+        setSelectedMembers(newSelected)
+
+        // Also clear all discounts for the affected members when toggling
         setMemberConfigs(prev => {
             const newConfigs = { ...prev }
-            Object.keys(newConfigs).forEach(key => {
-                newConfigs[key] = {
-                    ...newConfigs[key],
-                    isFullDiscount: false,
-                    discountAmount: 0
+            filteredAfiliados.forEach(m => {
+                const id = String(m.id_afiliado)
+                if (newConfigs[id]) {
+                    newConfigs[id] = {
+                        ...newConfigs[id],
+                        isFullDiscount: false,
+                        discountAmount: 0
+                    }
                 }
             })
             return newConfigs
@@ -482,12 +506,23 @@ export function RegisterEventDialog({
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row min-h-0 h-full">
             {/* Left Column: Member Table */}
             <div className="flex-[1.8] flex flex-col min-w-0 bg-background border-b lg:border-b-0 lg:border-r min-h-0 h-full">
+                <div className="p-4 border-b bg-background sticky top-0 z-30">
+                    <div className="relative">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                            placeholder="Buscar miembro por nombre..."
+                            className="pl-9"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
                 <ScrollArea className="flex-1 h-full">
                     <div className="lg:min-w-[800px] flex flex-col">
                         {/* Sticky Header: Fixed at top, and moves horizontally with ScrollArea */}
                         <div className="sticky top-0 z-20 p-4 border-b bg-muted/80 backdrop-blur-md grid grid-cols-[40px_1fr_120px] md:grid-cols-[40px_minmax(120px,1.5fr)_minmax(180px,2fr)_minmax(180px,2fr)_minmax(140px,1.2fr)] gap-2 md:gap-4 items-center text-xs font-bold text-muted-foreground uppercase tracking-wider">
                             <Checkbox
-                                checked={selectedMembers.size === afiliados.length && afiliados.length > 0}
+                                checked={filteredAfiliados.length > 0 && filteredAfiliados.every(m => selectedMembers.has(String(m.id_afiliado)))}
                                 onCheckedChange={(checked) => toggleAll(!!checked)}
                             />
                             <span className="truncate">Miembro</span>
@@ -496,182 +531,188 @@ export function RegisterEventDialog({
                             <span className="truncate">Descuento</span>
                         </div>
                         <div className="p-4 space-y-0 overflow-y-auto overflow-x-auto h-full">
-                            {afiliados.map((member) => {
-                                const memberId = String(member.id_afiliado);
-                                const fullName = `${member.Nombre} ${member.Paterno} ${member.Materno || ""}`.trim();
-                                const isSelected = selectedMembers.has(memberId);
-                                const config = memberConfigs[memberId];
+                            {filteredAfiliados.length === 0 ? (
+                                <div className="py-12 text-center text-muted-foreground">
+                                    {searchQuery ? "No se encontraron miembros con ese nombre." : "No hay miembros disponibles."}
+                                </div>
+                            ) : (
+                                filteredAfiliados.map((member) => {
+                                    const memberId = String(member.id_afiliado);
+                                    const fullName = `${member.Nombre} ${member.Paterno} ${member.Materno || ""}`.trim();
+                                    const isSelected = selectedMembers.has(memberId);
+                                    const config = memberConfigs[memberId];
 
-                                return (
-                                    <div key={memberId} className="grid grid-cols-[40px_1fr_120px] md:grid-cols-[40px_minmax(120px,1.5fr)_minmax(180px,2fr)_minmax(180px,2fr)_minmax(140px,1.2fr)] gap-2 md:gap-4 items-center py-2 px-1 hover:bg-muted/5 rounded-lg transition-colors">
-                                        <Checkbox
-                                            checked={isSelected}
-                                            onCheckedChange={(checked) => handleSelectMember(memberId, !!checked)}
-                                        />
-                                        <span className="text-sm font-medium truncate" title={fullName}>{fullName}</span>
+                                    return (
+                                        <div key={memberId} className="grid grid-cols-[40px_1fr_120px] md:grid-cols-[40px_minmax(120px,1.5fr)_minmax(180px,2fr)_minmax(180px,2fr)_minmax(140px,1.2fr)] gap-2 md:gap-4 items-center py-2 px-1 hover:bg-muted/5 rounded-lg transition-colors">
+                                            <Checkbox
+                                                checked={isSelected}
+                                                onCheckedChange={(checked) => handleSelectMember(memberId, !!checked)}
+                                            />
+                                            <span className="text-sm font-medium truncate" title={fullName}>{fullName}</span>
 
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    role="combobox"
-                                                    className="hidden md:flex min-h-8 h-auto w-full justify-between font-normal"
-                                                    disabled={!isSelected || niveles.length === 0 || loadingNiveles}
-                                                >
-                                                    {niveles.length === 0 ? (
-                                                        <div className="flex justify-between w-full gap-2">
-                                                            <span>{modalidad}</span>
-                                                            <span className="text-muted-foreground">{formatCurrency(parseFloat(costo) || 0)}</span>
-                                                        </div>
-                                                    ) : memberConfigs[memberId]?.selectedNivelId && memberConfigs[memberId]?.selectedCategoryId ? (
-                                                        <div className="flex justify-between w-full gap-2 text-xs">
-                                                            <span className="truncate max-w-[120px]">
-                                                                {(() => {
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        role="combobox"
+                                                        className="hidden md:flex min-h-8 h-auto w-full justify-between font-normal"
+                                                        disabled={!isSelected || niveles.length === 0 || loadingNiveles}
+                                                    >
+                                                        {niveles.length === 0 ? (
+                                                            <div className="flex justify-between w-full gap-2">
+                                                                <span>{modalidad}</span>
+                                                                <span className="text-muted-foreground">{formatCurrency(parseFloat(costo) || 0)}</span>
+                                                            </div>
+                                                        ) : memberConfigs[memberId]?.selectedNivelId && memberConfigs[memberId]?.selectedCategoryId ? (
+                                                            <div className="flex justify-between w-full gap-2 text-xs">
+                                                                <span className="truncate max-w-[120px]">
+                                                                    {(() => {
+                                                                        const match = View_Modalidades_detalle.find(d =>
+                                                                            d.id_nivel === Number(memberConfigs[memberId].selectedNivelId) &&
+                                                                            d.id_categoria === Number(memberConfigs[memberId].selectedCategoryId)
+                                                                        );
+                                                                        if (!match) return "Seleccionado";
+                                                                        return `${match.titulo} (Edad: ${match.edad_ini}-${match.edad_fin})`;
+                                                                    })()}
+                                                                </span>
+                                                                <span className="text-teal-600 font-semibold shrink-0">
+                                                                    {(() => {
+                                                                        const n = niveles.find(l =>
+                                                                            String(l.id_nivel) === memberConfigs[memberId].selectedNivelId &&
+                                                                            String(l.id_categoria) === memberConfigs[memberId].selectedCategoryId
+                                                                        );
+                                                                        const nivelCost = typeof n?.costo === 'string' ? parseFloat(n.costo) : (n?.costo || 0)
+                                                                        return formatCurrency((parseFloat(costo) || 0) + nivelCost);
+                                                                    })()}
+                                                                </span>
+                                                            </div>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">Seleccionar</span>
+                                                        )}
+                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[350px] p-0" align="start" side="bottom">
+                                                    <Command>
+                                                        <CommandInput placeholder="Buscar nivel/categoria..." />
+                                                        <CommandList>
+                                                            <CommandEmpty>No se encontraron niveles.</CommandEmpty>
+                                                            <CommandGroup>
+                                                                {niveles.map((item) => {
                                                                     const match = View_Modalidades_detalle.find(d =>
-                                                                        d.id_nivel === Number(memberConfigs[memberId].selectedNivelId) &&
-                                                                        d.id_categoria === Number(memberConfigs[memberId].selectedCategoryId)
+                                                                        d.id_nivel === item.id_nivel &&
+                                                                        d.id_categoria === item.id_categoria
                                                                     );
-                                                                    if (!match) return "Seleccionado";
-                                                                    return `${match.titulo} (Edad: ${match.edad_ini}-${match.edad_fin})`;
-                                                                })()}
-                                                            </span>
-                                                            <span className="text-teal-600 font-semibold shrink-0">
-                                                                {(() => {
-                                                                    const n = niveles.find(l =>
-                                                                        String(l.id_nivel) === memberConfigs[memberId].selectedNivelId &&
-                                                                        String(l.id_categoria) === memberConfigs[memberId].selectedCategoryId
-                                                                    );
-                                                                    const nivelCost = typeof n?.costo === 'string' ? parseFloat(n.costo) : (n?.costo || 0)
-                                                                    return formatCurrency((parseFloat(costo) || 0) + nivelCost);
-                                                                })()}
-                                                            </span>
-                                                        </div>
-                                                    ) : (
-                                                        <span className="text-muted-foreground">Seleccionar</span>
-                                                    )}
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[350px] p-0" align="start" side="bottom">
-                                                <Command>
-                                                    <CommandInput placeholder="Buscar nivel/categoria..." />
-                                                    <CommandList>
-                                                        <CommandEmpty>No se encontraron niveles.</CommandEmpty>
-                                                        <CommandGroup>
-                                                            {niveles.map((item) => {
-                                                                const match = View_Modalidades_detalle.find(d =>
-                                                                    d.id_nivel === item.id_nivel &&
-                                                                    d.id_categoria === item.id_categoria
-                                                                );
-                                                                const fullDesc = match ? `${match.titulo} (Edad: ${match.edad_ini}-${match.edad_fin})` : `Nivel ${item.id_nivel} - Cat ${item.id_categoria}`;
-                                                                const itemKey = `${item.id_nivel}-${item.id_categoria}`;
-                                                                const isSelected = memberConfigs[memberId]?.selectedNivelId === String(item.id_nivel) &&
-                                                                    memberConfigs[memberId]?.selectedCategoryId === String(item.id_categoria);
+                                                                    const fullDesc = match ? `${match.titulo} (Edad: ${match.edad_ini}-${match.edad_fin})` : `Nivel ${item.id_nivel} - Cat ${item.id_categoria}`;
+                                                                    const itemKey = `${item.id_nivel}-${item.id_categoria}`;
+                                                                    const isSelected = memberConfigs[memberId]?.selectedNivelId === String(item.id_nivel) &&
+                                                                        memberConfigs[memberId]?.selectedCategoryId === String(item.id_categoria);
 
-                                                                return (
+                                                                    return (
+                                                                        <CommandItem
+                                                                            key={itemKey}
+                                                                            value={`${fullDesc} | ${itemKey}`}
+                                                                            onSelect={() => handleNivelSelect(memberId, String(item.id_nivel), String(item.id_categoria))}
+                                                                        >
+                                                                            <Check
+                                                                                className={cn(
+                                                                                    "mr-2 h-4 w-4",
+                                                                                    isSelected ? "opacity-100" : "opacity-0"
+                                                                                )}
+                                                                            />
+                                                                            <div className="flex justify-between w-full gap-2">
+                                                                                <span className="truncate">{fullDesc}</span>
+                                                                                <span className="text-muted-foreground shrink-0">{formatCurrency(typeof item.costo === 'string' ? parseFloat(item.costo) : item.costo)}</span>
+                                                                            </div>
+                                                                        </CommandItem>
+                                                                    );
+                                                                })}
+                                                            </CommandGroup>
+                                                        </CommandList>
+                                                    </Command>
+                                                </PopoverContent>
+                                            </Popover>
+
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        role="combobox"
+                                                        className="hidden md:flex min-h-8 h-auto w-full justify-between font-normal"
+                                                        disabled={!isSelected || adicionales.length === 0 || loadingAdicionales}
+                                                    >
+                                                        {adicionales.length === 0 ? (
+                                                            <span className="text-muted-foreground italic">Sin adicionales</span>
+                                                        ) : memberConfigs[memberId]?.additionalItemIds?.length > 0 ? (
+                                                            <span className="truncate text-xs">
+                                                                {memberConfigs[memberId].additionalItemIds.length > 1
+                                                                    ? `${memberConfigs[memberId].additionalItemIds.length} seleccionados`
+                                                                    : adicionales.find(i => String(i.id_aparato) === memberConfigs[memberId].additionalItemIds[0])?.Descripcion
+                                                                }
+                                                            </span>
+                                                        ) : (
+                                                            <span className="text-muted-foreground">Elegir</span>
+                                                        )}
+                                                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[300px] p-0" align="start" side="bottom">
+                                                    <Command>
+                                                        <CommandInput placeholder="Buscar aparato..." />
+                                                        <CommandList>
+                                                            <CommandEmpty>No se encontraron aparatos.</CommandEmpty>
+                                                            <CommandGroup>
+                                                                {adicionales.map((item) => (
                                                                     <CommandItem
-                                                                        key={itemKey}
-                                                                        value={fullDesc}
-                                                                        onSelect={() => handleNivelSelect(memberId, String(item.id_nivel), String(item.id_categoria))}
+                                                                        key={String(item.id_aparato)}
+                                                                        value={item.Descripcion}
+                                                                        onSelect={() => handleAdditionalItemToggle(memberId, String(item.id_aparato))}
                                                                     >
                                                                         <Check
                                                                             className={cn(
                                                                                 "mr-2 h-4 w-4",
-                                                                                isSelected ? "opacity-100" : "opacity-0"
+                                                                                memberConfigs[memberId]?.additionalItemIds?.includes(String(item.id_aparato))
+                                                                                    ? "opacity-100"
+                                                                                    : "opacity-0"
                                                                             )}
                                                                         />
-                                                                        <div className="flex justify-between w-full gap-2">
-                                                                            <span className="truncate">{fullDesc}</span>
-                                                                            <span className="text-muted-foreground shrink-0">{formatCurrency(typeof item.costo === 'string' ? parseFloat(item.costo) : item.costo)}</span>
+                                                                        <div className="flex justify-between w-full">
+                                                                            <span>{item.Descripcion}</span>
+                                                                            <span className="text-muted-foreground">{formatCurrency(item.Costo)}</span>
                                                                         </div>
                                                                     </CommandItem>
-                                                                );
-                                                            })}
-                                                        </CommandGroup>
-                                                    </CommandList>
-                                                </Command>
-                                            </PopoverContent>
-                                        </Popover>
+                                                                ))}
+                                                            </CommandGroup>
+                                                        </CommandList>
+                                                    </Command>
+                                                </PopoverContent>
+                                            </Popover>
 
-                                        <Popover>
-                                            <PopoverTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    role="combobox"
-                                                    className="hidden md:flex min-h-8 h-auto w-full justify-between font-normal"
-                                                    disabled={!isSelected || adicionales.length === 0 || loadingAdicionales}
-                                                >
-                                                    {adicionales.length === 0 ? (
-                                                        <span className="text-muted-foreground italic">Sin adicionales</span>
-                                                    ) : memberConfigs[memberId]?.additionalItemIds?.length > 0 ? (
-                                                        <span className="truncate text-xs">
-                                                            {memberConfigs[memberId].additionalItemIds.length > 1
-                                                                ? `${memberConfigs[memberId].additionalItemIds.length} seleccionados`
-                                                                : adicionales.find(i => String(i.id_aparato) === memberConfigs[memberId].additionalItemIds[0])?.Descripcion
-                                                            }
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-muted-foreground">Elegir</span>
-                                                    )}
-                                                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                                </Button>
-                                            </PopoverTrigger>
-                                            <PopoverContent className="w-[300px] p-0" align="start" side="bottom">
-                                                <Command>
-                                                    <CommandInput placeholder="Buscar aparato..." />
-                                                    <CommandList>
-                                                        <CommandEmpty>No se encontraron aparatos.</CommandEmpty>
-                                                        <CommandGroup>
-                                                            {adicionales.map((item) => (
-                                                                <CommandItem
-                                                                    key={String(item.id_aparato)}
-                                                                    value={item.Descripcion}
-                                                                    onSelect={() => handleAdditionalItemToggle(memberId, String(item.id_aparato))}
-                                                                >
-                                                                    <Check
-                                                                        className={cn(
-                                                                            "mr-2 h-4 w-4",
-                                                                            memberConfigs[memberId]?.additionalItemIds?.includes(String(item.id_aparato))
-                                                                                ? "opacity-100"
-                                                                                : "opacity-0"
-                                                                        )}
-                                                                    />
-                                                                    <div className="flex justify-between w-full">
-                                                                        <span>{item.Descripcion}</span>
-                                                                        <span className="text-muted-foreground">{formatCurrency(item.Costo)}</span>
-                                                                    </div>
-                                                                </CommandItem>
-                                                            ))}
-                                                        </CommandGroup>
-                                                    </CommandList>
-                                                </Command>
-                                            </PopoverContent>
-                                        </Popover>
-
-                                        <div className="flex items-center gap-2">
-                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                <Checkbox
-                                                    id={`full-discount-${memberId}`}
-                                                    checked={config?.isFullDiscount || false}
-                                                    onCheckedChange={(checked) => handleFullDiscountToggle(memberId, !!checked)}
-                                                    disabled={!isSelected}
+                                            <div className="flex items-center gap-2">
+                                                <div className="flex items-center gap-1.5 shrink-0">
+                                                    <Checkbox
+                                                        id={`full-discount-${memberId}`}
+                                                        checked={config?.isFullDiscount || false}
+                                                        onCheckedChange={(checked) => handleFullDiscountToggle(memberId, !!checked)}
+                                                        disabled={!isSelected}
+                                                    />
+                                                    <label htmlFor={`full-discount-${memberId}`} className="text-[10px] leading-none font-medium text-muted-foreground cursor-pointer">
+                                                        Exento
+                                                    </label>
+                                                </div>
+                                                <Input
+                                                    type="number"
+                                                    placeholder="0.00"
+                                                    className="h-8 text-xs px-2 w-full"
+                                                    value={config?.discountAmount || ""}
+                                                    onChange={(e) => handleDiscountAmountChange(memberId, e.target.value)}
+                                                    disabled={!isSelected || config?.isFullDiscount}
                                                 />
-                                                <label htmlFor={`full-discount-${memberId}`} className="text-[10px] leading-none font-medium text-muted-foreground cursor-pointer">
-                                                    Exento
-                                                </label>
                                             </div>
-                                            <Input
-                                                type="number"
-                                                placeholder="0.00"
-                                                className="h-8 text-xs px-2 w-full"
-                                                value={config?.discountAmount || ""}
-                                                onChange={(e) => handleDiscountAmountChange(memberId, e.target.value)}
-                                                disabled={!isSelected || config?.isFullDiscount}
-                                            />
                                         </div>
-                                    </div>
-                                )
-                            })}
+                                    )
+                                })
+                            )}
                         </div>
                     </div>
                 </ScrollArea>
