@@ -3,184 +3,180 @@ import { ArrowUpDown, TicketPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
-import { RegisterEventDialog } from "./register-event-dialog"
 import { EventosConfiguradosItem } from "@/lib/evento-service"
 
-export const getColumns = (onSuccess?: () => void): ColumnDef<EventosConfiguradosItem>[] => [
-    {
-        id: "inscribirse",
-        header: "Inscribirse",
-        cell: ({ row }) => {
-            return (
-                <div className="flex items-center pl-2">
-                    <RegisterEventDialog
-                        eventoId={String(row.original.id)}
-                        eventoName={row.original.Nombre}
-                        modalidad={row.original.Modalidad}
-                        costo={row.original.Costo_base}
-                        fechaFinInscripcion={row.original.F_fin_incripciones}
-                        horaLimiteInscripcion={row.original.Hora_limite_inscripciones}
-                        limiteParticipantes={row.original.Limite_participantes}
-                        onSuccess={onSuccess}
-                    >
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-teal-100 text-teal-700">
+export const getColumns = (
+    onSuccess: () => void,
+    onRegister: (evento: EventosConfiguradosItem) => void
+): ColumnDef<EventosConfiguradosItem>[] => [
+        {
+            id: "inscribirse",
+            header: "Inscribirse",
+            cell: ({ row }) => {
+                return (
+                    <div className="flex items-center pl-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 hover:bg-teal-100 text-teal-700"
+                            onClick={() => onRegister(row.original)}
+                        >
                             <TicketPlus className="h-4 w-4" />
                             <span className="sr-only">Inscribirse</span>
                         </Button>
-                    </RegisterEventDialog>
-                </div>
-            )
+                    </div>
+                )
+            },
         },
-    },
-    {
-        accessorKey: "id",
-        header: ({ column }) => {
-            return (
+        {
+            accessorKey: "id",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        No. Evento
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+        },
+        {
+            accessorKey: "Nombre",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Nombre
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+        },
+        {
+            accessorKey: "Organizador",
+            header: ({ column }) => (
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
-                    No. Evento
+                    Organizador
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
-            )
+            ),
         },
-    },
-    {
-        accessorKey: "Nombre",
-        header: ({ column }) => {
-            return (
+        {
+            accessorKey: "Asociacion",
+            header: ({ column }) => (
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
-                    Nombre
+                    Asociación
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
-            )
+            ),
         },
-    },
-    {
-        accessorKey: "Organizador",
-        header: ({ column }) => (
-            <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            >
-                Organizador
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-        ),
-    },
-    {
-        accessorKey: "Asociacion",
-        header: ({ column }) => (
-            <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            >
-                Asociación
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-        ),
-    },
-    {
-        accessorKey: "Lugar",
-        header: ({ column }) => {
-            return (
+        {
+            accessorKey: "Lugar",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Lugar
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+        },
+        {
+            accessorKey: "Sede",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Sede
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+        },
+        {
+            accessorKey: "Region",
+            header: ({ column }) => (
                 <Button
                     variant="ghost"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
-                    Lugar
+                    Región
                     <ArrowUpDown className="ml-2 h-4 w-4" />
                 </Button>
-            )
+            ),
         },
-    },
-    {
-        accessorKey: "Sede",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Sede
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
+        {
+            accessorKey: "F_ini_evento",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Fecha de evento
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                const dateStr = row.getValue("F_ini_evento") as string
+                if (!dateStr) return <div>-</div>
+                const date = new Date(dateStr)
+                return <div>{format(date, "P", { locale: es })}</div>
+            }
         },
-    },
-    {
-        accessorKey: "Region",
-        header: ({ column }) => (
-            <Button
-                variant="ghost"
-                onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-            >
-                Región
-                <ArrowUpDown className="ml-2 h-4 w-4" />
-            </Button>
-        ),
-    },
-    {
-        accessorKey: "F_ini_evento",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Fecha de evento
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
+        {
+            accessorKey: "Restriccion",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Restricción
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                return <div className="pl-4">{row.getValue("Restriccion")}</div>
+            }
         },
-        cell: ({ row }) => {
-            const dateStr = row.getValue("F_ini_evento") as string
-            if (!dateStr) return <div>-</div>
-            const date = new Date(dateStr)
-            return <div>{format(date, "P", { locale: es })}</div>
-        }
-    },
-    {
-        accessorKey: "Restriccion",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Restricción
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
+        {
+            accessorKey: "Status",
+            header: ({ column }) => {
+                return (
+                    <Button
+                        variant="ghost"
+                        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+                    >
+                        Estatus
+                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                    </Button>
+                )
+            },
+            cell: ({ row }) => {
+                const status = row.getValue("Status") as string
+                return (
+                    <div className="font-medium text-gray-600">
+                        {status}
+                    </div>
+                )
+            },
         },
-        cell: ({ row }) => {
-            return <div className="pl-4">{row.getValue("Restriccion")}</div>
-        }
-    },
-    {
-        accessorKey: "Status",
-        header: ({ column }) => {
-            return (
-                <Button
-                    variant="ghost"
-                    onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-                >
-                    Estatus
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
-                </Button>
-            )
-        },
-        cell: ({ row }) => {
-            const status = row.getValue("Status") as string
-            return (
-                <div className="font-medium text-gray-600">
-                    {status}
-                </div>
-            )
-        },
-    },
-]
+    ]

@@ -30,6 +30,8 @@ interface DataTableProps<TData, TValue> {
     containerClassName?: string
     headerClassName?: string
     tableHeight?: string
+    rowSelection?: any
+    onRowSelectionChange?: any
 }
 
 export function DataTable<TData, TValue>({
@@ -38,7 +40,9 @@ export function DataTable<TData, TValue>({
     noResultsMessage = "No results.",
     containerClassName,
     headerClassName = "bg-white dark:bg-teal-950",
-    tableHeight = "h-[41.75rem]",
+    tableHeight = "h-[38.75rem]",
+    rowSelection = {},
+    onRowSelectionChange,
 }: DataTableProps<TData, TValue>) {
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
@@ -53,9 +57,11 @@ export function DataTable<TData, TValue>({
         getFilteredRowModel: getFilteredRowModel(),
         onSortingChange: setSorting,
         getSortedRowModel: getSortedRowModel(),
+        onRowSelectionChange: onRowSelectionChange,
         state: {
             columnFilters,
             sorting,
+            rowSelection,
         },
     })
 

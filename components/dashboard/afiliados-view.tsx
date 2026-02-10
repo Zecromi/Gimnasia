@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState, useMemo, useCallback } from "react"
-import { Search, Plus } from "lucide-react"
+import { useEffect, useState, useMemo, useCallback, Suspense, lazy } from "react"
+import { Search, Plus, CreditCard } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -23,15 +23,15 @@ import {
 
 import { getColumns } from "./afiliados-columns"
 import { DataTable } from "./data-table"
-import { AfiliadosDialog } from "./afiliados-dialog"
-import { AffiliateMembershipDialog } from "./afiliado-membership-dialog"
+const AfiliadosDialog = lazy(() => import("./afiliados-dialog").then(module => ({ default: module.AfiliadosDialog })))
+const AffiliateMembershipDialog = lazy(() => import("./afiliado-membership-dialog").then(module => ({ default: module.AffiliateMembershipDialog })))
+const BulkMembershipDialog = lazy(() => import("./bulk-membership-dialog").then(module => ({ default: module.BulkMembershipDialog })))
 import { getClubs, ViewClubGral } from "@/lib/club-service"
 import { getAfiliadosCatalogs, Afiliado, AfiliadosCatalogsResponse } from "@/lib/afiliados-service"
 
 import { useCatalogStore } from "@/lib/store/catalog-store"
 import { useAuthStore } from "@/lib/store/auth-store"
 
-import Cookies from "js-cookie"
 
 export function AfiliadosView() {
     const [isLoading, setIsLoading] = useState(true)
@@ -44,6 +44,7 @@ export function AfiliadosView() {
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [isPaymentOpen, setIsPaymentOpen] = useState(false)
     const [payingAfiliado, setPayingAfiliado] = useState<Afiliado | undefined>(undefined)
+    const [isBulkPaymentOpen, setIsBulkPaymentOpen] = useState(false)
 
     const { Escolaridad, Estados, Niveles_tecnicos, fetchCatalogs } = useCatalogStore()
     const authData = useAuthStore((state) => state.authData)
@@ -54,6 +55,7 @@ export function AfiliadosView() {
     const [filterEstatus, setFilterEstatus] = useState("todos")
     const [filterNoAfiliado, setFilterNoAfiliado] = useState("")
     const [filterCurp, setFilterCurp] = useState("")
+    const [rowSelection, setRowSelection] = useState({})
 
     useEffect(() => {
         // If not admin, force filterClub to user's club ID
@@ -82,18 +84,6 @@ export function AfiliadosView() {
 
                 console.log("AuthData:", authData)
 
-                // Permission Filter: If not admin (type 1), only show members of their own club
-                // eslint-disable-next-line eqeqeq
-                /*
-                if (authData && authData.tipo_registro != 1) {
-                    console.log(`Filtering for Club ID: ${authData.id}`)
-                    // eslint-disable-next-line eqeqeq
-                    allAfiliados = allAfiliados.filter(a => a.id_Club == authData.id)
-                    console.log("Filtered count (Permission):", allAfiliados.length)
-                } else {
-                    console.log("Showing all (Admin or No Auth)")
-                }
-                */
                 console.log("Showing all (Permission Filter Disabled for Debug)")
 
                 setAfiliados(allAfiliados)
@@ -121,6 +111,10 @@ export function AfiliadosView() {
         setPayingAfiliado(afiliado)
         setIsPaymentOpen(true)
     }, [])
+
+    const selectedAfiliados = useMemo(() => {
+        return Object.keys(rowSelection).map(index => filteredAfiliados[parseInt(index)]).filter(Boolean)
+    }, [rowSelection, filteredAfiliados])
 
     const columns = useMemo(() => getColumns(fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos, authData), [fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos, authData])
 
@@ -161,7 +155,7 @@ export function AfiliadosView() {
 
     if (isLoading) {
         return (
-            <div className="space-y-6">
+            <div className="space-y-2">
                 <Card className="rounded-2xl border-none shadow-none">
                     <CardHeader>
                         <CardTitle>
@@ -198,7 +192,7 @@ export function AfiliadosView() {
 
     return (
         <TooltipProvider>
-            <div className="space-y-6">
+            <div className="space-y-2">
                 <Card className="rounded-2xl border-none shadow-none bg-gray-50 dark:bg-zinc-900">
                     <CardHeader className="pt-2 pb-0">
                         <CardTitle>
@@ -289,8 +283,20 @@ export function AfiliadosView() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="col-span-1 flex items-center justify-center border-l pl-4">
-                                <AfiliadosDialog onSuccess={fetchData} clubs={clubs} catalogs={afiliadosCatalogs || undefined} />
+                            <div className="col-span-1 flex flex-col items-center justify-center border-l pl-4 gap-2">
+                                <Suspense fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
+                                    <AfiliadosDialog onSuccess={fetchData} clubs={clubs} catalogs={afiliadosCatalogs || undefined} />
+                                </Suspense>
+                                {selectedAfiliados.length > 0 && (
+                                    <Button
+                                        variant="outline"
+                                        size="icon"
+                                        className="h-10 w-10 rounded-full border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-600 shadow-sm"
+                                        onClick={() => setIsBulkPaymentOpen(true)}
+                                    >
+                                        <CreditCard className="h-5 w-5" />
+                                    </Button>
+                                )}
                             </div>
 
                         </div>
@@ -301,31 +307,52 @@ export function AfiliadosView() {
                     data={filteredAfiliados}
                     headerClassName="bg-white dark:bg-sky-950"
                     tableHeight="h-[700px]"
+                    rowSelection={rowSelection}
+                    onRowSelectionChange={setRowSelection}
                 />
 
-                <AfiliadosDialog
-                    open={isEditOpen}
-                    onOpenChange={setIsEditOpen}
-                    afiliado={editingAfiliado}
-                    trigger={<span className="sr-only"></span>}
-                    clubs={clubs}
-                    catalogs={afiliadosCatalogs || undefined}
-                    onSuccess={() => {
-                        setIsEditOpen(false)
-                        fetchData()
-                    }}
-                />
-
-                {payingAfiliado && (
-                    <AffiliateMembershipDialog
-                        open={isPaymentOpen}
-                        onOpenChange={setIsPaymentOpen}
-                        afiliado={payingAfiliado}
+                <Suspense fallback={null}>
+                    <AfiliadosDialog
+                        open={isEditOpen}
+                        onOpenChange={setIsEditOpen}
+                        afiliado={editingAfiliado}
+                        trigger={<span className="sr-only"></span>}
+                        clubs={clubs}
+                        catalogs={afiliadosCatalogs || undefined}
                         onSuccess={() => {
-                            setIsPaymentOpen(false)
+                            setIsEditOpen(false)
                             fetchData()
                         }}
                     />
+                </Suspense>
+
+                {payingAfiliado && (
+                    <Suspense fallback={null}>
+                        <AffiliateMembershipDialog
+                            open={isPaymentOpen}
+                            onOpenChange={setIsPaymentOpen}
+                            afiliado={payingAfiliado}
+                            onSuccess={() => {
+                                setIsPaymentOpen(false)
+                                fetchData()
+                            }}
+                        />
+                    </Suspense>
+                )}
+
+                {selectedAfiliados.length > 0 && (
+                    <Suspense fallback={null}>
+                        <BulkMembershipDialog
+                            open={isBulkPaymentOpen}
+                            onOpenChange={setIsBulkPaymentOpen}
+                            selectedAfiliados={selectedAfiliados}
+                            onSuccess={() => {
+                                setIsBulkPaymentOpen(false)
+                                setRowSelection({})
+                                fetchData()
+                            }}
+                        />
+                    </Suspense>
                 )}
             </div>
         </TooltipProvider>

@@ -83,7 +83,9 @@ interface MemberConfig {
 }
 
 interface RegisterEventDialogProps {
-    children: React.ReactNode
+    children?: React.ReactNode
+    open?: boolean
+    onOpenChange?: (open: boolean) => void
     eventoId: string
     eventoName?: string
     modalidad: string
@@ -97,6 +99,8 @@ interface RegisterEventDialogProps {
 
 export function RegisterEventDialog({
     children,
+    open: externalOpen,
+    onOpenChange: setExternalOpen,
     eventoId,
     eventoName,
     modalidad,
@@ -113,7 +117,10 @@ export function RegisterEventDialog({
     const { Catalogo_formas_pago, Niveles_tecnicos, fetchCatalogs: fetchPayCatalogs } = useCatalogPayStore()
     const { View_Modalidades_detalle, fetchCatalogs: fetchGlobalCatalogs } = useCatalogStore()
     const { afiliados, fetchAfiliadosEventos } = useAfiliadosEventosStore()
-    const [open, setOpen] = useState(false)
+    const [internalOpen, setInternalOpen] = useState(false)
+
+    const open = externalOpen !== undefined ? externalOpen : internalOpen
+    const setOpen = setExternalOpen !== undefined ? setExternalOpen : setInternalOpen
     const [selectedMembers, setSelectedMembers] = useState<Set<string>>(new Set())
     const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<number | null>(null)
     const [memberConfigs, setMemberConfigs] = useState<Record<string, MemberConfig>>({})
@@ -835,7 +842,7 @@ export function RegisterEventDialog({
 
     const isMobile = useIsMobile()
 
-    const trigger = (
+    const trigger = children && (
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
@@ -915,9 +922,11 @@ export function RegisterEventDialog({
     if (isMobile) {
         return (
             <Drawer open={open} onOpenChange={setOpen}>
-                <DrawerTrigger asChild>
-                    {children}
-                </DrawerTrigger>
+                {children && (
+                    <DrawerTrigger asChild>
+                        {children}
+                    </DrawerTrigger>
+                )}
                 <DrawerContent className="h-[96vh] max-h-[96vh]">
                     <DrawerHeader>
                         <DrawerTitle className="text-xl">Inscripción: <span className="text-teal-600">{eventoName}</span></DrawerTitle>

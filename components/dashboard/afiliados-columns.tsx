@@ -12,8 +12,8 @@ import {
 import { Afiliado } from "@/lib/afiliados-service"
 
 import { ViewClubGral, CatalogoItem, Estado } from "@/lib/club-service"
-
 import { AuthData } from "@/lib/store/auth-store"
+import { Checkbox } from "@/components/ui/checkbox"
 
 export const getColumns = (
     onSuccess: () => void,
@@ -25,6 +25,32 @@ export const getColumns = (
     nivelesTecnicosList: { id: number; Descripcion: string }[] = [],
     authData: AuthData | null = null
 ): ColumnDef<Afiliado>[] => [
+        {
+            id: "select",
+            header: ({ table }) => (
+                <div className="px-4">
+                    <Checkbox
+                        checked={
+                            table.getIsAllPageRowsSelected() ||
+                            (table.getIsSomePageRowsSelected() && "indeterminate")
+                        }
+                        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
+                        aria-label="Select all"
+                    />
+                </div>
+            ),
+            cell: ({ row }) => (
+                <div className="px-4">
+                    <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(value) => row.toggleSelected(!!value)}
+                        aria-label="Select row"
+                    />
+                </div>
+            ),
+            enableSorting: false,
+            enableHiding: false,
+        },
         {
             id: "detalle",
             header: "Detalle",

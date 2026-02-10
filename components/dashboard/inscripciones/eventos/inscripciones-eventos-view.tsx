@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useState, useCallback, useEffect, useMemo } from "react"
+import { Suspense, useState, useCallback, useEffect, useMemo, lazy } from "react"
 import { Search, Calendar as CalendarIcon, Plus, BrushCleaning } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
@@ -18,6 +18,7 @@ import {
 
 import { getColumns } from "./inscripciones-columns"
 import { DataTable } from "@/components/dashboard/data-table"
+const RegisterEventDialog = lazy(() => import("./register-event-dialog").then(module => ({ default: module.RegisterEventDialog })))
 import { Calendar } from "@/components/ui/calendar"
 import {
     Popover,
@@ -66,7 +67,15 @@ export function InscripcionesEventosView() {
     const [filterRegion, setFilterRegion] = useState("todas")
     const [date, setDate] = useState<Date>()
 
-    const columns = useMemo(() => getColumns(fetchData), [fetchData])
+    const [isRegisterOpen, setIsRegisterOpen] = useState(false)
+    const [selectedEvento, setSelectedEvento] = useState<EventosConfiguradosItem | null>(null)
+
+    const handleRegister = useCallback((evento: EventosConfiguradosItem) => {
+        setSelectedEvento(evento)
+        setIsRegisterOpen(true)
+    }, [])
+
+    const columns = useMemo(() => getColumns(fetchData, handleRegister), [fetchData, handleRegister])
 
     const handleClearFilters = () => {
         setFilterId("")
@@ -298,11 +307,31 @@ export function InscripcionesEventosView() {
                 </div>
             ) : (
                 <DataTable
-                    columns={getColumns(fetchData)}
+                    columns={columns}
                     data={filteredEventos}
                     noResultsMessage="No existen registros de eventos"
                     headerClassName="bg-white dark:bg-teal-950"
                 />
+            )}
+
+            {selectedEvento && (
+                <Suspense fallback={null}>
+                    <RegisterEventDialog
+                        open={isRegisterOpen}
+                        onOpenChange={setIsRegisterOpen}
+                        eventoId={String(selectedEvento.id)}
+                        eventoName={selectedEvento.Nombre}
+                        modalidad={selectedEvento.Modalidad}
+                        costo={selectedEvento.Costo_base}
+                        fechaFinInscripcion={selectedEvento.F_fin_incripciones}
+                        horaLimiteInscripcion={selectedEvento.Hora_limite_inscripciones}
+                        limiteParticipantes={selectedEvento.Limite_participantes}
+                        onSuccess={() => {
+                            setIsRegisterOpen(false)
+                            fetchData()
+                        }}
+                    />
+                </Suspense>
             )}
         </div >
     )
