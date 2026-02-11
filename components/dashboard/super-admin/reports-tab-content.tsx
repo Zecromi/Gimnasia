@@ -63,6 +63,7 @@ export function ReportsTabContent() {
         nombre: "",
         status: "",
         forma_pago: "",
+        club: "",
         fecha_ini: "",
         fecha_fin: ""
     })
@@ -95,6 +96,7 @@ export function ReportsTabContent() {
                 if (affiliateFilters.nombre) params.nombre = affiliateFilters.nombre
                 if (affiliateFilters.status && affiliateFilters.status !== "todos") params.status = affiliateFilters.status
                 if (affiliateFilters.forma_pago && affiliateFilters.forma_pago !== "todos") params.forma_pago = affiliateFilters.forma_pago
+                if (affiliateFilters.club) params.club = affiliateFilters.club
                 if (affiliateFilters.fecha_ini) params.fecha_ini = affiliateFilters.fecha_ini
                 if (affiliateFilters.fecha_fin) params.fecha_fin = affiliateFilters.fecha_fin
 
@@ -397,6 +399,14 @@ export function ReportsTabContent() {
                                         value={affiliateFilters.nombre}
                                         onChange={(e) => handleFilterChange("nombre", e.target.value)}
                                         placeholder="Nombre del afiliado"
+                                    />
+                                </InputGroup>
+                                <InputGroup label="Club" htmlFor="club">
+                                    <Input
+                                        id="club"
+                                        value={affiliateFilters.club || ""}
+                                        onChange={(e) => handleFilterChange("club", e.target.value)}
+                                        placeholder="Nombre del club"
                                     />
                                 </InputGroup>
                                 <InputGroup label="Estatus">
