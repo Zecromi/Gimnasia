@@ -39,15 +39,20 @@ export const getColumns = (
                     />
                 </div>
             ),
-            cell: ({ row }) => (
-                <div className="px-4">
-                    <Checkbox
-                        checked={row.getIsSelected()}
-                        onCheckedChange={(value) => row.toggleSelected(!!value)}
-                        aria-label="Select row"
-                    />
-                </div>
-            ),
+            cell: ({ row }) => {
+                const isPaid = !!row.original.Afiliado
+                return (
+                    <div className="px-4">
+                        <Checkbox
+                            checked={row.getIsSelected()}
+                            onCheckedChange={(value) => row.toggleSelected(!!value)}
+                            disabled={isPaid}
+                            aria-label="Select row"
+                            className={isPaid ? "opacity-50 cursor-not-allowed" : ""}
+                        />
+                    </div>
+                )
+            },
             enableSorting: false,
             enableHiding: false,
         },

@@ -24,9 +24,8 @@ import {
 } from "@/components/ui/drawer"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Afiliado } from "@/lib/afiliados-service"
+import { ViewClubGral, updateClubMembership } from "@/lib/club-service"
 import { useIsMobile } from "@/hooks/use-mobile"
-import { updateClubMembership } from "@/lib/club-service"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { useCatalogPayStore } from "@/lib/store/catalog-pay-store"
@@ -46,19 +45,19 @@ import { Calendar } from "@/components/ui/calendar"
 import { CalendarIcon } from "lucide-react"
 import { cn } from "@/lib/utils"
 
-interface BulkMembershipDialogProps {
-    selectedAfiliados: Afiliado[]
+interface BulkClubMembershipDialogProps {
+    selectedClubs: ViewClubGral[]
     open: boolean
     onOpenChange: (open: boolean) => void
     onSuccess?: () => void
 }
 
-export function BulkMembershipDialog({
-    selectedAfiliados,
+export function BulkClubMembershipDialog({
+    selectedClubs,
     open,
     onOpenChange,
     onSuccess
-}: BulkMembershipDialogProps) {
+}: BulkClubMembershipDialogProps) {
     const [isSubmitting, setIsSubmitting] = React.useState(false)
     const [currentProgress, setCurrentProgress] = React.useState(0)
     const [costo, setCosto] = React.useState("")
@@ -89,32 +88,32 @@ export function BulkMembershipDialog({
             const selectedForma = Catalogo_formas_pago.find(f => f.Nombre === formaPago)
             const formattedDate = fechaPago ? format(fechaPago, "yyyy-MM-dd") : ""
 
-            for (let i = 0; i < selectedAfiliados.length; i++) {
-                const afiliado = selectedAfiliados[i]
+            for (let i = 0; i < selectedClubs.length; i++) {
+                const club = selectedClubs[i]
                 setCurrentProgress(i + 1)
                 try {
                     await updateClubMembership({
-                        tipo: "2", // 2 para Afiliado
-                        id: afiliado.id.toString(),
+                        tipo: "1", // 1 para Club
+                        id: club.id.toString(),
                         total: costo,
                         id_forma_pago: selectedForma?.id.toString() || "5",
-                        no_ticket: "", // Mandamos vacío como se solicitó si no existe el campo
+                        no_ticket: "",
                         lugar_pago: lugarPago || "",
                         fecha_pago: formattedDate,
                     })
                     successCount++
                 } catch (err) {
-                    console.error(`Error al procesar el pago para el afiliado ${afiliado.id}:`, err)
+                    console.error(`Error al procesar el pago para el club ${club.id}:`, err)
                     errorCount++
                 }
             }
 
             if (successCount > 0) {
-                toast.success(`Pago masivo procesado para ${successCount} afiliados.${errorCount > 0 ? ` (${errorCount} errores)` : ""}`)
+                toast.success(`Pago masivo procesado para ${successCount} clubes.${errorCount > 0 ? ` (${errorCount} errores)` : ""}`)
                 onOpenChange(false)
                 onSuccess?.()
             } else if (errorCount > 0) {
-                toast.error(`Error al procesar los pagos masivos para ${errorCount} afiliados`)
+                toast.error(`Error al procesar los pagos masivos para ${errorCount} clubes`)
             }
         } catch (error) {
             console.error("Error in bulk payment process:", error)
@@ -125,30 +124,30 @@ export function BulkMembershipDialog({
         }
     }
 
-    const title = "Pago de Afiliación Masivo"
-    const description = `Realizar el pago para ${selectedAfiliados.length} afiliados seleccionados.`
+    const title = "Pago de Membresía Masivo"
+    const description = `Realizar el pago para ${selectedClubs.length} clubes seleccionados.`
 
     const content = (
         <div className="space-y-4 py-4">
             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-100 dark:border-blue-800">
                 <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
-                    Afiliados seleccionados: <span className="text-lg font-bold">{selectedAfiliados.length}</span>
+                    Clubes seleccionados: <span className="text-lg font-bold">{selectedClubs.length}</span>
                 </p>
                 {isSubmitting && (
                     <p className="text-xs text-blue-700 dark:text-blue-300 mt-2 font-semibold">
-                        Guardando información {currentProgress} de {selectedAfiliados.length}...
+                        Guardando información {currentProgress} de {selectedClubs.length}...
                     </p>
                 )}
             </div>
 
             <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                    <Label htmlFor="bulk-cost" className="text-sm font-semibold">Costo por Afiliación *</Label>
+                    <Label htmlFor="bulk-cost-club" className="text-sm font-semibold">Costo por Membresía *</Label>
                     <Input
-                        id="bulk-cost"
+                        id="bulk-cost-club"
                         type="number"
                         step="0.01"
-                        placeholder="Ej. 500.00"
+                        placeholder="Ej. 1500.00"
                         value={costo}
                         onChange={(e) => setCosto(e.target.value)}
                         disabled={isSubmitting}
@@ -156,13 +155,13 @@ export function BulkMembershipDialog({
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="bulk-forma-pago" className="text-sm font-semibold">Forma de pago</Label>
+                    <Label htmlFor="bulk-forma-pago-club" className="text-sm font-semibold">Forma de pago</Label>
                     <Select
                         value={formaPago}
                         onValueChange={setFormaPago}
                         disabled={isSubmitting}
                     >
-                        <SelectTrigger id="bulk-forma-pago">
+                        <SelectTrigger id="bulk-forma-pago-club">
                             <SelectValue placeholder="Seleccione..." />
                         </SelectTrigger>
                         <SelectContent>
@@ -176,9 +175,9 @@ export function BulkMembershipDialog({
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="bulk-lugar-pago" className="text-sm font-semibold">Lugar de pago</Label>
+                    <Label htmlFor="bulk-lugar-pago-club" className="text-sm font-semibold">Lugar de pago</Label>
                     <Input
-                        id="bulk-lugar-pago"
+                        id="bulk-lugar-pago-club"
                         placeholder="Ej. Oficina"
                         value={lugarPago}
                         onChange={(e) => setLugarPago(e.target.value)}
@@ -238,7 +237,7 @@ export function BulkMembershipDialog({
                             onClick={handleConfirm}
                             disabled={isSubmitting}
                         >
-                            {isSubmitting ? `Procesando (${currentProgress}/${selectedAfiliados.length})...` : "Confirmar Pago Masivo"}
+                            {isSubmitting ? `Procesando (${currentProgress}/${selectedClubs.length})...` : "Confirmar Pago Masivo"}
                         </Button>
                         <DrawerClose asChild disabled={isSubmitting}>
                             <Button variant="outline" className="w-full">Cancelar</Button>
@@ -273,7 +272,7 @@ export function BulkMembershipDialog({
                         onClick={handleConfirm}
                         disabled={isSubmitting}
                     >
-                        {isSubmitting ? `Guardando ${currentProgress}/${selectedAfiliados.length}...` : "Realizar Pago"}
+                        {isSubmitting ? `Guardando ${currentProgress}/${selectedClubs.length}...` : "Realizar Pago"}
                     </Button>
                 </DialogFooter>
             </DialogContent>

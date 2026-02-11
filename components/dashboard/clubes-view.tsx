@@ -21,9 +21,12 @@ import { useClubStore } from "@/lib/store/club-store"
 import { DataTable } from "./data-table"
 
 const ClubDialog = lazy(() => import("./club-dialog").then(module => ({ default: module.ClubDialog })))
+const BulkClubMembershipDialog = dynamic(() => import("./bulk-club-membership-dialog").then(module => module.BulkClubMembershipDialog), { ssr: false })
 
 import { useAuthStore } from "@/lib/store/auth-store"
 import { getColumns } from "./clubes-columns"
+import dynamic from "next/dynamic"
+import { CreditCard } from "lucide-react"
 
 // ... inside component
 
@@ -31,6 +34,8 @@ export function ClubesView() {
     const [isLoading, setIsLoading] = useState(true)
     const { clubs, setClubs } = useClubStore()
     const authData = useAuthStore((state) => state.authData)
+    const [rowSelection, setRowSelection] = useState({})
+    const [isBulkPaymentOpen, setIsBulkPaymentOpen] = useState(false)
 
     // Use loose equality to handle potential string/number mismatches
     // eslint-disable-next-line eqeqeq
@@ -89,6 +94,10 @@ export function ClubesView() {
 
         return true
     })
+
+    const selectedClubs = useMemo(() => {
+        return Object.keys(rowSelection).map(index => filteredData[parseInt(index)]).filter(Boolean)
+    }, [rowSelection, filteredData])
 
     if (isLoading) {
         return (
@@ -191,11 +200,21 @@ export function ClubesView() {
                                 </div>
                             </div>
                         </div>
-                        <div className="col-span-1 flex items-center justify-center border-l pl-4">
+                        <div className="col-span-1 flex flex-col items-center justify-center border-l pl-4 gap-2">
                             {canEdit && (
                                 <Suspense fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
                                     <ClubDialog onClubCreated={fetchClubs} />
                                 </Suspense>
+                            )}
+                            {selectedClubs.length > 0 && (
+                                <Button
+                                    variant="outline"
+                                    size="icon"
+                                    className="h-10 w-10 rounded-full border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-600 shadow-sm"
+                                    onClick={() => setIsBulkPaymentOpen(true)}
+                                >
+                                    <CreditCard className="h-5 w-5" />
+                                </Button>
                             )}
                         </div>
                     </div>
@@ -206,7 +225,24 @@ export function ClubesView() {
                 data={filteredData}
                 headerClassName="bg-white dark:bg-sky-950"
                 tableHeight="h-[700px]"
+                rowSelection={rowSelection}
+                onRowSelectionChange={setRowSelection}
             />
+
+            {selectedClubs.length > 0 && (
+                <Suspense fallback={null}>
+                    <BulkClubMembershipDialog
+                        open={isBulkPaymentOpen}
+                        onOpenChange={setIsBulkPaymentOpen}
+                        selectedClubs={selectedClubs}
+                        onSuccess={() => {
+                            setIsBulkPaymentOpen(false)
+                            setRowSelection({})
+                            fetchClubs()
+                        }}
+                    />
+                </Suspense>
+            )}
         </div>
     )
 }
