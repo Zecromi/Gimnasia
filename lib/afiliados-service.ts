@@ -134,6 +134,7 @@ export interface AfiliadoPaymentReportParams {
     nombre?: string;
     status?: string;
     forma_pago?: string;
+    club?: string;
     fecha_ini?: string;
     fecha_fin?: string;
 }
