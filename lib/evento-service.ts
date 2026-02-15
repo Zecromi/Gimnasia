@@ -209,4 +209,34 @@ export const getNiveles = async (id: string): Promise<GetNivelesResponse> => {
     return response.data;
 };
 
+export interface InscripcionesReportParams {
+    id_evento?: string;
+    nombre_event?: string;
+    club?: string;
+    id_afiliado?: string;
+    nom_afiliado?: string;
+    status?: string;
+}
+
+export interface InscripcionReportItem {
+    id_evento: number;
+    evento: string;
+    club: string;
+    afiliado: string;
+    id_afiliado: number;
+    Costo_ind: number;
+    Total: number;
+    Status: string;
+}
+
+export interface GetInscripcionesReportResponse {
+    resultados: InscripcionReportItem[];
+}
+
+export const getInscripcionesReport = async (params: InscripcionesReportParams) => {
+    console.log("getInscripcionesReport params:", params);
+    const response = await api.get<GetInscripcionesReportResponse>("/GetRepo_inscripciones", { params });
+    return response.data;
+};
+
 

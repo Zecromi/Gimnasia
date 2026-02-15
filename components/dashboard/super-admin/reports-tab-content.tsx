@@ -7,6 +7,7 @@ import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { getClubMembershipReport, ClubMembershipItem, ClubMembershipReportParams } from "@/lib/club-service"
 import { getAffiliatePaymentReport, AfiliadoPaymentReportParams, AfiliadoPaymentItem } from "@/lib/afiliados-service"
+import { getInscripcionesReport, InscripcionReportItem, InscripcionesReportParams } from "@/lib/evento-service"
 import { Button } from "@/components/ui/button"
 import {
     Card,
@@ -43,7 +44,7 @@ import { toast } from "sonner"
 
 export function ReportsTabContent() {
     const [isLoading, setIsLoading] = React.useState(false)
-    const [reportType, setReportType] = React.useState<"club" | "affiliate">("club")
+    const [reportType, setReportType] = React.useState<"club" | "affiliate" | "inscripciones">("club")
 
     // Club Report State
     const [clubReportData, setClubReportData] = React.useState<ClubMembershipItem[]>([])
@@ -68,6 +69,17 @@ export function ReportsTabContent() {
         fecha_fin: ""
     })
 
+    // Inscripciones Report State
+    const [inscripcionesReportData, setInscripcionesReportData] = React.useState<InscripcionReportItem[]>([])
+    const [inscripcionesFilters, setInscripcionesFilters] = React.useState<InscripcionesReportParams>({
+        id_evento: "",
+        nombre_event: "",
+        club: "",
+        id_afiliado: "",
+        nom_afiliado: "",
+        status: ""
+    })
+
     // PDF Preview State
     const [showPdfPreview, setShowPdfPreview] = React.useState(false)
     const [pdfUrl, setPdfUrl] = React.useState<string | null>(null)
@@ -89,7 +101,7 @@ export function ReportsTabContent() {
                 const items = (data as any)?.resultados || (data as any)?.View_Club_gral || (Array.isArray(data) ? data : [])
                 setClubReportData(items)
                 if (items.length === 0) toast.info("No se encontraron resultados.")
-            } else {
+            } else if (reportType === "affiliate") {
                 // Construct params dynamically to avoid sending empty strings which might break backend filtering
                 const params: any = {}
                 if (affiliateFilters.id_afilido) params.id_afilido = affiliateFilters.id_afilido
@@ -102,6 +114,18 @@ export function ReportsTabContent() {
 
                 const data = await getAffiliatePaymentReport(params)
                 setAffiliateReportData(data.resultados || [])
+                if (!data.resultados || data.resultados.length === 0) toast.info("No se encontraron resultados.")
+            } else if (reportType === "inscripciones") {
+                const params: any = {}
+                if (inscripcionesFilters.id_evento) params.id_evento = inscripcionesFilters.id_evento
+                if (inscripcionesFilters.nombre_event) params.nombre_event = inscripcionesFilters.nombre_event
+                if (inscripcionesFilters.club) params.club = inscripcionesFilters.club
+                if (inscripcionesFilters.id_afiliado) params.id_afiliado = inscripcionesFilters.id_afiliado
+                if (inscripcionesFilters.nom_afiliado) params.nom_afiliado = inscripcionesFilters.nom_afiliado
+                if (inscripcionesFilters.status && inscripcionesFilters.status !== "todos") params.status = inscripcionesFilters.status
+
+                const data = await getInscripcionesReport(params)
+                setInscripcionesReportData(data.resultados || [])
                 if (!data.resultados || data.resultados.length === 0) toast.info("No se encontraron resultados.")
             }
         } catch (error: any) {
@@ -156,7 +180,7 @@ export function ReportsTabContent() {
     }
 
     const handleDownload = () => {
-        const data = reportType === "club" ? clubReportData : affiliateReportData
+        const data = reportType === "club" ? clubReportData : reportType === "affiliate" ? affiliateReportData : inscripcionesReportData
 
         if (data.length === 0) {
             toast.warning("No hay datos para exportar")
@@ -182,7 +206,7 @@ export function ReportsTabContent() {
                 "Lugar Pago": "",
                 "Fecha Pago": ""
             })
-        } else {
+        } else if (reportType === "affiliate") {
             const affiliateData = data as AfiliadoPaymentItem[]
             dataToExport = affiliateData.map(formatAffiliateData)
             const total = affiliateData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0)
@@ -195,13 +219,36 @@ export function ReportsTabContent() {
                 "Forma Pago": "",
                 "Estatus": ""
             })
+        } else if (reportType === "inscripciones") {
+            const inscripcionesData = data as InscripcionReportItem[]
+            dataToExport = inscripcionesData.map(item => ({
+                "ID Evento": item.id_evento,
+                "Evento": item.evento,
+                "Club": item.club,
+                "ID Afiliado": item.id_afiliado,
+                "Afiliado": item.afiliado,
+                "Costo Individual": item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00",
+                "Total": item.Total ? `$${Number(item.Total).toFixed(2)}` : "$0.00",
+                "Estatus": item.Status
+            }))
+            const totalCosto = inscripcionesData.reduce((sum, item) => sum + (Number(item.Costo_ind) || 0), 0)
+            dataToExport.push({
+                "ID Evento": "",
+                "Evento": "",
+                "Club": "",
+                "ID Afiliado": "",
+                "Afiliado": "Total General",
+                "Costo Individual": `$${totalCosto.toFixed(2)}`,
+                "Total": "",
+                "Estatus": ""
+            })
         }
 
         const worksheet = utils.json_to_sheet(dataToExport)
         const workbook = utils.book_new()
         utils.book_append_sheet(workbook, worksheet, "Reporte")
 
-        const fileName = reportType === "club" ? "reporte_clubes_membresia.xlsx" : "reporte_pagos_afiliados.xlsx"
+        const fileName = reportType === "club" ? "reporte_clubes_membresia.xlsx" : reportType === "affiliate" ? "reporte_pagos_afiliados.xlsx" : "reporte_inscripciones.xlsx"
 
         const wbout = write(workbook, { bookType: 'xlsx', type: 'array' })
         const blob = new Blob([wbout], { type: 'application/octet-stream' })
@@ -215,14 +262,14 @@ export function ReportsTabContent() {
 
     const generatePdf = () => {
         const doc = new jsPDF()
-        const data = reportType === "club" ? clubReportData : affiliateReportData
+        const data = reportType === "club" ? clubReportData : reportType === "affiliate" ? affiliateReportData : inscripcionesReportData
 
         if (data.length === 0) {
             toast.warning("No hay datos para generar el PDF")
             return null
         }
 
-        const title = reportType === "club" ? "Reporte de Membresías de Clubes" : "Reporte de Pagos de Afiliados"
+        const title = reportType === "club" ? "Reporte de Membresías de Clubes" : reportType === "affiliate" ? "Reporte de Pagos de Afiliados" : "Reporte de Inscripciones"
         const formattedDate = new Date().toLocaleDateString("es-MX", { day: '2-digit', month: '2-digit', year: 'numeric' }).replace(/\//g, '-')
         const fileName = `${title}-${formattedDate}`
 
@@ -260,7 +307,7 @@ export function ReportsTabContent() {
                 styles: { fontSize: 8 },
                 headStyles: { fillColor: [22, 163, 74] } // Green color
             })
-        } else {
+        } else if (reportType === "affiliate") {
             const affiliateData = data as AfiliadoPaymentItem[]
             const tableData = affiliateData.map(item => {
                 const f = formatAffiliateData(item)
@@ -286,6 +333,31 @@ export function ReportsTabContent() {
                 styles: { fontSize: 8 },
                 headStyles: { fillColor: [22, 163, 74] }
             })
+        } else if (reportType === "inscripciones") {
+            const inscripcionesData = data as InscripcionReportItem[]
+            const tableData = inscripcionesData.map(item => ([
+                String(item.id_evento || ""),
+                String(item.evento || ""),
+                String(item.club || ""),
+                String(item.id_afiliado || ""),
+                String(item.afiliado || ""),
+                String(item.Status || ""),
+                String(item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00")
+
+            ]))
+
+            // Calculate totals
+            const total = inscripcionesData.reduce((sum, item) => sum + (Number(item.Total) || 0), 0)
+            tableData.push(["", "", "", "", "Total General:", "", `$${total.toFixed(2)}`])
+
+            autoTable(doc, {
+                startY: 25,
+                head: [["ID Evento", "Evento", "Club", "ID Afiliado", "Afiliado", "Estatus", "Costo"]],
+                body: tableData,
+                theme: 'grid',
+                styles: { fontSize: 8 },
+                headStyles: { fillColor: [22, 163, 74] }
+            })
         }
 
         return { url: String(doc.output('bloburl')), fileName }
@@ -303,8 +375,10 @@ export function ReportsTabContent() {
     const handleFilterChange = (key: string, value: string) => {
         if (reportType === "club") {
             setClubFilters(prev => ({ ...prev, [key]: value }))
-        } else {
+        } else if (reportType === "affiliate") {
             setAffiliateFilters(prev => ({ ...prev, [key]: value }))
+        } else if (reportType === "inscripciones") {
+            setInscripcionesFilters(prev => ({ ...prev, [key]: value }))
         }
     }
 
@@ -320,22 +394,23 @@ export function ReportsTabContent() {
                 <div className="flex justify-between items-center bg-muted/20 p-4 rounded-md border">
                     <div className="flex items-center gap-4">
                         <label className="text-sm font-medium">Tipo de Reporte:</label>
-                        <Select value={reportType} onValueChange={(val: "club" | "affiliate") => setReportType(val)}>
+                        <Select value={reportType} onValueChange={(val: "club" | "affiliate" | "inscripciones") => setReportType(val)}>
                             <SelectTrigger className="w-[280px]">
                                 <SelectValue placeholder="Seleccione reporte" />
                             </SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="club">Membresías de Clubes</SelectItem>
                                 <SelectItem value="affiliate">Pagos de Afiliados</SelectItem>
+                                <SelectItem value="inscripciones">Inscripciones</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
                     <div className="flex gap-2">
-                        <Button onClick={handlePreviewPdf} disabled={(reportType === "club" ? clubReportData : affiliateReportData).length === 0} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                        <Button onClick={handlePreviewPdf} disabled={(reportType === "club" ? clubReportData : reportType === "affiliate" ? affiliateReportData : inscripcionesReportData).length === 0} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
                             <Printer className="mr-2 h-4 w-4" />
                             Ver PDF
                         </Button>
-                        <Button onClick={handleDownload} disabled={(reportType === "club" ? clubReportData : affiliateReportData).length === 0} className="bg-green-600 hover:bg-green-700 text-white">
+                        <Button onClick={handleDownload} disabled={(reportType === "club" ? clubReportData : reportType === "affiliate" ? affiliateReportData : inscripcionesReportData).length === 0} className="bg-green-600 hover:bg-green-700 text-white">
                             <Download className="mr-2 h-4 w-4" />
                             Descargar Excel
                         </Button>
@@ -344,7 +419,7 @@ export function ReportsTabContent() {
 
                 {/* Filters */}
                 <div className="grid gap-4 p-4 border rounded-md bg-muted/20">
-                    <h3 className="font-semibold mb-2">Filtros de Búsqueda ({reportType === "club" ? "Clubes" : "Afiliados"})</h3>
+                    <h3 className="font-semibold mb-2">Filtros de Búsqueda ({reportType === "club" ? "Clubes" : reportType === "affiliate" ? "Afiliados" : "Inscripciones"})</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {reportType === "club" ? (
                             <>
@@ -383,7 +458,7 @@ export function ReportsTabContent() {
                                     </Select>
                                 </InputGroup>
                             </>
-                        ) : (
+                        ) : reportType === "affiliate" ? (
                             <>
                                 <InputGroup label="ID Afiliado" htmlFor="id_afilido">
                                     <Input
@@ -424,41 +499,103 @@ export function ReportsTabContent() {
                                     </Select>
                                 </InputGroup>
                             </>
+                        ) : (
+                            <>
+                                <InputGroup label="ID Evento" htmlFor="id_evento">
+                                    <Input
+                                        id="id_evento"
+                                        value={inscripcionesFilters.id_evento}
+                                        onChange={(e) => handleFilterChange("id_evento", e.target.value)}
+                                        placeholder="ID Evento"
+                                    />
+                                </InputGroup>
+                                <InputGroup label="Nombre Evento" htmlFor="nombre_event">
+                                    <Input
+                                        id="nombre_event"
+                                        value={inscripcionesFilters.nombre_event}
+                                        onChange={(e) => handleFilterChange("nombre_event", e.target.value)}
+                                        placeholder="Nombre del evento"
+                                    />
+                                </InputGroup>
+                                <InputGroup label="Club" htmlFor="club_insc">
+                                    <Input
+                                        id="club_insc"
+                                        value={inscripcionesFilters.club}
+                                        onChange={(e) => handleFilterChange("club", e.target.value)}
+                                        placeholder="Nombre del club"
+                                    />
+                                </InputGroup>
+                                <InputGroup label="ID Afiliado" htmlFor="id_afiliado">
+                                    <Input
+                                        id="id_afiliado"
+                                        value={inscripcionesFilters.id_afiliado}
+                                        onChange={(e) => handleFilterChange("id_afiliado", e.target.value)}
+                                        placeholder="ID Afiliado"
+                                    />
+                                </InputGroup>
+                                <InputGroup label="Nombre Afiliado" htmlFor="nom_afiliado">
+                                    <Input
+                                        id="nom_afiliado"
+                                        value={inscripcionesFilters.nom_afiliado}
+                                        onChange={(e) => handleFilterChange("nom_afiliado", e.target.value)}
+                                        placeholder="Nombre del afiliado"
+                                    />
+                                </InputGroup>
+                                <InputGroup label="Estatus">
+                                    <Select value={inscripcionesFilters.status} onValueChange={(val) => handleFilterChange("status", val)}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Todos" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="todos">Todos</SelectItem>
+                                            <SelectItem value="Pagado">Pagado</SelectItem>
+                                            <SelectItem value="Pendiente">Pendiente</SelectItem>
+                                            <SelectItem value="Cancelado">Cancelado</SelectItem>
+                                            <SelectItem value="En Curso">En Curso</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </InputGroup>
+                            </>
+
                         )}
 
-                        <InputGroup label="Forma de Pago">
-                            <Select
-                                value={reportType === "club" ? clubFilters.forma_pago : affiliateFilters.forma_pago}
-                                onValueChange={(val) => handleFilterChange("forma_pago", val)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Todos" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="todos">Todos</SelectItem>
-                                    <SelectItem value="Efectivo">Efectivo</SelectItem>
-                                    <SelectItem value="Transferencia">Transferencia</SelectItem>
-                                    <SelectItem value="Deposito">Depósito</SelectItem>
-                                    <SelectItem value="Cheque">Cheque</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </InputGroup>
+                        {reportType !== "inscripciones" && (
+                            <>
+                                <InputGroup label="Forma de Pago">
+                                    <Select
+                                        value={reportType === "club" ? clubFilters.forma_pago : affiliateFilters.forma_pago}
+                                        onValueChange={(val) => handleFilterChange("forma_pago", val)}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Todos" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="todos">Todos</SelectItem>
+                                            <SelectItem value="Efectivo">Efectivo</SelectItem>
+                                            <SelectItem value="Transferencia">Transferencia</SelectItem>
+                                            <SelectItem value="Deposito">Depósito</SelectItem>
+                                            <SelectItem value="Cheque">Cheque</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </InputGroup>
 
-                        <InputGroup label="Fecha Inicio">
-                            <Input
-                                type="date"
-                                value={reportType === "club" ? clubFilters.fecha_ini : affiliateFilters.fecha_ini}
-                                onChange={(e) => handleFilterChange("fecha_ini", e.target.value)}
-                            />
-                        </InputGroup>
+                                <InputGroup label="Fecha Inicio">
+                                    <Input
+                                        type="date"
+                                        value={reportType === "club" ? clubFilters.fecha_ini : affiliateFilters.fecha_ini}
+                                        onChange={(e) => handleFilterChange("fecha_ini", e.target.value)}
+                                    />
+                                </InputGroup>
 
-                        <InputGroup label="Fecha Fin">
-                            <Input
-                                type="date"
-                                value={reportType === "club" ? clubFilters.fecha_fin : affiliateFilters.fecha_fin}
-                                onChange={(e) => handleFilterChange("fecha_fin", e.target.value)}
-                            />
-                        </InputGroup>
+                                <InputGroup label="Fecha Fin">
+                                    <Input
+                                        type="date"
+                                        value={reportType === "club" ? clubFilters.fecha_fin : affiliateFilters.fecha_fin}
+                                        onChange={(e) => handleFilterChange("fecha_fin", e.target.value)}
+                                    />
+                                </InputGroup>
+                            </>
+                        )}
                     </div>
                     <div className="flex justify-end mt-2">
                         <Button onClick={fetchReport} disabled={isLoading}>
@@ -492,7 +629,7 @@ export function ReportsTabContent() {
                                             <TableHead className="whitespace-nowrap">Lugar Pago</TableHead>
                                             <TableHead className="whitespace-nowrap">Fecha Pago</TableHead>
                                         </>
-                                    ) : (
+                                    ) : reportType === "affiliate" ? (
                                         <>
                                             <TableHead className="whitespace-nowrap">ID</TableHead>
                                             <TableHead className="whitespace-nowrap">Nombre Completo</TableHead>
@@ -502,6 +639,17 @@ export function ReportsTabContent() {
                                             <TableHead className="whitespace-nowrap">Fecha Pago</TableHead>
                                             <TableHead className="whitespace-nowrap">Forma Pago</TableHead>
                                             <TableHead className="whitespace-nowrap">Estatus</TableHead>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <TableHead className="whitespace-nowrap">ID Evento</TableHead>
+                                            <TableHead className="whitespace-nowrap">Evento</TableHead>
+                                            <TableHead className="whitespace-nowrap">Club</TableHead>
+                                            <TableHead className="whitespace-nowrap">ID Afiliado</TableHead>
+                                            <TableHead className="whitespace-nowrap">Afiliado</TableHead>
+                                            <TableHead className="whitespace-nowrap">Estatus</TableHead>
+                                            <TableHead className="whitespace-nowrap text-right">Costo Unitario</TableHead>
+                                            <TableHead className="whitespace-nowrap text-right">Total</TableHead>
                                         </>
                                     )}
                                 </TableRow>
@@ -557,7 +705,7 @@ export function ReportsTabContent() {
                                             </TableCell>
                                         </TableRow>
                                     )
-                                ) : (
+                                ) : reportType === "affiliate" ? (
                                     affiliateReportData.length > 0 ? (
                                         <>
                                             {affiliateReportData.map((item, index) => {
@@ -604,6 +752,43 @@ export function ReportsTabContent() {
                                             </TableCell>
                                         </TableRow>
                                     )
+                                ) : (
+                                    inscripcionesReportData.length > 0 ? (
+                                        <>
+                                            {inscripcionesReportData.map((item, index) => (
+                                                <TableRow key={`${item.id_evento}-${item.id_afiliado}-${index}`}>
+                                                    <TableCell className="whitespace-nowrap">{item.id_evento}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.evento}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.club}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.id_afiliado}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.afiliado}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">
+                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.Status === "Pagado" || item.Status === "En Curso"
+                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
+                                                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
+                                                            }`}>
+                                                            {item.Status}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell className="whitespace-nowrap text-right">{item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00"}</TableCell>
+                                                    <TableCell className="whitespace-nowrap text-right">{item.Total ? `$${Number(item.Total).toFixed(2)}` : "$0.00"}</TableCell>
+                                                </TableRow>
+                                            ))}
+                                            <TableRow className="bg-muted/50 font-medium border-t-2">
+                                                <TableCell colSpan={6} className="text-right pr-4">Total General:</TableCell>
+                                                <TableCell className="whitespace-nowrap text-right">
+                                                    ${inscripcionesReportData.reduce((sum, item) => sum + (Number(item.Costo_ind) || 0), 0).toFixed(2)}
+                                                </TableCell>
+                                                <TableCell className="whitespace-nowrap text-right"></TableCell>
+                                            </TableRow>
+                                        </>
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={7} className="h-24 text-center">
+                                                No se encontraron resultados.
+                                            </TableCell>
+                                        </TableRow>
+                                    )
                                 )}
                             </TableBody>
                         </Table>
@@ -637,6 +822,6 @@ export function ReportsTabContent() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-        </Card>
+        </Card >
     )
 }
