@@ -160,7 +160,7 @@ export function ReportsTabContent() {
             Membresía: club.membresia ? "Activa" : "Inactiva",
             Estatus: club.Estatus ? "Alta" : "Baja",
             "Monto Pago": club.M_pago ? `$${Number(club.M_pago).toFixed(2)}` : "$0.00",
-            "F. Pago": club.F_pago,
+            "Forma Pago": club.F_pago,
             "Comprobante": club.Comprobante,
             "Lugar Pago": club.Lugar_p,
             "Fecha Pago": club.fecha_p ? new Date(club.fecha_p).toLocaleDateString("es-MX", { timeZone: 'UTC' }) : "-",
@@ -172,6 +172,7 @@ export function ReportsTabContent() {
             "ID Afiliado": item.id_Afiliado,
             "Nombre Completo": `${item.Nombre} ${item.Paterno} ${item.Materno}`.trim(),
             "Club": item.Club,
+            "Membresía": item.M_pago ? "Pagado" : "Pendiente",
             "Importe": item.M_pago ? `$${Number(item.M_pago).toFixed(2)}` : "$0.00",
             "Fecha Pago": item.fecha_p ? new Date(item.fecha_p).toLocaleDateString("es-MX", { timeZone: 'UTC' }) : "-",
             "Forma Pago": item.F_pago,
@@ -201,7 +202,7 @@ export function ReportsTabContent() {
                 "Membresía": "",
                 "Estatus": "",
                 "Monto Pago": `$${total.toFixed(2)}`,
-                "F. Pago": "",
+                "Forma Pago": "",
                 "Comprobante": "",
                 "Lugar Pago": "",
                 "Fecha Pago": ""
@@ -214,6 +215,7 @@ export function ReportsTabContent() {
                 "ID Afiliado": "",
                 "Nombre Completo": "",
                 "Club": "",
+                "Membresía": "",
                 "Importe": `$${total.toFixed(2)}`,
                 "Fecha Pago": "",
                 "Forma Pago": "",
@@ -227,9 +229,9 @@ export function ReportsTabContent() {
                 "Club": item.club,
                 "ID Afiliado": item.id_afiliado,
                 "Afiliado": item.afiliado,
+                "Estatus": item.Status,
                 "Costo Individual": item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00",
-                "Total": item.Total ? `$${Number(item.Total).toFixed(2)}` : "$0.00",
-                "Estatus": item.Status
+                "Total": item.Total ? `$${Number(item.Total).toFixed(2)}` : "$0.00"
             }))
             const totalCosto = inscripcionesData.reduce((sum, item) => sum + (Number(item.Costo_ind) || 0), 0)
             dataToExport.push({
@@ -238,9 +240,9 @@ export function ReportsTabContent() {
                 "Club": "",
                 "ID Afiliado": "",
                 "Afiliado": "Total General",
+                "Estatus": "",
                 "Costo Individual": `$${totalCosto.toFixed(2)}`,
-                "Total": "",
-                "Estatus": ""
+                "Total": ""
             })
         }
 
@@ -261,7 +263,7 @@ export function ReportsTabContent() {
     }
 
     const generatePdf = () => {
-        const doc = new jsPDF()
+        const doc = new jsPDF({ orientation: "landscape" })
         const data = reportType === "club" ? clubReportData : reportType === "affiliate" ? affiliateReportData : inscripcionesReportData
 
         if (data.length === 0) {
@@ -288,23 +290,27 @@ export function ReportsTabContent() {
                 return [
                     String(f.Club || ""),
                     String(f.Alias || ""),
+                    String(f.Email || ""),
+                    String(f.Asociación || ""),
                     String(f.Membresía || ""),
                     String(f.Estatus || ""),
                     String(f["Monto Pago"] || ""),
-                    String(f["F. Pago"] || ""),
+                    String(f["Forma Pago"] || ""),
+                    String(f.Comprobante || ""),
+                    String(f["Lugar Pago"] || ""),
                     String(f["Fecha Pago"] || "")
                 ]
             })
 
             const total = clubData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0)
-            tableData.push(["", "", "", "Total General:", `$${total.toFixed(2)}`, "", ""])
+            tableData.push(["", "", "", "", "", "Total General:", `$${total.toFixed(2)}`, "", "", "", ""])
 
             autoTable(doc, {
                 startY: 25,
-                head: [["Club", "Alias", "Membresía", "Estatus", "Monto", "Forma Pago", "Fecha Pago"]],
+                head: [["Club", "Alias", "Email", "Asociación", "Membresía", "Estatus", "Monto", "Forma Pago", "Comprobante", "Lugar Pago", "Fecha Pago"]],
                 body: tableData,
                 theme: 'grid',
-                styles: { fontSize: 8 },
+                styles: { fontSize: 7 },
                 headStyles: { fillColor: [22, 163, 74] } // Green color
             })
         } else if (reportType === "affiliate") {
@@ -315,19 +321,20 @@ export function ReportsTabContent() {
                     String(f["ID Afiliado"] || ""),
                     String(f["Nombre Completo"] || ""),
                     String(f.Club || ""),
-                    String(f.Estatus || ""),
+                    String(f.Membresía || ""),
                     String(f.Importe || ""),
+                    String(f["Fecha Pago"] || ""),
                     String(f["Forma Pago"] || ""),
-                    String(f["Fecha Pago"] || "")
+                    String(f.Estatus || "")
                 ]
             })
 
             const total = affiliateData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0)
-            tableData.push(["", "", "", "Total General:", `$${total.toFixed(2)}`, "", ""])
+            tableData.push(["", "", "", "Total General:", `$${total.toFixed(2)}`, "", "", ""])
 
             autoTable(doc, {
                 startY: 25,
-                head: [["ID", "Nombre", "Club", "Estatus", "Importe", "Forma Pago", "Fecha Pago"]],
+                head: [["ID", "Nombre", "Club", "Membresía", "Importe", "Fecha Pago", "Forma Pago", "Estatus"]],
                 body: tableData,
                 theme: 'grid',
                 styles: { fontSize: 8 },
@@ -342,17 +349,17 @@ export function ReportsTabContent() {
                 String(item.id_afiliado || ""),
                 String(item.afiliado || ""),
                 String(item.Status || ""),
-                String(item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00")
-
+                String(item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00"),
+                String(item.Total ? `$${Number(item.Total).toFixed(2)}` : "$0.00")
             ]))
 
             // Calculate totals
-            const total = inscripcionesData.reduce((sum, item) => sum + (Number(item.Total) || 0), 0)
-            tableData.push(["", "", "", "", "Total General:", "", `$${total.toFixed(2)}`])
+            const totalCosto = inscripcionesData.reduce((sum, item) => sum + (Number(item.Costo_ind) || 0), 0)
+            tableData.push(["", "", "", "", "", "Total General:", `$${totalCosto.toFixed(2)}`, ""])
 
             autoTable(doc, {
                 startY: 25,
-                head: [["ID Evento", "Evento", "Club", "ID Afiliado", "Afiliado", "Estatus", "Costo"]],
+                head: [["ID Evento", "Evento", "Club", "ID Afiliado", "Afiliado", "Estatus", "Costo", "Total"]],
                 body: tableData,
                 theme: 'grid',
                 styles: { fontSize: 8 },
@@ -683,7 +690,7 @@ export function ReportsTabContent() {
                                                             </span>
                                                         </TableCell>
                                                         <TableCell className="whitespace-nowrap">{formatted["Monto Pago"]}</TableCell>
-                                                        <TableCell className="whitespace-nowrap">{formatted["F. Pago"]}</TableCell>
+                                                        <TableCell className="whitespace-nowrap">{formatted["Forma Pago"]}</TableCell>
                                                         <TableCell className="whitespace-nowrap">{formatted.Comprobante}</TableCell>
                                                         <TableCell className="whitespace-nowrap">{formatted["Lugar Pago"]}</TableCell>
                                                         <TableCell className="whitespace-nowrap">{formatted["Fecha Pago"]}</TableCell>
