@@ -4,9 +4,18 @@ import { ColumnDef } from "@tanstack/react-table"
 import { Edit, ArrowUpDown, CreditCard } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { ViewClubGral } from "@/lib/club-service"
-import { EditClubDialog } from "./edit-club-dialog"
-import { MembershipDialog } from "./membership-dialog"
 import { AuthData } from "@/lib/store/auth-store"
+import dynamic from "next/dynamic"
+
+const EditClubDialog = dynamic(() => import("./edit-club-dialog").then(mod => mod.EditClubDialog), {
+    ssr: false,
+    loading: () => <div className="h-8 w-8 animate-pulse bg-muted rounded-md" />
+})
+
+const MembershipDialog = dynamic(() => import("./membership-dialog").then(mod => mod.MembershipDialog), {
+    ssr: false,
+    loading: () => <div className="h-8 w-8 animate-pulse bg-muted rounded-md" />
+})
 import {
     Tooltip,
     TooltipContent,
@@ -88,7 +97,7 @@ export const getColumns = (authData: AuthData | null): ColumnDef<ViewClubGral>[]
                                             </Button>
                                         </MembershipDialog>
                                     </TooltipTrigger>
-                                    <TooltipContent>Membresía</TooltipContent>
+                                    <TooltipContent side="right">Membresía</TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
                         )}

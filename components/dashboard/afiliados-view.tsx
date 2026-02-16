@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useMemo, useCallback, Suspense, lazy } from "react"
-import { Search, Plus, CreditCard } from "lucide-react"
+import { Search, Plus, CreditCard, BrushCleaning } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -41,7 +41,6 @@ import { useAuthStore } from "@/lib/store/auth-store"
 export function AfiliadosView() {
     const [isLoading, setIsLoading] = useState(true)
     const [afiliados, setAfiliados] = useState<Afiliado[]>([])
-    const [filteredAfiliados, setFilteredAfiliados] = useState<Afiliado[]>([])
     const [clubs, setClubs] = useState<ViewClubGral[]>([])
     const [afiliadosCatalogs, setAfiliadosCatalogs] = useState<AfiliadosCatalogsResponse | null>(null)
 
@@ -61,6 +60,9 @@ export function AfiliadosView() {
     const [filterNoAfiliado, setFilterNoAfiliado] = useState("")
     const [filterCurp, setFilterCurp] = useState("")
     const [rowSelection, setRowSelection] = useState({})
+
+    // Infinite scroll / incremental rendering state
+    const [displayLimit, setDisplayLimit] = useState(50)
 
     useEffect(() => {
         // If not admin, force filterClub to user's club ID
@@ -92,7 +94,7 @@ export function AfiliadosView() {
                 console.log("Showing all (Permission Filter Disabled for Debug)")
 
                 setAfiliados(allAfiliados)
-                setFilteredAfiliados(allAfiliados)
+                setDisplayLimit(50) // Reset limit on fresh fetch
             }
             setClubs(clubsData.View_Club_gral)
             setAfiliadosCatalogs(data)
@@ -117,13 +119,8 @@ export function AfiliadosView() {
         setIsPaymentOpen(true)
     }, [])
 
-    const selectedAfiliados = useMemo(() => {
-        return Object.keys(rowSelection).map(index => filteredAfiliados[parseInt(index)]).filter(Boolean)
-    }, [rowSelection, filteredAfiliados])
-
-    const columns = useMemo(() => getColumns(fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos, authData), [fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos, authData])
-
-    const handleFilter = () => {
+    // Filtering Logic (Reactive)
+    const filteredAfiliados = useMemo(() => {
         let filtered = [...afiliados]
 
         if (filterAfiliado) {
@@ -155,8 +152,44 @@ export function AfiliadosView() {
             filtered = filtered.filter(a => a.Curp.toLowerCase().includes(filterCurp.toLowerCase()))
         }
 
-        setFilteredAfiliados(filtered)
+        return filtered
+    }, [afiliados, filterAfiliado, filterClub, filterEstatus, filterNoAfiliado, filterCurp])
+
+    // Reset display limit when filters change
+    useEffect(() => {
+        setDisplayLimit(50)
+    }, [filterAfiliado, filterClub, filterEstatus, filterNoAfiliado, filterCurp])
+
+    const selectedAfiliados = useMemo(() => {
+        return Object.keys(rowSelection).map(index => filteredAfiliados[parseInt(index)]).filter(Boolean)
+    }, [rowSelection, filteredAfiliados])
+
+    const columns = useMemo(() => getColumns(fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos, authData), [fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos, authData])
+
+    const handleClearFilters = () => {
+        setFilterAfiliado("")
+        // eslint-disable-next-line eqeqeq
+        if (authData && authData.tipo_registro == 1) {
+            setFilterClub("todos")
+        }
+        setFilterEstatus("todos")
+        setFilterNoAfiliado("")
+        setFilterCurp("")
+        setDisplayLimit(50)
     }
+
+    const handleLoadMore = useCallback(() => {
+        if (displayLimit < filteredAfiliados.length) {
+            console.log("Loading more afiliados...")
+            setDisplayLimit(prev => prev + 50)
+        }
+    }, [displayLimit, filteredAfiliados.length])
+
+    const displayedAfiliados = useMemo(() => {
+        return filteredAfiliados.slice(0, displayLimit)
+    }, [filteredAfiliados, displayLimit])
+
+
 
     if (isLoading) {
         return (
@@ -278,11 +311,11 @@ export function AfiliadosView() {
                                         </InputGroup>
                                         <div className="md:col-span-2 flex justify-end">
                                             <Button
-                                                onClick={handleFilter}
-                                                className="w-full bg-[#0EA5E9] hover:bg-[#0284C7] text-white h-8"
+                                                onClick={handleClearFilters}
+                                                className="w-full bg-teal-600 hover:bg-teal-700 text-white h-8"
                                             >
-                                                <Search className="mr-2 h-4 w-4" />
-                                                Filtrar
+                                                <BrushCleaning className="mr-2 h-4 w-4" />
+                                                Limpiar Filtros
                                             </Button>
                                         </div>
                                     </div>
@@ -309,11 +342,12 @@ export function AfiliadosView() {
                 </Card>
                 <DataTable
                     columns={columns}
-                    data={filteredAfiliados}
+                    data={displayedAfiliados}
                     headerClassName="bg-white dark:bg-sky-950"
-                    tableHeight="h-[700px]"
+                    tableHeight="h-[600px]"
                     rowSelection={rowSelection}
                     onRowSelectionChange={setRowSelection}
+                    onEndReached={handleLoadMore}
                 />
 
                 <Suspense fallback={null}>

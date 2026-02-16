@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Save } from "lucide-react"
+import { Plus, Save, Check, ChevronsUpDown } from "lucide-react"
 import { toast } from "sonner"
 import { AfiliadosCatalogsResponse, getAfiliadosCatalogs, createAfiliado, updateAfiliado, CreateAfiliadoPayload, Afiliado } from "@/lib/afiliados-service"
 import { useCatalogStore } from "@/lib/store/catalog-store"
@@ -47,6 +47,19 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
 
 interface AfiliadosDialogProps {
     afiliado?: Afiliado
@@ -225,7 +238,7 @@ const PersonalDataSection = React.memo(({ afiliado, activeCatalogs }: { afiliado
     </div>
 ));
 
-const AffiliationSection = React.memo(({ afiliado, activeCatalogs, uniqueClubs, selectedClubId, setSelectedClubId, authData }: any) => (
+const AffiliationSection = React.memo(({ afiliado, activeCatalogs, uniqueClubs, selectedClubId, setSelectedClubId, authData, selectedModalities, onModalityToggle }: any) => (
     <div className="grid gap-6">
         <div className="grid grid-cols-12 gap-6">
             <InputGroup label="Asociación : *" className="col-span-12 md:col-span-6">
@@ -317,7 +330,7 @@ const AffiliationSection = React.memo(({ afiliado, activeCatalogs, uniqueClubs, 
             </InputGroup>
         </div>
 
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-12 gap-6 items-end">
             <InputGroup label="Nivel Tecnico : *" className="col-span-12 md:col-span-6">
                 <Select name="nivelTecnico" defaultValue={afiliado?.id_nivel_tec?.toString()}>
                     <SelectTrigger>
@@ -331,6 +344,59 @@ const AffiliationSection = React.memo(({ afiliado, activeCatalogs, uniqueClubs, 
                         ))}
                     </SelectContent>
                 </Select>
+            </InputGroup>
+
+            <InputGroup label="Modalidades : *" className="col-span-12 md:col-span-6">
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            className="w-full justify-between font-normal h-10 px-3"
+                        >
+                            {selectedModalities.length === 0 ? (
+                                <span className="text-muted-foreground">Seleccionar modalidades...</span>
+                            ) : (
+                                <div className="flex gap-1 truncate text-xs">
+                                    {selectedModalities.length > 2
+                                        ? `${selectedModalities.length} seleccionadas`
+                                        : selectedModalities.map((id: string) =>
+                                            activeCatalogs.Modalidades?.find((m: any) => m.id.toString() === id)?.Nombre
+                                        ).join(", ")
+                                    }
+                                </div>
+                            )}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0" align="start">
+                        <Command>
+                            <CommandInput placeholder="Buscar modalidad..." />
+                            <CommandList>
+                                <CommandEmpty>No se encontraron modalidades.</CommandEmpty>
+                                <CommandGroup>
+                                    {activeCatalogs.Modalidades?.map((modality: any) => (
+                                        <CommandItem
+                                            key={modality.id}
+                                            value={modality.Nombre}
+                                            onSelect={() => onModalityToggle(modality.id.toString())}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    selectedModalities.includes(modality.id.toString())
+                                                        ? "opacity-100"
+                                                        : "opacity-0"
+                                                )}
+                                            />
+                                            {modality.Nombre}
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
             </InputGroup>
         </div>
     </div>
@@ -396,16 +462,16 @@ ContactSection.displayName = "ContactSection";
 function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, catalogs: catalogsProp }: AfiliadosFormProps) {
     const { Modalidades, fetchCatalogs, Catalogo_afiliaciones, Niveles_tecnicos, Estados: StoreEstados, Escolaridad: StoreEscolaridad } = useCatalogStore()
 
-    const activeCatalogs = React.useMemo(() => catalogsProp || {
-        Catalogo_afiliaciones: Catalogo_afiliaciones,
-        Niveles_tecnicos: Niveles_tecnicos,
-        Estados: StoreEstados,
-        Escolaridad: StoreEscolaridad,
+    const activeCatalogs = React.useMemo(() => ({
+        Catalogo_afiliaciones: catalogsProp?.Catalogo_afiliaciones || Catalogo_afiliaciones,
+        Niveles_tecnicos: catalogsProp?.Niveles_tecnicos || Niveles_tecnicos,
+        Estados: catalogsProp?.Estados || StoreEstados,
+        Escolaridad: catalogsProp?.Escolaridad || StoreEscolaridad,
         Puestos: [],
         Modalidades: Modalidades,
         View_Modalidades_detalle: [],
         Catalogo_eventos: []
-    }, [catalogsProp, Catalogo_afiliaciones, Niveles_tecnicos, StoreEstados, StoreEscolaridad, Modalidades])
+    }), [catalogsProp, Catalogo_afiliaciones, Niveles_tecnicos, StoreEstados, StoreEscolaridad, Modalidades])
 
     const [isLoading, setIsLoading] = React.useState(false)
     const [clubs, setClubs] = React.useState<ViewClubGral[]>(clubsProp || [])
@@ -413,6 +479,19 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
     const [selectedClubId, setSelectedClubId] = React.useState<string>(
         afiliado?.id_Club?.toString() || ""
     )
+
+    const [selectedModalities, setSelectedModalities] = React.useState<string[]>(() => {
+        if (!afiliado?.Modalidad) return []
+        const mod = afiliado.Modalidad.toString()
+        if (mod.includes(",")) return mod.split(",")
+        return [mod]
+    })
+
+    const handleModalityToggle = (id: string) => {
+        setSelectedModalities(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        )
+    }
 
     const uniqueClubs = React.useMemo(() => {
         return Array.from(new Map(clubs.map(club => [club.id, club])).values())
@@ -486,12 +565,12 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
             }
         }
 
-        if (data.curp && data.curp.trim().length !== 18) {
-            toast.error("El CURP debe tener exactamente 18 caracteres")
+        if (selectedModalities.length === 0) {
+            toast.error("Debe seleccionar al menos una modalidad")
             return
         }
 
-        const defaultModalidad = afiliado?.Modalidad?.toString() || Modalidades?.[0]?.id?.toString() || "1"
+        const joinedModalities = selectedModalities.join(",")
 
         if (afiliado) {
             const changes: { campo: string; valor: string }[] = []
@@ -557,6 +636,11 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 if (newValue !== originalValue) changes.push({ campo: backendField, valor: newValue })
             }
 
+            const originalModalities = afiliado.Modalidad?.toString() || ""
+            if (joinedModalities !== originalModalities) {
+                changes.push({ campo: "Modalidad", valor: joinedModalities })
+            }
+
             if (changes.length === 0) {
                 toast.info("No hay cambios para guardar")
                 return
@@ -594,7 +678,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 afiliacion_3: (data.tipoAfiliadoTercero === "none" ? "" : data.tipoAfiliadoTercero) || "",
                 afiliacion_4: (data.tipoAfiliadoCuarto === "none" ? "" : data.tipoAfiliadoCuarto) || "",
                 id_nivel_tec: data.nivelTecnico,
-                modalidad: defaultModalidad
+                modalidad: joinedModalities
             }
 
             try {
@@ -632,6 +716,8 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                         selectedClubId={selectedClubId}
                         setSelectedClubId={setSelectedClubId}
                         authData={authData}
+                        selectedModalities={selectedModalities}
+                        onModalityToggle={handleModalityToggle}
                     />
                     <ContactSection afiliado={afiliado} activeCatalogs={activeCatalogs} />
                 </div>

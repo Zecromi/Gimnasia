@@ -4,8 +4,13 @@ import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
-import { EditEventoDialog } from "./edit-evento-dialog"
+import dynamic from "next/dynamic"
 import { EventosConfiguradosItem } from "@/lib/evento-service"
+
+const EditEventoDialog = dynamic(() => import("./edit-evento-dialog").then(mod => mod.EditEventoDialog), {
+    ssr: false,
+    loading: () => <div className="h-8 w-8 animate-pulse bg-muted rounded-md" />
+})
 
 export const getColumns = (onEventUpdated: () => void): ColumnDef<EventosConfiguradosItem>[] => [
     {

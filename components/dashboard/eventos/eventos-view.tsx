@@ -42,6 +42,7 @@ export function EventosView() {
     const [filterTipo, setFilterTipo] = useState("todos")
     const [filterRegion, setFilterRegion] = useState("todas")
     const [date, setDate] = useState<Date>()
+    const [displayLimit, setDisplayLimit] = useState(50)
 
     // Modalidad & Pirámide placeholders (no data in model yet)
     // const [filterModalidad, setFilterModalidad] = useState("todas")
@@ -52,6 +53,7 @@ export function EventosView() {
             const data = await getEventos()
             if (data && data.Eventos_configurados) {
                 setEventos(data.Eventos_configurados)
+                setDisplayLimit(50)
             }
         } catch (error) {
             console.error("Error fetching events:", error)
@@ -116,7 +118,19 @@ export function EventosView() {
         setFilterTipo("todos")
         setFilterRegion("todas")
         setDate(undefined)
+        setDisplayLimit(50)
     }
+
+    const handleLoadMore = useCallback(() => {
+        if (displayLimit < filteredEventos.length) {
+            console.log("Loading more eventos...")
+            setDisplayLimit(prev => prev + 50)
+        }
+    }, [displayLimit, filteredEventos.length])
+
+    const displayedEventos = useMemo(() => {
+        return filteredEventos.slice(0, displayLimit)
+    }, [filteredEventos, displayLimit])
 
     if (isLoading) {
         return (
@@ -287,7 +301,11 @@ export function EventosView() {
                 </CardContent>
             </Card>
 
-            <DataTable columns={columns} data={filteredEventos} />
+            <DataTable
+                columns={columns}
+                data={displayedEventos}
+                onEndReached={handleLoadMore}
+            />
         </div>
     )
 }

@@ -32,6 +32,7 @@ interface DataTableProps<TData, TValue> {
     tableHeight?: string
     rowSelection?: any
     onRowSelectionChange?: any
+    onEndReached?: () => void
 }
 
 export function DataTable<TData, TValue>({
@@ -43,11 +44,13 @@ export function DataTable<TData, TValue>({
     tableHeight = "h-[38.75rem]",
     rowSelection = {},
     onRowSelectionChange,
+    onEndReached,
 }: DataTableProps<TData, TValue>) {
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
         []
     )
     const [sorting, setSorting] = React.useState<SortingState>([])
+    const endOfTableRef = React.useRef<HTMLDivElement>(null)
 
     const table = useReactTable({
         data,
@@ -64,6 +67,30 @@ export function DataTable<TData, TValue>({
             rowSelection,
         },
     })
+
+    React.useEffect(() => {
+        if (!onEndReached) return
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    onEndReached()
+                }
+            },
+            { threshold: 0.1, rootMargin: "100px" }
+        )
+
+        const currentRef = endOfTableRef.current
+        if (currentRef) {
+            observer.observe(currentRef)
+        }
+
+        return () => {
+            if (currentRef) {
+                observer.unobserve(currentRef)
+            }
+        }
+    }, [onEndReached])
 
     return (
         <div className={cn("rounded-md border", containerClassName)}>
@@ -95,18 +122,26 @@ export function DataTable<TData, TValue>({
                     </TableHeader>
                     <TableBody>
                         {table.getRowModel().rows?.length ? (
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow
-                                    key={row.id}
-                                    data-state={row.getIsSelected() && "selected"}
-                                >
-                                    {row.getVisibleCells().map((cell) => (
-                                        <TableCell key={cell.id}>
-                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                        </TableCell>
-                                    ))}
-                                </TableRow>
-                            ))
+                            <>
+                                {table.getRowModel().rows.map((row) => (
+                                    <TableRow
+                                        key={row.id}
+                                        data-state={row.getIsSelected() && "selected"}
+                                    >
+                                        {row.getVisibleCells().map((cell) => (
+                                            <TableCell key={cell.id}>
+                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                            </TableCell>
+                                        ))}
+                                    </TableRow>
+                                ))}
+                                {/* Indicator for end of table to trigger more loading */}
+                                <tr>
+                                    <td colSpan={columns.length} className="p-0">
+                                        <div ref={endOfTableRef} className="h-4 w-full" />
+                                    </td>
+                                </tr>
+                            </>
                         ) : (
                             <TableRow>
                                 <TableCell colSpan={columns.length} className="h-24 text-center">

@@ -37,7 +37,7 @@ export function AffiliateActions({
                         <span className="sr-only">Editar</span>
                     </Button>
                 </TooltipTrigger>
-                <TooltipContent>
+                <TooltipContent side="right">
                     <p>Editar Afiliado</p>
                 </TooltipContent>
             </Tooltip>
@@ -55,7 +55,7 @@ export function AffiliateActions({
                             <span className="sr-only">Pago</span>
                         </Button>
                     </TooltipTrigger>
-                    <TooltipContent>
+                    <TooltipContent side="right">
                         <p>Pago de Afiliación</p>
                     </TooltipContent>
                 </Tooltip>
