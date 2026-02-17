@@ -41,6 +41,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { InputGroup } from "@/components/ui/input-group"
 import { toast } from "sonner"
+import { useInscripcionesStore } from "@/lib/store/inscripciones-store"
 
 export function ReportsTabContent() {
     const [isLoading, setIsLoading] = React.useState(false)
@@ -69,16 +70,22 @@ export function ReportsTabContent() {
         fecha_fin: ""
     })
 
-    // Inscripciones Report State
-    const [inscripcionesReportData, setInscripcionesReportData] = React.useState<InscripcionReportItem[]>([])
-    const [inscripcionesFilters, setInscripcionesFilters] = React.useState<InscripcionesReportParams>({
-        id_evento: "",
-        nombre_event: "",
-        club: "",
-        id_afiliado: "",
-        nom_afiliado: "",
-        status: ""
-    })
+    // Inscripciones Report State (Global Store)
+    const {
+        allData: allInscripcionesData,
+        filteredData: inscripcionesReportData,
+        filters: inscripcionesFilters,
+        suggestions,
+        showSuggestions,
+        isFiltering,
+        hasSelectedEvent,
+        setAllData: setAllInscripcionesData,
+        setFilters: setInscripcionesFilters,
+        filterData: filterInscripcionesData,
+        setShowSuggestions,
+        setIsFiltering,
+        setHasSelectedEvent
+    } = useInscripcionesStore()
 
     // PDF Preview State
     const [showPdfPreview, setShowPdfPreview] = React.useState(false)
@@ -125,7 +132,7 @@ export function ReportsTabContent() {
                 if (inscripcionesFilters.status && inscripcionesFilters.status !== "todos") params.status = inscripcionesFilters.status
 
                 const data = await getInscripcionesReport(params)
-                setInscripcionesReportData(data.resultados || [])
+                setAllInscripcionesData(data.resultados || [])
                 if (!data.resultados || data.resultados.length === 0) toast.info("No se encontraron resultados.")
             }
         } catch (error: any) {
@@ -150,6 +157,39 @@ export function ReportsTabContent() {
         fetchReport()
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [reportType]) // Refetch when report type changes
+
+    // Debounced filtering effect for Inscripciones
+    React.useEffect(() => {
+        if (reportType !== "inscripciones") return
+
+        const timer = setTimeout(() => {
+            filterInscripcionesData()
+        }, 300)
+
+        setIsFiltering(true)
+
+        return () => clearTimeout(timer)
+    }, [inscripcionesFilters, reportType, filterInscripcionesData, setIsFiltering])
+
+    const handleSuggestionClick = (key: string, value: string) => {
+        setInscripcionesFilters((prev) => ({ ...prev, [key]: value }))
+        setShowSuggestions((prev) => ({ ...prev, [key]: false }))
+        if (key === "nombre_event") {
+            setHasSelectedEvent(true)
+        }
+    }
+
+    const handleBlur = (key: string) => {
+        // Small delay to allow click event on suggestion to fire
+        setTimeout(() => {
+            setShowSuggestions((prev) => ({ ...prev, [key]: false }))
+        }, 200)
+    }
+
+    const handleFocus = (key: string) => {
+        setShowSuggestions((prev) => ({ ...prev, [key]: true }))
+    }
+
 
     const formatClubData = (club: ClubMembershipItem) => {
         return {
@@ -380,12 +420,16 @@ export function ReportsTabContent() {
     }
 
     const handleFilterChange = (key: string, value: string) => {
-        if (reportType === "club") {
-            setClubFilters(prev => ({ ...prev, [key]: value }))
-        } else if (reportType === "affiliate") {
-            setAffiliateFilters(prev => ({ ...prev, [key]: value }))
-        } else if (reportType === "inscripciones") {
+        if (reportType === "inscripciones") {
             setInscripcionesFilters(prev => ({ ...prev, [key]: value }))
+            if (key === "nombre_event") {
+                setHasSelectedEvent(false)
+            }
+            // Debounce handled in useEffect
+        } else if (reportType === "club") {
+            setClubFilters(prev => ({ ...prev, [key]: value }))
+        } else {
+            setAffiliateFilters(prev => ({ ...prev, [key]: value }))
         }
     }
 
@@ -508,45 +552,125 @@ export function ReportsTabContent() {
                             </>
                         ) : (
                             <>
-                                <InputGroup label="ID Evento" htmlFor="id_evento">
+                                <InputGroup label="ID Evento" htmlFor="id_evento" className="relative">
                                     <Input
                                         id="id_evento"
                                         value={inscripcionesFilters.id_evento}
                                         onChange={(e) => handleFilterChange("id_evento", e.target.value)}
+                                        onFocus={() => handleFocus("id_evento")}
+                                        onBlur={() => handleBlur("id_evento")}
                                         placeholder="ID Evento"
+                                        autoComplete="off"
                                     />
+                                    {showSuggestions["id_evento"] && suggestions["id_evento"]?.length > 0 && (
+                                        <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto mt-1 dark:bg-gray-800 dark:border-gray-700">
+                                            {suggestions["id_evento"].map((suggestion, index) => (
+                                                <li
+                                                    key={index}
+                                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700"
+                                                    onClick={() => handleSuggestionClick("id_evento", suggestion)}
+                                                >
+                                                    {suggestion}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
                                 </InputGroup>
-                                <InputGroup label="Nombre Evento" htmlFor="nombre_event">
+                                <InputGroup label="Nombre Evento" htmlFor="nombre_event" className="relative">
                                     <Input
                                         id="nombre_event"
                                         value={inscripcionesFilters.nombre_event}
                                         onChange={(e) => handleFilterChange("nombre_event", e.target.value)}
+                                        onFocus={() => handleFocus("nombre_event")}
+                                        onBlur={() => handleBlur("nombre_event")}
                                         placeholder="Nombre del evento"
+                                        autoComplete="off"
                                     />
+                                    {showSuggestions["nombre_event"] && suggestions["nombre_event"]?.length > 0 && (
+                                        <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto mt-1 dark:bg-gray-800 dark:border-gray-700">
+                                            {suggestions["nombre_event"].map((suggestion, index) => (
+                                                <li
+                                                    key={index}
+                                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700"
+                                                    onClick={() => handleSuggestionClick("nombre_event", suggestion)}
+                                                >
+                                                    {suggestion}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
                                 </InputGroup>
-                                <InputGroup label="Club" htmlFor="club_insc">
+                                <InputGroup label="Club" htmlFor="club_insc" className="relative">
                                     <Input
                                         id="club_insc"
                                         value={inscripcionesFilters.club}
                                         onChange={(e) => handleFilterChange("club", e.target.value)}
+                                        onFocus={() => handleFocus("club")}
+                                        onBlur={() => handleBlur("club")}
                                         placeholder="Nombre del club"
+                                        autoComplete="off"
                                     />
+                                    {showSuggestions["club"] && suggestions["club"]?.length > 0 && (
+                                        <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto mt-1 dark:bg-gray-800 dark:border-gray-700">
+                                            {suggestions["club"].map((suggestion, index) => (
+                                                <li
+                                                    key={index}
+                                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700"
+                                                    onClick={() => handleSuggestionClick("club", suggestion)}
+                                                >
+                                                    {suggestion}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
                                 </InputGroup>
-                                <InputGroup label="ID Afiliado" htmlFor="id_afiliado">
+                                <InputGroup label="ID Afiliado" htmlFor="id_afiliado" className="relative">
                                     <Input
                                         id="id_afiliado"
                                         value={inscripcionesFilters.id_afiliado}
                                         onChange={(e) => handleFilterChange("id_afiliado", e.target.value)}
+                                        onFocus={() => handleFocus("id_afiliado")}
+                                        onBlur={() => handleBlur("id_afiliado")}
                                         placeholder="ID Afiliado"
+                                        autoComplete="off"
                                     />
+                                    {showSuggestions["id_afiliado"] && suggestions["id_afiliado"]?.length > 0 && (
+                                        <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto mt-1 dark:bg-gray-800 dark:border-gray-700">
+                                            {suggestions["id_afiliado"].map((suggestion, index) => (
+                                                <li
+                                                    key={index}
+                                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700"
+                                                    onClick={() => handleSuggestionClick("id_afiliado", suggestion)}
+                                                >
+                                                    {suggestion}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
                                 </InputGroup>
-                                <InputGroup label="Nombre Afiliado" htmlFor="nom_afiliado">
+                                <InputGroup label="Nombre Afiliado" htmlFor="nom_afiliado" className="relative">
                                     <Input
                                         id="nom_afiliado"
                                         value={inscripcionesFilters.nom_afiliado}
                                         onChange={(e) => handleFilterChange("nom_afiliado", e.target.value)}
+                                        onFocus={() => handleFocus("nom_afiliado")}
+                                        onBlur={() => handleBlur("nom_afiliado")}
                                         placeholder="Nombre del afiliado"
+                                        autoComplete="off"
                                     />
+                                    {showSuggestions["nom_afiliado"] && suggestions["nom_afiliado"]?.length > 0 && (
+                                        <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto mt-1 dark:bg-gray-800 dark:border-gray-700">
+                                            {suggestions["nom_afiliado"].map((suggestion, index) => (
+                                                <li
+                                                    key={index}
+                                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700"
+                                                    onClick={() => handleSuggestionClick("nom_afiliado", suggestion)}
+                                                >
+                                                    {suggestion}
+                                                </li>
+                                            ))}
+                                        </ul>
+                                    )}
                                 </InputGroup>
                                 <InputGroup label="Estatus">
                                     <Select value={inscripcionesFilters.status} onValueChange={(val) => handleFilterChange("status", val)}>
@@ -791,7 +915,7 @@ export function ReportsTabContent() {
                                         </>
                                     ) : (
                                         <TableRow>
-                                            <TableCell colSpan={7} className="h-24 text-center">
+                                            <TableCell colSpan={8} className="h-24 text-center">
                                                 No se encontraron resultados.
                                             </TableCell>
                                         </TableRow>
