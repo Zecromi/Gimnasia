@@ -572,7 +572,7 @@ export function RegisterEventDialog({
                                                                             d.id_categoria === Number(memberConfigs[memberId].selectedCategoryId)
                                                                         );
                                                                         if (!match) return "Seleccionado";
-                                                                        return `${match.titulo} (Edad: ${match.edad_ini}-${match.edad_fin})`;
+                                                                        return `${match.Nivel} (Edad: ${match.edad_ini}-${match.edad_fin})`;
                                                                     })()}
                                                                 </span>
                                                                 <span className="text-teal-600 font-semibold shrink-0">
@@ -600,10 +600,11 @@ export function RegisterEventDialog({
                                                             <CommandGroup>
                                                                 {niveles.map((item) => {
                                                                     const match = View_Modalidades_detalle.find(d =>
+
                                                                         d.id_nivel === item.id_nivel &&
                                                                         d.id_categoria === item.id_categoria
                                                                     );
-                                                                    const fullDesc = match ? `${match.titulo} (Edad: ${match.edad_ini}-${match.edad_fin})` : `Nivel ${item.id_nivel} - Cat ${item.id_categoria}`;
+                                                                    const fullDesc = match ? `${match.Nivel} (Edad: ${match.edad_ini}-${match.edad_fin})` : `Nivel ${item.id_nivel} - Cat ${item.id_categoria}`;
                                                                     const itemKey = `${item.id_nivel}-${item.id_categoria}`;
                                                                     const isSelected = memberConfigs[memberId]?.selectedNivelId === String(item.id_nivel) &&
                                                                         memberConfigs[memberId]?.selectedCategoryId === String(item.id_categoria);
@@ -778,7 +779,7 @@ export function RegisterEventDialog({
                                                                         d.id_nivel === Number(config.selectedNivelId) &&
                                                                         d.id_categoria === Number(config.selectedCategoryId)
                                                                     );
-                                                                    return `+ ${match ? `${match.titulo} (Edad: ${match.edad_ini}-${match.edad_fin})` : "Nivel/Cat"}`;
+                                                                    return `+ ${match ? `${match.Nivel} (Edad: ${match.edad_ini}-${match.edad_fin})` : "Nivel/Cat"}`;
                                                                 })()}
                                                             </span>
                                                             <span className="shrink-0">
