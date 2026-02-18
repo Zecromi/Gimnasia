@@ -32,6 +32,7 @@ interface DataTableProps<TData, TValue> {
     tableHeight?: string
     rowSelection?: any
     onRowSelectionChange?: any
+    enableRowSelection?: (row: any) => boolean
     onEndReached?: () => void
 }
 
@@ -44,6 +45,7 @@ export function DataTable<TData, TValue>({
     tableHeight = "h-[38.75rem]",
     rowSelection = {},
     onRowSelectionChange,
+    enableRowSelection,
     onEndReached,
 }: DataTableProps<TData, TValue>) {
     const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(
@@ -61,6 +63,7 @@ export function DataTable<TData, TValue>({
         onSortingChange: setSorting,
         getSortedRowModel: getSortedRowModel(),
         onRowSelectionChange: onRowSelectionChange,
+        enableRowSelection: enableRowSelection,
         state: {
             columnFilters,
             sorting,
@@ -95,7 +98,7 @@ export function DataTable<TData, TValue>({
     return (
         <div className={cn("rounded-md border", containerClassName)}>
             <div className={cn("relative w-full overflow-auto", tableHeight)}>
-                <table className="w-full caption-bottom text-sm border-collapse">
+                <table className="w-full caption-bottom text-xs border-collapse">
                     <TableHeader className={headerClassName}>
                         {table.getHeaderGroups().map((headerGroup) => (
                             <TableRow key={headerGroup.id} className="border-none">

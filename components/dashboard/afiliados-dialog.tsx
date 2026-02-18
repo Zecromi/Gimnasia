@@ -492,7 +492,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
             prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
         )
     }
-
+    const defaultModalidad = afiliado?.Modalidad?.toString() || Modalidades?.[0]?.id?.toString() || "1"
     const uniqueClubs = React.useMemo(() => {
         return Array.from(new Map(clubs.map(club => [club.id, club])).values())
     }, [clubs])
@@ -637,9 +637,6 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
             }
 
             const originalModalities = afiliado.Modalidad?.toString() || ""
-            if (joinedModalities !== originalModalities) {
-                changes.push({ campo: "Modalidad", valor: joinedModalities })
-            }
 
             if (changes.length === 0) {
                 toast.info("No hay cambios para guardar")
@@ -647,7 +644,17 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
             }
 
             try {
-                await updateAfiliado(afiliado.id, { uno: changes })
+                // Construct the payload matching the required structure
+                const updatePayload: any = { uno: changes }
+
+                // Always include the detailed modalities array if there are changes or if it's just good practice to sync
+                // The user request implies we should send it.
+                updatePayload.modalidades = selectedModalities.map((id: string) => ({
+                    id_afiliado: afiliado.id.toString(),
+                    id_modalidad: id
+                }))
+
+                await updateAfiliado(afiliado.id, updatePayload)
                 toast.success("Afiliado actualizado exitosamente")
                 onSuccess?.()
             } catch (error) {
@@ -678,10 +685,15 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 afiliacion_3: (data.tipoAfiliadoTercero === "none" ? "" : data.tipoAfiliadoTercero) || "",
                 afiliacion_4: (data.tipoAfiliadoCuarto === "none" ? "" : data.tipoAfiliadoCuarto) || "",
                 id_nivel_tec: data.nivelTecnico,
-                modalidad: joinedModalities
+                modalidad: defaultModalidad,
+                modalidades: selectedModalities.map(id => ({
+                    id_afiliado: "",
+                    id_modalidad: id
+                }))
             }
 
             try {
+                console.log(payload)
                 await createAfiliado(payload)
                 toast.success("Afiliado creado exitosamente")
                 setTimeout(() => { onSuccess?.() }, 500)

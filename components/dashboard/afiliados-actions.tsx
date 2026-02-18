@@ -29,11 +29,11 @@ export function AffiliateActions({
                 <TooltipTrigger asChild>
                     <Button
                         variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 hover:bg-green-200 dark:hover:bg-green-800 text-green-600"
+                        size="icon-xs"
+                        className="hover:bg-green-200 dark:hover:bg-green-800 text-green-600"
                         onClick={() => onEdit(afiliado)}
                     >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3.5 w-3.5" />
                         <span className="sr-only">Editar</span>
                     </Button>
                 </TooltipTrigger>
@@ -47,11 +47,11 @@ export function AffiliateActions({
                     <TooltipTrigger asChild>
                         <Button
                             variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600"
+                            size="icon-xs"
+                            className="hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600"
                             onClick={() => onPayment(afiliado)}
                         >
-                            <CreditCard className="h-4 w-4" />
+                            <CreditCard className="h-3.5 w-3.5" />
                             <span className="sr-only">Pago</span>
                         </Button>
                     </TooltipTrigger>

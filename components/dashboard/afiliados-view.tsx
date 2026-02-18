@@ -348,6 +348,7 @@ export function AfiliadosView() {
                     rowSelection={rowSelection}
                     onRowSelectionChange={setRowSelection}
                     onEndReached={handleLoadMore}
+                    enableRowSelection={(row: { original: Afiliado }) => !row.original.Afiliado}
                 />
 
                 <Suspense fallback={null}>

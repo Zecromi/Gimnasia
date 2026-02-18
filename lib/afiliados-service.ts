@@ -29,7 +29,7 @@ export interface Afiliado {
     Afiliacion_4: number | null;
     id_nivel_tec: number;
     Modalidad: number;
-    Afiliado: any | null;
+    Afiliado: boolean | null;
     M_pago: number;
     F_pago: string;
     Comprobante: string;
@@ -93,6 +93,7 @@ export interface CreateAfiliadoPayload {
     afiliacion_4: string;
     id_nivel_tec: string;
     modalidad: string;
+    modalidades?: { id_afiliado: string; id_modalidad: string }[];
     m_pago?: string;
     f_pago?: string;
     comprobante?: string;
@@ -119,9 +120,11 @@ export interface UpdateAfiliadoItem {
 
 export interface UpdateAfiliadoPayload {
     uno: UpdateAfiliadoItem[];
+    modalidades?: { id_afiliado: string; id_modalidad: string }[];
 }
 
 export const updateAfiliado = async (id: number, payload: UpdateAfiliadoPayload) => {
+    console.log("updateAfiliado Payload:", JSON.stringify(payload, null, 2));
     const response = await api.post("/PutAfiliado", payload, {
         params: { id }
     });

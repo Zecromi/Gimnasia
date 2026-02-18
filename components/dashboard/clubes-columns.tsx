@@ -70,14 +70,14 @@ export const getColumns = (authData: AuthData | null): ColumnDef<ViewClubGral>[]
                 return (
                     <div className="flex items-center gap-1">
                         {!canEdit ? (
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 cursor-not-allowed" disabled>
-                                <Edit className="h-4 w-4" />
+                            <Button variant="ghost" size="icon-xs" className="text-gray-400 cursor-not-allowed" disabled>
+                                <Edit className="h-3.5 w-3.5" />
                                 <span className="sr-only">Editar</span>
                             </Button>
                         ) : (
                             <EditClubDialog club={club}>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-green-200 dark:hover:bg-green-800">
-                                    <Edit className="h-4 w-4" />
+                                <Button variant="ghost" size="icon-xs" className="hover:bg-green-200 dark:hover:bg-green-800">
+                                    <Edit className="h-3.5 w-3.5" />
                                     <span className="sr-only">Editar</span>
                                 </Button>
                             </EditClubDialog>
@@ -89,10 +89,10 @@ export const getColumns = (authData: AuthData | null): ColumnDef<ViewClubGral>[]
                                         <MembershipDialog club={club}>
                                             <Button
                                                 variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 hover:bg-blue-200 dark:hover:bg-blue-800"
+                                                size="icon-xs"
+                                                className="hover:bg-blue-200 dark:hover:bg-blue-800"
                                             >
-                                                <CreditCard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                                <CreditCard className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
                                                 <span className="sr-only">Membresía</span>
                                             </Button>
                                         </MembershipDialog>
@@ -108,18 +108,18 @@ export const getColumns = (authData: AuthData | null): ColumnDef<ViewClubGral>[]
         {
             accessorKey: "id",
             header: ({ column }) => (
-                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     ID
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                 </Button>
             ),
         },
         {
             accessorKey: "Club",
             header: ({ column }) => (
-                <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                <Button variant="ghost" size="xs" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
                     Club
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                 </Button>
             ),
         },
