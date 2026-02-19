@@ -45,6 +45,38 @@ export interface AfiliadosCatalogsResponse {
     Afiliados: Afiliado[];
 }
 
+export interface ModalidadAfilItem {
+    id_afiliado: number;
+    id_modalidad: number;
+}
+
+export interface GetModalidadesAfilResponse {
+    Modalidades_afil: ModalidadAfilItem[];
+}
+
+export const getModalidadesAfil = async (id?: string) => {
+    // Construct params object dynamically
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const params: any = {};
+    if (id !== undefined) params.id = id;
+
+    const response = await api.get<GetModalidadesAfilResponse>("/GetInf_Mod_afil", {
+        params: params
+    });
+
+    // Handle potential text/plain response from backend
+    if (typeof response.data === "string") {
+        try {
+            return JSON.parse(response.data);
+        } catch (e) {
+            console.error("Failed to parse response data", e);
+            return response.data;
+        }
+    }
+
+    return response.data;
+};
+
 export const getAfiliadosCatalogs = async (id?: number, tipo?: number) => {
     // Construct params object dynamically
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -68,6 +100,7 @@ export const getAfiliadosCatalogs = async (id?: number, tipo?: number) => {
 
     return response.data;
 };
+
 
 export interface CreateAfiliadoPayload {
     nombre: string;
@@ -93,6 +126,7 @@ export interface CreateAfiliadoPayload {
     afiliacion_4: string;
     id_nivel_tec: string;
     modalidad: string;
+    email: string;
     modalidades?: { id_afiliado: string; id_modalidad: string }[];
     m_pago?: string;
     f_pago?: string;

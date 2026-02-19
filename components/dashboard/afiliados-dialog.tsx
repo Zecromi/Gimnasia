@@ -3,7 +3,7 @@
 import * as React from "react"
 import { Plus, Save, Check, ChevronsUpDown } from "lucide-react"
 import { toast } from "sonner"
-import { AfiliadosCatalogsResponse, getAfiliadosCatalogs, createAfiliado, updateAfiliado, CreateAfiliadoPayload, Afiliado } from "@/lib/afiliados-service"
+import { AfiliadosCatalogsResponse, getAfiliadosCatalogs, createAfiliado, updateAfiliado, CreateAfiliadoPayload, Afiliado, getModalidadesAfil } from "@/lib/afiliados-service"
 import { useCatalogStore } from "@/lib/store/catalog-store"
 import { useAuthStore } from "@/lib/store/auth-store"
 import { CatalogoItem, Estado, getClubs, ViewClubGral } from "@/lib/club-service"
@@ -443,7 +443,7 @@ const ContactSection = React.memo(({ afiliado, activeCatalogs }: { afiliado?: Af
         </div>
         <div className="grid grid-cols-12 gap-6">
             <InputGroup label="Email : *" htmlFor="email" className="col-span-12 md:col-span-4">
-                <Input id="email" type="email" name="email" />
+                <Input id="email" type="email" name="email" defaultValue={afiliado?.Email || ""} />
             </InputGroup>
             <InputGroup label="Teléfono Particular : *" htmlFor="tel-particular" className="col-span-12 md:col-span-4">
                 <Input id="tel-particular" name="telParticular" defaultValue={afiliado?.Telefono_c} />
@@ -524,10 +524,22 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
             if (!catalogsProp) {
                 await fetchCatalogs()
             }
+
+            if (afiliado) {
+                try {
+                    const modalitiesData = await getModalidadesAfil(afiliado.id.toString())
+                    if (modalitiesData && modalitiesData.Modalidades_afil) {
+                        const selectedIds = modalitiesData.Modalidades_afil.map((m: any) => m.id_modalidad.toString())
+                        setSelectedModalities(selectedIds)
+                    }
+                } catch (e) {
+                    console.error("Error fetching modalities for affiliate:", e)
+                }
+            }
         }
 
         initData()
-    }, [clubsProp, catalogsProp, fetchCatalogs, authData])
+    }, [clubsProp, catalogsProp, fetchCatalogs, authData, afiliado])
 
     React.useEffect(() => {
         if (!afiliado && uniqueClubs.length === 1 && selectedClubId === "") {
@@ -596,7 +608,8 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 tipoAfiliadoSecundario: "Afiliacion_2",
                 tipoAfiliadoTercero: "Afiliacion_3",
                 tipoAfiliadoCuarto: "Afiliacion_4",
-                nivelTecnico: "id_nivel_tec"
+                nivelTecnico: "id_nivel_tec",
+                email: "Email"
             }
 
             const getOriginalValue = (key: string): string => {
@@ -623,6 +636,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                     case "tipoAfiliadoTercero": return afiliado.Afiliacion_3?.toString() || "";
                     case "tipoAfiliadoCuarto": return afiliado.Afiliacion_4?.toString() || "";
                     case "nivelTecnico": return afiliado.id_nivel_tec.toString();
+                    case "email": return afiliado.Email || "";
                     default: return "";
                 }
             }
@@ -686,6 +700,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 afiliacion_4: (data.tipoAfiliadoCuarto === "none" ? "" : data.tipoAfiliadoCuarto) || "",
                 id_nivel_tec: data.nivelTecnico,
                 modalidad: defaultModalidad,
+                email: data.email,
                 modalidades: selectedModalities.map(id => ({
                     id_afiliado: "",
                     id_modalidad: id

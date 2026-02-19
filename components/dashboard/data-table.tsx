@@ -39,7 +39,7 @@ interface DataTableProps<TData, TValue> {
 export function DataTable<TData, TValue>({
     columns,
     data,
-    noResultsMessage = "No results.",
+    noResultsMessage = "No se encontraron resultados.",
     containerClassName,
     headerClassName = "bg-white dark:bg-teal-950",
     tableHeight = "h-[38.75rem]",
