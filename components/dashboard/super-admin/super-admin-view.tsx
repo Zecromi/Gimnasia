@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { EditAdminDialog, AdminUser } from "@/components/dashboard/edit-admin-dialog"
 import { ReportsTabContent } from "@/components/dashboard/super-admin/reports-tab-content"
+import { PersonalTabContent } from "@/components/dashboard/super-admin/personal-tab-content"
 import { useRouter } from "next/navigation"
 import { useAuthStore } from "@/lib/store/auth-store"
 
@@ -119,6 +120,10 @@ export function SuperAdminView() {
                         <Users className="mr-2 h-4 w-4" />
                         Super Admin
                     </TabsTrigger> */}
+                    <TabsTrigger value="personal">
+                        <UserCog className="mr-2 h-4 w-4" />
+                        Personal
+                    </TabsTrigger>
                 </TabsList>
 
                 {/* <TabsContent value="super-admin" className="space-y-4">
@@ -222,6 +227,10 @@ export function SuperAdminView() {
 
                 <TabsContent value="reportes">
                     <ReportsTabContent />
+                </TabsContent>
+
+                <TabsContent value="personal">
+                    <PersonalTabContent />
                 </TabsContent>
             </Tabs>
 
