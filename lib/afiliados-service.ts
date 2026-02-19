@@ -30,6 +30,7 @@ export interface Afiliado {
     id_nivel_tec: number;
     Modalidad: number;
     Afiliado: boolean | null;
+    Email: string | null;
     M_pago: number;
     F_pago: string;
     Comprobante: string;
