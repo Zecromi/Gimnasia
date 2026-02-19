@@ -56,7 +56,7 @@ interface CatalogPayStoreData {
     Niveles_tecnicos: NivelTecnicoItem[];
     Estados: EstadoItem[];
     Escolaridad: EscolaridadItem[];
-    Afiliados: AfiliadoItem[];
+    Modalidades_afil: AfiliadoItem[];
     Catalogo_formas_pago: CatalogoItem[];
 }
 
@@ -71,7 +71,7 @@ export const useCatalogPayStore = create<CatalogPayStore>((set) => ({
     Niveles_tecnicos: [],
     Estados: [],
     Escolaridad: [],
-    Afiliados: [],
+    Modalidades_afil: [],
     Catalogo_formas_pago: [],
     isLoading: false,
     error: null,

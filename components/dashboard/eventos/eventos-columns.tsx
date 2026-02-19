@@ -4,8 +4,13 @@ import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 
-import { EditEventoDialog } from "./edit-evento-dialog"
+import dynamic from "next/dynamic"
 import { EventosConfiguradosItem } from "@/lib/evento-service"
+
+const EditEventoDialog = dynamic(() => import("./edit-evento-dialog").then(mod => mod.EditEventoDialog), {
+    ssr: false,
+    loading: () => <div className="h-8 w-8 animate-pulse bg-muted rounded-md" />
+})
 
 export const getColumns = (onEventUpdated: () => void): ColumnDef<EventosConfiguradosItem>[] => [
     {
@@ -15,8 +20,8 @@ export const getColumns = (onEventUpdated: () => void): ColumnDef<EventosConfigu
             return (
                 <div className="flex items-center">
                     <EditEventoDialog evento={row.original as any} onSuccess={onEventUpdated}>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-teal-200 dark:hover:bg-teal-800">
-                            <Edit className="h-4 w-4" />
+                        <Button variant="ghost" size="icon-xs" className="hover:bg-teal-200 dark:hover:bg-teal-800">
+                            <Edit className="h-3.5 w-3.5" />
                             <span className="sr-only">Editar</span>
                         </Button>
                     </EditEventoDialog>
@@ -30,10 +35,11 @@ export const getColumns = (onEventUpdated: () => void): ColumnDef<EventosConfigu
             return (
                 <Button
                     variant="ghost"
+                    size="xs"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                     No. Evento
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                 </Button>
             )
         },
@@ -44,10 +50,11 @@ export const getColumns = (onEventUpdated: () => void): ColumnDef<EventosConfigu
             return (
                 <Button
                     variant="ghost"
+                    size="xs"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                     Nombre
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                 </Button>
             )
         },
@@ -57,10 +64,11 @@ export const getColumns = (onEventUpdated: () => void): ColumnDef<EventosConfigu
         header: ({ column }) => (
             <Button
                 variant="ghost"
+                size="xs"
                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             >
                 Organizador
-                <ArrowUpDown className="ml-2 h-4 w-4" />
+                <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
             </Button>
         ),
     },
@@ -69,10 +77,11 @@ export const getColumns = (onEventUpdated: () => void): ColumnDef<EventosConfigu
         header: ({ column }) => (
             <Button
                 variant="ghost"
+                size="xs"
                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             >
                 Asociación
-                <ArrowUpDown className="ml-2 h-4 w-4" />
+                <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
             </Button>
         ),
     },
@@ -81,10 +90,11 @@ export const getColumns = (onEventUpdated: () => void): ColumnDef<EventosConfigu
         header: ({ column }) => (
             <Button
                 variant="ghost"
+                size="xs"
                 onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
             >
                 Lugar
-                <ArrowUpDown className="ml-2 h-4 w-4" />
+                <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
             </Button>
         ),
     },

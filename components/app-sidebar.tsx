@@ -7,7 +7,8 @@ import {
     Home,
     Calendar,
     Ticket,
-   Users,
+    Users,
+    Newspaper,
 } from "lucide-react"
 
 import { ModeToggle } from "@/components/mode-toggle"
@@ -57,6 +58,11 @@ const items = [
         title: "Admin",
         url: "/dashboard/super-admin",
         icon: Users,
+    },
+    {
+        title: "Noticias",
+        url: "/dashboard/noticias",
+        icon: Newspaper,
     },
 
 ]

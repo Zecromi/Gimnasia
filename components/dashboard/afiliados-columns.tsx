@@ -3,10 +3,12 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { ArrowUpDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { cn } from "@/lib/utils"
 import { Afiliado } from "@/lib/afiliados-service"
 import { ViewClubGral, CatalogoItem, Estado } from "@/lib/club-service"
 import { AuthData } from "@/lib/store/auth-store"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
 import dynamic from "next/dynamic"
 
 const AffiliateActions = dynamic(() => import("./afiliados-actions").then(mod => mod.AffiliateActions), {
@@ -74,10 +76,11 @@ export const getColumns = (
                 return (
                     <Button
                         variant="ghost"
+                        size="xs"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
-                        No. afiliado
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        {column.id === "id" ? "No. afiliado" : "Afiliado"}
+                        <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                     </Button>
                 )
             },
@@ -88,16 +91,37 @@ export const getColumns = (
                 return (
                     <Button
                         variant="ghost"
+                        size="xs"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
                         Afiliado
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                     </Button>
                 )
             },
             cell: ({ row }) => {
                 const affiliate = row.original
                 return `${affiliate.Nombre} ${affiliate.Paterno} ${affiliate.Materno}`.trim()
+            }
+        },
+        {
+            id: "pago",
+            header: "Pago",
+            cell: ({ row }) => {
+                const isPaid = !!row.original.Afiliado
+                return (
+                    <Badge
+                        variant="outline"
+                        className={cn(
+                            "font-semibold tracking-wider px-2 py-0.5",
+                            isPaid
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-400 dark:border-emerald-800"
+                                : "bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:border-rose-800"
+                        )}
+                    >
+                        {isPaid ? "Pagado" : "Sin pago"}
+                    </Badge>
+                )
             }
         },
         {
@@ -263,10 +287,11 @@ export const getColumns = (
                 return (
                     <Button
                         variant="ghost"
+                        size="xs"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
                         Estatus
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                     </Button>
                 )
             },

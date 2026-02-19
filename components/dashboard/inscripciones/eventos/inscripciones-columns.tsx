@@ -17,11 +17,11 @@ export const getColumns = (
                     <div className="flex items-center pl-2">
                         <Button
                             variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 hover:bg-teal-100 text-teal-700"
+                            size="icon-xs"
+                            className="hover:bg-teal-100 text-teal-700"
                             onClick={() => onRegister(row.original)}
                         >
-                            <TicketPlus className="h-4 w-4" />
+                            <TicketPlus className="h-3.5 w-3.5" />
                             <span className="sr-only">Inscribirse</span>
                         </Button>
                     </div>
@@ -34,10 +34,11 @@ export const getColumns = (
                 return (
                     <Button
                         variant="ghost"
+                        size="xs"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
                         No. Evento
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                     </Button>
                 )
             },
@@ -48,10 +49,11 @@ export const getColumns = (
                 return (
                     <Button
                         variant="ghost"
+                        size="xs"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
                         Nombre
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                     </Button>
                 )
             },
@@ -61,10 +63,11 @@ export const getColumns = (
             header: ({ column }) => (
                 <Button
                     variant="ghost"
+                    size="xs"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                     Organizador
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                 </Button>
             ),
         },
@@ -73,10 +76,11 @@ export const getColumns = (
             header: ({ column }) => (
                 <Button
                     variant="ghost"
+                    size="xs"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                     Asociación
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                 </Button>
             ),
         },
@@ -86,10 +90,11 @@ export const getColumns = (
                 return (
                     <Button
                         variant="ghost"
+                        size="xs"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
                         Lugar
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                     </Button>
                 )
             },
@@ -100,10 +105,11 @@ export const getColumns = (
                 return (
                     <Button
                         variant="ghost"
+                        size="xs"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
                         Sede
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                     </Button>
                 )
             },
@@ -113,10 +119,11 @@ export const getColumns = (
             header: ({ column }) => (
                 <Button
                     variant="ghost"
+                    size="xs"
                     onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                 >
                     Región
-                    <ArrowUpDown className="ml-2 h-4 w-4" />
+                    <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                 </Button>
             ),
         },
@@ -126,10 +133,11 @@ export const getColumns = (
                 return (
                     <Button
                         variant="ghost"
+                        size="xs"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
                         Fecha de evento
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                     </Button>
                 )
             },
@@ -163,10 +171,11 @@ export const getColumns = (
                 return (
                     <Button
                         variant="ghost"
+                        size="xs"
                         onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
                     >
                         Estatus
-                        <ArrowUpDown className="ml-2 h-4 w-4" />
+                        <ArrowUpDown className="ml-1 h-3.5 w-3.5" />
                     </Button>
                 )
             },

@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Save } from "lucide-react"
+import { Plus, Save, Check, ChevronsUpDown } from "lucide-react"
 import { toast } from "sonner"
-import { AfiliadosCatalogsResponse, getAfiliadosCatalogs, createAfiliado, updateAfiliado, CreateAfiliadoPayload, Afiliado } from "@/lib/afiliados-service"
+import { AfiliadosCatalogsResponse, getAfiliadosCatalogs, createAfiliado, updateAfiliado, CreateAfiliadoPayload, Afiliado, getModalidadesAfil } from "@/lib/afiliados-service"
 import { useCatalogStore } from "@/lib/store/catalog-store"
 import { useAuthStore } from "@/lib/store/auth-store"
 import { CatalogoItem, Estado, getClubs, ViewClubGral } from "@/lib/club-service"
@@ -47,6 +47,19 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command"
 
 interface AfiliadosDialogProps {
     afiliado?: Afiliado
@@ -225,7 +238,7 @@ const PersonalDataSection = React.memo(({ afiliado, activeCatalogs }: { afiliado
     </div>
 ));
 
-const AffiliationSection = React.memo(({ afiliado, activeCatalogs, uniqueClubs, selectedClubId, setSelectedClubId, authData }: any) => (
+const AffiliationSection = React.memo(({ afiliado, activeCatalogs, uniqueClubs, selectedClubId, setSelectedClubId, authData, selectedModalities, onModalityToggle }: any) => (
     <div className="grid gap-6">
         <div className="grid grid-cols-12 gap-6">
             <InputGroup label="Asociación : *" className="col-span-12 md:col-span-6">
@@ -317,7 +330,7 @@ const AffiliationSection = React.memo(({ afiliado, activeCatalogs, uniqueClubs, 
             </InputGroup>
         </div>
 
-        <div className="grid grid-cols-12 gap-6">
+        <div className="grid grid-cols-12 gap-6 items-end">
             <InputGroup label="Nivel Tecnico : *" className="col-span-12 md:col-span-6">
                 <Select name="nivelTecnico" defaultValue={afiliado?.id_nivel_tec?.toString()}>
                     <SelectTrigger>
@@ -331,6 +344,59 @@ const AffiliationSection = React.memo(({ afiliado, activeCatalogs, uniqueClubs, 
                         ))}
                     </SelectContent>
                 </Select>
+            </InputGroup>
+
+            <InputGroup label="Modalidades : *" className="col-span-12 md:col-span-6">
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button
+                            variant="outline"
+                            role="combobox"
+                            className="w-full justify-between font-normal h-10 px-3"
+                        >
+                            {selectedModalities.length === 0 ? (
+                                <span className="text-muted-foreground">Seleccionar modalidades...</span>
+                            ) : (
+                                <div className="flex gap-1 truncate text-xs">
+                                    {selectedModalities.length > 2
+                                        ? `${selectedModalities.length} seleccionadas`
+                                        : selectedModalities.map((id: string) =>
+                                            activeCatalogs.Modalidades?.find((m: any) => m.id.toString() === id)?.Nombre
+                                        ).join(", ")
+                                    }
+                                </div>
+                            )}
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[300px] p-0" align="start">
+                        <Command>
+                            <CommandInput placeholder="Buscar modalidad..." />
+                            <CommandList>
+                                <CommandEmpty>No se encontraron modalidades.</CommandEmpty>
+                                <CommandGroup>
+                                    {activeCatalogs.Modalidades?.map((modality: any) => (
+                                        <CommandItem
+                                            key={modality.id}
+                                            value={modality.Nombre}
+                                            onSelect={() => onModalityToggle(modality.id.toString())}
+                                        >
+                                            <Check
+                                                className={cn(
+                                                    "mr-2 h-4 w-4",
+                                                    selectedModalities.includes(modality.id.toString())
+                                                        ? "opacity-100"
+                                                        : "opacity-0"
+                                                )}
+                                            />
+                                            {modality.Nombre}
+                                        </CommandItem>
+                                    ))}
+                                </CommandGroup>
+                            </CommandList>
+                        </Command>
+                    </PopoverContent>
+                </Popover>
             </InputGroup>
         </div>
     </div>
@@ -377,7 +443,7 @@ const ContactSection = React.memo(({ afiliado, activeCatalogs }: { afiliado?: Af
         </div>
         <div className="grid grid-cols-12 gap-6">
             <InputGroup label="Email : *" htmlFor="email" className="col-span-12 md:col-span-4">
-                <Input id="email" type="email" name="email" />
+                <Input id="email" type="email" name="email" defaultValue={afiliado?.Email || ""} />
             </InputGroup>
             <InputGroup label="Teléfono Particular : *" htmlFor="tel-particular" className="col-span-12 md:col-span-4">
                 <Input id="tel-particular" name="telParticular" defaultValue={afiliado?.Telefono_c} />
@@ -396,16 +462,16 @@ ContactSection.displayName = "ContactSection";
 function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, catalogs: catalogsProp }: AfiliadosFormProps) {
     const { Modalidades, fetchCatalogs, Catalogo_afiliaciones, Niveles_tecnicos, Estados: StoreEstados, Escolaridad: StoreEscolaridad } = useCatalogStore()
 
-    const activeCatalogs = React.useMemo(() => catalogsProp || {
-        Catalogo_afiliaciones: Catalogo_afiliaciones,
-        Niveles_tecnicos: Niveles_tecnicos,
-        Estados: StoreEstados,
-        Escolaridad: StoreEscolaridad,
+    const activeCatalogs = React.useMemo(() => ({
+        Catalogo_afiliaciones: catalogsProp?.Catalogo_afiliaciones || Catalogo_afiliaciones,
+        Niveles_tecnicos: catalogsProp?.Niveles_tecnicos || Niveles_tecnicos,
+        Estados: catalogsProp?.Estados || StoreEstados,
+        Escolaridad: catalogsProp?.Escolaridad || StoreEscolaridad,
         Puestos: [],
         Modalidades: Modalidades,
         View_Modalidades_detalle: [],
         Catalogo_eventos: []
-    }, [catalogsProp, Catalogo_afiliaciones, Niveles_tecnicos, StoreEstados, StoreEscolaridad, Modalidades])
+    }), [catalogsProp, Catalogo_afiliaciones, Niveles_tecnicos, StoreEstados, StoreEscolaridad, Modalidades])
 
     const [isLoading, setIsLoading] = React.useState(false)
     const [clubs, setClubs] = React.useState<ViewClubGral[]>(clubsProp || [])
@@ -414,6 +480,19 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
         afiliado?.id_Club?.toString() || ""
     )
 
+    const [selectedModalities, setSelectedModalities] = React.useState<string[]>(() => {
+        if (!afiliado?.Modalidad) return []
+        const mod = afiliado.Modalidad.toString()
+        if (mod.includes(",")) return mod.split(",")
+        return [mod]
+    })
+
+    const handleModalityToggle = (id: string) => {
+        setSelectedModalities(prev =>
+            prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+        )
+    }
+    const defaultModalidad = afiliado?.Modalidad?.toString() || Modalidades?.[0]?.id?.toString() || "1"
     const uniqueClubs = React.useMemo(() => {
         return Array.from(new Map(clubs.map(club => [club.id, club])).values())
     }, [clubs])
@@ -445,10 +524,22 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
             if (!catalogsProp) {
                 await fetchCatalogs()
             }
+
+            if (afiliado) {
+                try {
+                    const modalitiesData = await getModalidadesAfil(afiliado.id.toString())
+                    if (modalitiesData && modalitiesData.Modalidades_afil) {
+                        const selectedIds = modalitiesData.Modalidades_afil.map((m: any) => m.id_modalidad.toString())
+                        setSelectedModalities(selectedIds)
+                    }
+                } catch (e) {
+                    console.error("Error fetching modalities for affiliate:", e)
+                }
+            }
         }
 
         initData()
-    }, [clubsProp, catalogsProp, fetchCatalogs, authData])
+    }, [clubsProp, catalogsProp, fetchCatalogs, authData, afiliado])
 
     React.useEffect(() => {
         if (!afiliado && uniqueClubs.length === 1 && selectedClubId === "") {
@@ -486,12 +577,12 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
             }
         }
 
-        if (data.curp && data.curp.trim().length !== 18) {
-            toast.error("El CURP debe tener exactamente 18 caracteres")
+        if (selectedModalities.length === 0) {
+            toast.error("Debe seleccionar al menos una modalidad")
             return
         }
 
-        const defaultModalidad = afiliado?.Modalidad?.toString() || Modalidades?.[0]?.id?.toString() || "1"
+        const joinedModalities = selectedModalities.join(",")
 
         if (afiliado) {
             const changes: { campo: string; valor: string }[] = []
@@ -517,7 +608,8 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 tipoAfiliadoSecundario: "Afiliacion_2",
                 tipoAfiliadoTercero: "Afiliacion_3",
                 tipoAfiliadoCuarto: "Afiliacion_4",
-                nivelTecnico: "id_nivel_tec"
+                nivelTecnico: "id_nivel_tec",
+                email: "Email"
             }
 
             const getOriginalValue = (key: string): string => {
@@ -544,6 +636,7 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                     case "tipoAfiliadoTercero": return afiliado.Afiliacion_3?.toString() || "";
                     case "tipoAfiliadoCuarto": return afiliado.Afiliacion_4?.toString() || "";
                     case "nivelTecnico": return afiliado.id_nivel_tec.toString();
+                    case "email": return afiliado.Email || "";
                     default: return "";
                 }
             }
@@ -557,13 +650,25 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 if (newValue !== originalValue) changes.push({ campo: backendField, valor: newValue })
             }
 
+            const originalModalities = afiliado.Modalidad?.toString() || ""
+
             if (changes.length === 0) {
                 toast.info("No hay cambios para guardar")
                 return
             }
 
             try {
-                await updateAfiliado(afiliado.id, { uno: changes })
+                // Construct the payload matching the required structure
+                const updatePayload: any = { uno: changes }
+
+                // Always include the detailed modalities array if there are changes or if it's just good practice to sync
+                // The user request implies we should send it.
+                updatePayload.modalidades = selectedModalities.map((id: string) => ({
+                    id_afiliado: afiliado.id.toString(),
+                    id_modalidad: id
+                }))
+
+                await updateAfiliado(afiliado.id, updatePayload)
                 toast.success("Afiliado actualizado exitosamente")
                 onSuccess?.()
             } catch (error) {
@@ -594,10 +699,16 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                 afiliacion_3: (data.tipoAfiliadoTercero === "none" ? "" : data.tipoAfiliadoTercero) || "",
                 afiliacion_4: (data.tipoAfiliadoCuarto === "none" ? "" : data.tipoAfiliadoCuarto) || "",
                 id_nivel_tec: data.nivelTecnico,
-                modalidad: defaultModalidad
+                modalidad: defaultModalidad,
+                email: data.email,
+                modalidades: selectedModalities.map(id => ({
+                    id_afiliado: "",
+                    id_modalidad: id
+                }))
             }
 
             try {
+                console.log(payload)
                 await createAfiliado(payload)
                 toast.success("Afiliado creado exitosamente")
                 setTimeout(() => { onSuccess?.() }, 500)
@@ -632,6 +743,8 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
                         selectedClubId={selectedClubId}
                         setSelectedClubId={setSelectedClubId}
                         authData={authData}
+                        selectedModalities={selectedModalities}
+                        onModalityToggle={handleModalityToggle}
                     />
                     <ContactSection afiliado={afiliado} activeCatalogs={activeCatalogs} />
                 </div>

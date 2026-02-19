@@ -227,6 +227,7 @@ export function ClubesView() {
                 tableHeight="h-[700px]"
                 rowSelection={rowSelection}
                 onRowSelectionChange={setRowSelection}
+                enableRowSelection={(row: { original: ViewClubGral }) => !row.original.membresia}
             />
 
             {selectedClubs.length > 0 && (
