@@ -35,6 +35,7 @@ import { useAuthStore } from "@/lib/store/auth-store"
 import { useClubStore } from "@/lib/store/club-store"
 import { ReportsTabContent } from "@/components/dashboard/super-admin/reports-tab-content"
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { FileText } from "lucide-react"
 import { getClubs } from "@/lib/club-service"
 
@@ -324,16 +325,22 @@ export function InscripcionesEventosView() {
                         <div className="xl:col-span-1 flex flex-col items-center justify-center border-l pl-4 gap-2">
                             {isClubAdmin && (
                                 <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="h-10 w-10 rounded-full border-green-200 bg-green-50 hover:bg-green-100 text-green-600 shadow-sm"
-                                            title="Generar Reporte"
-                                        >
-                                            <FileText className="h-5 w-5" />
-                                        </Button>
-                                    </DialogTrigger>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    variant="outline"
+                                                    size="icon"
+                                                    className="h-10 w-10 rounded-full border-green-200 bg-green-50 hover:bg-green-100 text-green-600 shadow-sm"
+                                                >
+                                                    <FileText className="h-5 w-5" />
+                                                </Button>
+                                            </DialogTrigger>
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right">
+                                            <p>Generar Reporte</p>
+                                        </TooltipContent>
+                                    </Tooltip>
                                     <DialogContent
                                         className="max-w-4xl h-[90vh] overflow-y-auto"
                                         onInteractOutside={(e) => e.preventDefault()}
