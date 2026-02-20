@@ -461,14 +461,8 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Generador de Reportes</CardTitle>
-                <CardDescription>
-                    Seleccione el tipo de reporte y utilice los filtros para consultar la información.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        <Card className="mt-4">
+            <CardContent className="px-0">
                 <div className="flex justify-between items-center bg-muted/20 p-4 rounded-md border">
                     <div className="flex items-center gap-4">
                         {!hideFilters.includes("report_type") && (

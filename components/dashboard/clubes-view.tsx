@@ -26,9 +26,7 @@ const BulkClubMembershipDialog = dynamic(() => import("./bulk-club-membership-di
 import { useAuthStore } from "@/lib/store/auth-store"
 import { getColumns } from "./clubes-columns"
 import dynamic from "next/dynamic"
-import { CreditCard, FileText } from "lucide-react"
-import { ReportsTabContent } from "./super-admin/reports-tab-content"
-import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { CreditCard } from "lucide-react"
 
 // ... inside component
 
@@ -38,7 +36,7 @@ export function ClubesView() {
     const authData = useAuthStore((state) => state.authData)
     const [rowSelection, setRowSelection] = useState({})
     const [isBulkPaymentOpen, setIsBulkPaymentOpen] = useState(false)
-    const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+
 
     // Use loose equality to handle potential string/number mismatches
     // eslint-disable-next-line eqeqeq
@@ -211,37 +209,6 @@ export function ClubesView() {
                                 <Suspense fallback={<Skeleton className="h-10 w-10 rounded-full" />}>
                                     <ClubDialog onClubCreated={fetchClubs} />
                                 </Suspense>
-                            )}
-                            {isClubAdmin && (
-                                <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            size="icon"
-                                            className="h-10 w-10 rounded-full border-green-200 bg-green-50 hover:bg-green-100 text-green-600 shadow-sm"
-                                            title="Generar Reporte"
-                                        >
-                                            <FileText className="h-5 w-5" />
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent
-                                        className="max-w-4xl h-[90vh] overflow-y-auto"
-                                        onInteractOutside={(e) => e.preventDefault()}
-                                        onEscapeKeyDown={(e) => e.preventDefault()}
-                                    >
-                                        <DialogHeader>
-                                            <DialogTitle>Reporte de Inscripciones</DialogTitle>
-                                            <DialogDescription>
-                                                Genera y visualiza el reporte de inscripciones para tu club.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <ReportsTabContent
-                                            defaultReportType="inscripciones"
-                                            forcedClubId={clubs.find(c => c.id === authData?.id)?.Club}
-                                            hideFilters={["id_evento", "nombre_event", "id_afiliado", "nom_afiliado", "status", "report_type"]}
-                                        />
-                                    </DialogContent>
-                                </Dialog>
                             )}
                             {selectedClubs.length > 0 && (
                                 <Button

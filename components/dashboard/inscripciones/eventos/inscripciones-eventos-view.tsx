@@ -29,10 +29,23 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { EventosConfiguradosItem, getEventos } from "@/lib/evento-service"
+
 import { useCatalogStore } from "@/lib/store/catalog-store"
+import { useAuthStore } from "@/lib/store/auth-store"
+import { useClubStore } from "@/lib/store/club-store"
+import { ReportsTabContent } from "@/components/dashboard/super-admin/reports-tab-content"
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { FileText } from "lucide-react"
+import { getClubs } from "@/lib/club-service"
 
 export function InscripcionesEventosView() {
     const { Catalogo_eventos, fetchCatalogs } = useCatalogStore()
+    const { clubs, setClubs } = useClubStore()
+    const authData = useAuthStore((state) => state.authData)
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+
+    // eslint-disable-next-line eqeqeq
+    const isClubAdmin = authData?.tipo_registro == 2
     const [isLoading, setIsLoading] = useState(true)
     const [eventos, setEventos] = useState<EventosConfiguradosItem[]>([])
     // Estado para manejo de errores de carga (simulado por ahora)
@@ -54,6 +67,18 @@ export function InscripcionesEventosView() {
             setIsLoading(false)
         }
     }, [fetchCatalogs])
+
+    useEffect(() => {
+        const loadClubs = async () => {
+            if (clubs.length === 0) {
+                const response = await getClubs()
+                if (response && response.View_Club_gral) {
+                    setClubs(response.View_Club_gral)
+                }
+            }
+        }
+        loadClubs()
+    }, [clubs.length, setClubs])
 
     useEffect(() => {
         fetchData()
@@ -296,43 +321,80 @@ export function InscripcionesEventosView() {
                                 </div>
                             </div>
                         </div>
+                        <div className="xl:col-span-1 flex flex-col items-center justify-center border-l pl-4 gap-2">
+                            {isClubAdmin && (
+                                <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="icon"
+                                            className="h-10 w-10 rounded-full border-green-200 bg-green-50 hover:bg-green-100 text-green-600 shadow-sm"
+                                            title="Generar Reporte"
+                                        >
+                                            <FileText className="h-5 w-5" />
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent
+                                        className="max-w-4xl h-[90vh] overflow-y-auto"
+                                        onInteractOutside={(e) => e.preventDefault()}
+                                        onEscapeKeyDown={(e) => e.preventDefault()}
+                                    >
+                                        <DialogHeader className="sr-only">
+                                            <DialogTitle>Reporte de Inscripciones</DialogTitle>
+                                            <DialogDescription>
+                                                Genera y visualiza el reporte de inscripciones para tu club.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <ReportsTabContent
+                                            defaultReportType="inscripciones"
+                                            forcedClubId={clubs.find(c => c.id === authData?.id)?.Club}
+                                            hideFilters={["id_evento", "id_afiliado", "nom_afiliado", "status", "report_type"]}
+                                        />
+                                    </DialogContent>
+                                </Dialog>
+                            )}
+                        </div>
                     </div>
                 </CardContent>
             </Card>
 
-            {error ? (
-                <div className="text-center p-10 text-red-500">
-                    <p>{error}</p>
-                    <Button variant="outline" onClick={fetchData} className="mt-4">Reintentar</Button>
-                </div>
-            ) : (
-                <DataTable
-                    columns={columns}
-                    data={filteredEventos}
-                    noResultsMessage="No existen registros de eventos"
-                    headerClassName="bg-white dark:bg-teal-950"
-                />
-            )}
-
-            {selectedEvento && (
-                <Suspense fallback={null}>
-                    <RegisterEventDialog
-                        open={isRegisterOpen}
-                        onOpenChange={setIsRegisterOpen}
-                        eventoId={String(selectedEvento.id)}
-                        eventoName={selectedEvento.Nombre}
-                        modalidad={selectedEvento.Modalidad}
-                        costo={selectedEvento.Costo_base}
-                        fechaFinInscripcion={selectedEvento.F_fin_incripciones}
-                        horaLimiteInscripcion={selectedEvento.Hora_limite_inscripciones}
-                        limiteParticipantes={selectedEvento.Limite_participantes}
-                        onSuccess={() => {
-                            setIsRegisterOpen(false)
-                            fetchData()
-                        }}
+            {
+                error ? (
+                    <div className="text-center p-10 text-red-500">
+                        <p>{error}</p>
+                        <Button variant="outline" onClick={fetchData} className="mt-4">Reintentar</Button>
+                    </div>
+                ) : (
+                    <DataTable
+                        columns={columns}
+                        data={filteredEventos}
+                        noResultsMessage="No existen registros de eventos"
+                        headerClassName="bg-white dark:bg-teal-950"
                     />
-                </Suspense>
-            )}
+                )
+            }
+
+            {
+                selectedEvento && (
+                    <Suspense fallback={null}>
+                        <RegisterEventDialog
+                            open={isRegisterOpen}
+                            onOpenChange={setIsRegisterOpen}
+                            eventoId={String(selectedEvento.id)}
+                            eventoName={selectedEvento.Nombre}
+                            modalidad={selectedEvento.Modalidad}
+                            costo={selectedEvento.Costo_base}
+                            fechaFinInscripcion={selectedEvento.F_fin_incripciones}
+                            horaLimiteInscripcion={selectedEvento.Hora_limite_inscripciones}
+                            limiteParticipantes={selectedEvento.Limite_participantes}
+                            onSuccess={() => {
+                                setIsRegisterOpen(false)
+                                fetchData()
+                            }}
+                        />
+                    </Suspense>
+                )
+            }
         </div >
     )
 }
