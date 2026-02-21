@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { useForm } from "react-hook-form"
+import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
 import { Loader2, Save } from "lucide-react"
 
@@ -29,8 +30,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select"
-import { registerPersonal, getPersonal, PersonalData, PersonalItem } from "@/lib/personal-service"
-import { personalColumns } from "./personal-columns"
+import { registerPersonal, getPersonal, updatePersonal, PersonalData, PersonalItem } from "@/lib/personal-service"
+import { getPersonalColumns } from "./personal-columns"
 import { DataTable } from "@/components/dashboard/data-table"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog"
 import { useCatalogStore } from "@/lib/store/catalog-store"
@@ -57,15 +58,82 @@ const personalSchema = z.object({
 
 export function PersonalTabContent() {
     const [isLoading, setIsLoading] = React.useState(false)
+    const [isEditLoading, setIsEditLoading] = React.useState(false)
     const [isFormOpen, setIsFormOpen] = React.useState(false)
+    const [isEditOpen, setIsEditOpen] = React.useState(false)
+    const [editingPersonal, setEditingPersonal] = React.useState<PersonalItem | null>(null)
     const [personal, setPersonal] = React.useState<PersonalItem[]>([])
     const [isTableLoading, setIsTableLoading] = React.useState(true)
 
     const [successData, setSuccessData] = React.useState<{ usuario: string; password: string } | null>(null)
     const [openSuccess, setOpenSuccess] = React.useState(false)
     const [error, setError] = React.useState<string | null>(null)
+    const [editError, setEditError] = React.useState<string | null>(null)
 
     const { Estados, fetchCatalogs } = useCatalogStore()
+
+    // Edit form (same schema as register)
+    const editForm = useForm<z.infer<typeof personalSchema>>({
+        resolver: zodResolver(personalSchema),
+    })
+
+    const handleEdit = React.useCallback((item: PersonalItem) => {
+        setEditingPersonal(item)
+        setEditError(null)
+        editForm.reset({
+            nombre: item.Nombre.trim(),
+            paterno: item.Paterno.trim(),
+            materno: item.Materno.trim(),
+            calle: item.Calle.trim(),
+            exterior: item.Exterior.trim(),
+            interior: item.Interior?.trim() ?? "",
+            colonia: item.Colonia.trim(),
+            cp: item.Cp.trim(),
+            estado: String(item.Estado),
+            curp: item.Curp.trim(),
+            tel1: item.Tel1.trim(),
+            tel2: item.Tel2?.trim() ?? "",
+            fecha_alta: item.Fecha_alta.split("T")[0],
+            fecha_baja: item.Fecha_baja ? item.Fecha_baja.split("T")[0] : "",
+            id_Puesto: String(item.id_puesto),
+        })
+        setIsEditOpen(true)
+    }, [editForm])
+
+    const columns = React.useMemo(() => getPersonalColumns(handleEdit), [handleEdit])
+
+    async function onEditSubmit(values: z.infer<typeof personalSchema>) {
+        if (!editingPersonal) return
+        setIsEditLoading(true)
+        setEditError(null)
+        try {
+            const fields = [
+                { campo: "nombre", valor: values.nombre },
+                { campo: "paterno", valor: values.paterno },
+                { campo: "materno", valor: values.materno },
+                { campo: "calle", valor: values.calle },
+                { campo: "exterior", valor: values.exterior },
+                { campo: "interior", valor: values.interior ?? "" },
+                { campo: "colonia", valor: values.colonia },
+                { campo: "cp", valor: values.cp },
+                { campo: "estado", valor: values.estado },
+                { campo: "curp", valor: values.curp },
+                { campo: "tel1", valor: values.tel1 },
+                { campo: "tel2", valor: values.tel2 ?? "" },
+                { campo: "fecha_alta", valor: values.fecha_alta },
+                { campo: "fecha_baja", valor: values.fecha_baja ?? "" },
+                { campo: "id_Puesto", valor: values.id_Puesto },
+            ]
+            await updatePersonal(editingPersonal.id, fields)
+            setIsEditOpen(false)
+            fetchPersonal()
+        } catch (err) {
+            console.error(err)
+            setEditError("Ocurrió un error al actualizar. Verifique los datos e intente nuevamente.")
+        } finally {
+            setIsEditLoading(false)
+        }
+    }
 
     const fetchPersonal = React.useCallback(async () => {
         setIsTableLoading(true)
@@ -440,7 +508,7 @@ export function PersonalTabContent() {
                         </div>
                     ) : (
                         <DataTable
-                            columns={personalColumns}
+                            columns={columns}
                             data={personal}
                             noResultsMessage="No hay personal registrado"
                             headerClassName="bg-white dark:bg-zinc-900"
@@ -449,8 +517,60 @@ export function PersonalTabContent() {
                 </CardContent>
             </Card>
 
+            {/* Edit Dialog */}
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+                    <DialogHeader>
+                        <DialogTitle>Editar Personal</DialogTitle>
+                        <DialogDescription>
+                            Modifique los datos del personal. ID: {editingPersonal?.id}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Form {...editForm}>
+                        <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField control={editForm.control} name="nombre" render={({ field }) => (<FormItem><FormLabel>Nombre</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={editForm.control} name="paterno" render={({ field }) => (<FormItem><FormLabel>Apellido Paterno</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={editForm.control} name="materno" render={({ field }) => (<FormItem><FormLabel>Apellido Materno</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField control={editForm.control} name="curp" render={({ field }) => (<FormItem><FormLabel>CURP</FormLabel><FormControl><Input maxLength={18} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={editForm.control} name="tel1" render={({ field }) => (<FormItem><FormLabel>Teléfono 1</FormLabel><FormControl><Input maxLength={10} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={editForm.control} name="tel2" render={({ field }) => (<FormItem><FormLabel>Teléfono 2 (Opcional)</FormLabel><FormControl><Input maxLength={10} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <FormField control={editForm.control} name="calle" render={({ field }) => (<FormItem className="col-span-2"><FormLabel>Calle</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={editForm.control} name="exterior" render={({ field }) => (<FormItem><FormLabel>No. Exterior</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={editForm.control} name="interior" render={({ field }) => (<FormItem><FormLabel>No. Interior</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <FormField control={editForm.control} name="colonia" render={({ field }) => (<FormItem><FormLabel>Colonia</FormLabel><FormControl><Input {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={editForm.control} name="cp" render={({ field }) => (<FormItem><FormLabel>Código Postal</FormLabel><FormControl><Input maxLength={5} {...field} /></FormControl><FormMessage /></FormItem>)} />
+                                <FormField control={editForm.control} name="estado" render={({ field }) => (<FormItem><FormLabel>Estado</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un estado" /></SelectTrigger></FormControl><SelectContent>{Estados.map((e) => (<SelectItem key={e.id} value={e.id.toString()}>{e.Nombre}</SelectItem>))}</SelectContent></Select><FormMessage /></FormItem>)} />
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <FormField control={editForm.control} name="id_Puesto" render={({ field }) => (<FormItem><FormLabel>Puesto</FormLabel><Select onValueChange={field.onChange} value={field.value}><FormControl><SelectTrigger><SelectValue placeholder="Seleccione un puesto" /></SelectTrigger></FormControl><SelectContent><SelectItem value="1">Administrador</SelectItem><SelectItem value="2">Club</SelectItem><SelectItem value="3">Super Administrador</SelectItem></SelectContent></Select><FormMessage /></FormItem>)} />
+                                <FormField control={editForm.control} name="fecha_alta" render={({ field }) => (<FormItem><FormLabel>Fecha de Alta</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
+                            </div>
+                            <FormField control={editForm.control} name="fecha_baja" render={({ field }) => (<FormItem><FormLabel>Fecha de Baja (Opcional)</FormLabel><FormControl><Input type="date" {...field} /></FormControl><FormMessage /></FormItem>)} />
+
+                            {editError && (
+                                <div className="p-3 text-sm text-red-500 bg-red-50 border border-red-200 rounded-md">{editError}</div>
+                            )}
+
+                            <div className="flex justify-end gap-2 pt-4">
+                                <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancelar</Button>
+                                <Button type="submit" disabled={isEditLoading}>
+                                    {isEditLoading ? (<><Loader2 className="mr-2 h-4 w-4 animate-spin" />Guardando...</>) : (<><Save className="mr-2 h-4 w-4" />Guardar Cambios</>)}
+                                </Button>
+                            </div>
+                        </form>
+                    </Form>
+                </DialogContent>
+            </Dialog>
+
             <Dialog open={openSuccess} onOpenChange={setOpenSuccess}>
-                <DialogContent overlayClassName="backdrop-blur-none">
+                <DialogContent className="max-w-2xl" overlayClassName="backdrop-blur-none">
                     <DialogHeader>
                         <DialogTitle>Personal Registrado Exitosamente</DialogTitle>
                         <DialogDescription>

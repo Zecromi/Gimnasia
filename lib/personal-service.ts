@@ -62,3 +62,12 @@ export const getPersonal = async (): Promise<GetPersonalResponse> => {
     return response.data
 }
 
+export interface PersonalPatchField {
+    campo: string
+    valor: string
+}
+
+export const updatePersonal = async (id: number, fields: PersonalPatchField[]): Promise<void> => {
+    await api.post('/PutPersonal', fields, { params: { id } })
+}
+

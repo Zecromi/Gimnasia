@@ -3,6 +3,8 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { PersonalItem } from "@/lib/personal-service"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Edit } from "lucide-react"
 import { format, parseISO } from "date-fns"
 
 const PUESTOS: Record<number, string> = {
@@ -13,7 +15,22 @@ const PUESTOS: Record<number, string> = {
 
 const trimStr = (val: string | null | undefined) => (val ?? "").trim()
 
-export const personalColumns: ColumnDef<PersonalItem>[] = [
+export const getPersonalColumns = (onEdit: (item: PersonalItem) => void): ColumnDef<PersonalItem>[] => [
+    {
+        id: "acciones",
+        header: "Acciones",
+        cell: ({ row }) => (
+            <Button
+                variant="ghost"
+                size="icon-sm"
+                className="hover:bg-blue-100 text-blue-600"
+                onClick={() => onEdit(row.original)}
+            >
+                <Edit className="h-3.5 w-3.5" />
+                <span className="sr-only">Editar</span>
+            </Button>
+        ),
+    },
     {
         accessorKey: "id",
         header: "ID",
@@ -25,9 +42,7 @@ export const personalColumns: ColumnDef<PersonalItem>[] = [
         header: "Nombre",
         cell: ({ row }) => {
             const { Nombre, Paterno, Materno } = row.original
-            return (
-                <span>{`${trimStr(Nombre)} ${trimStr(Paterno)} ${trimStr(Materno)}`}</span>
-            )
+            return <span>{`${trimStr(Nombre)} ${trimStr(Paterno)} ${trimStr(Materno)}`}</span>
         },
     },
     {
