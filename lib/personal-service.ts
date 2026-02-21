@@ -1,5 +1,4 @@
 
-import axios from 'axios'
 import api from '@/lib/axios'
 
 export interface PersonalData {
@@ -34,3 +33,32 @@ export const registerPersonal = async (data: PersonalData): Promise<PersonalResp
         throw error
     }
 }
+
+export interface PersonalItem {
+    id: number
+    Nombre: string
+    Paterno: string
+    Materno: string
+    Calle: string
+    Exterior: string
+    Interior: string
+    Colonia: string
+    Cp: string
+    Estado: number
+    Curp: string
+    Tel1: string
+    Tel2: string
+    Fecha_alta: string
+    Fecha_baja: string | null
+    id_puesto: number
+}
+
+export interface GetPersonalResponse {
+    Personal_base: PersonalItem[]
+}
+
+export const getPersonal = async (): Promise<GetPersonalResponse> => {
+    const response = await api.get<GetPersonalResponse>('/GetPersonal_base')
+    return response.data
+}
+
