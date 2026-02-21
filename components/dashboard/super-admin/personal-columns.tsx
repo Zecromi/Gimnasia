@@ -112,8 +112,11 @@ export const getPersonalColumns = (onEdit: (item: PersonalItem) => void): Column
         id: "estatus",
         header: "Estatus",
         cell: ({ row }) => {
-            const baja = row.original.Fecha_baja
-            return baja
+            const { Fecha_baja, Fecha_alta } = row.original
+            const isValidBaja =
+                !!Fecha_baja &&
+                new Date(Fecha_baja) > new Date(Fecha_alta)
+            return isValidBaja
                 ? <Badge variant="destructive">Baja</Badge>
                 : <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Activo</Badge>
         },
