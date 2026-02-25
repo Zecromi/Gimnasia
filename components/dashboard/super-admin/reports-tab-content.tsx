@@ -247,7 +247,7 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
         }
     }
 
-    const handleDownload = () => {
+    const handleDownload = async () => {
         const data = reportType === "club" ? clubReportData : reportType === "affiliate" ? affiliateReportData : inscripcionesReportData
 
         if (data.length === 0) {
@@ -255,78 +255,182 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
             return
         }
 
-        let dataToExport: any[] = []
+        const formattedDownloadDate = new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" })
+        const currentYear = new Date().getFullYear().toString()
+
+        // ── Shared ExcelJS header helper ──
+        const buildExcelHeader = async (wb: any, sheetName: string, titleLine: string, subtitleLine: string, colHeaders: string[]) => {
+            const ws = wb.addWorksheet(sheetName)
+            const NUM_COLS = colHeaders.length
+            const addTitle = (rowNum: number, value: string, fontSize = 11) => {
+                ws.mergeCells(rowNum, 1, rowNum, NUM_COLS)
+                const row = ws.getRow(rowNum)
+                row.height = fontSize + 6
+                const cell = row.getCell(1)
+                cell.value = value
+                cell.font = { bold: true, size: fontSize }
+                cell.alignment = { horizontal: "center", vertical: "middle" }
+            }
+            const addMeta = (rowNum: number, label: string, value: string) => {
+                const row = ws.getRow(rowNum)
+                row.getCell(1).value = label
+                row.getCell(1).font = { bold: true, size: 9 }
+                row.getCell(2).value = value
+                row.getCell(2).font = { size: 9 }
+            }
+            addTitle(1, titleLine, 13)
+            addTitle(2, subtitleLine, 11)
+            ws.getRow(3).height = 6
+            addMeta(4, "Fecha de descarga:", formattedDownloadDate)
+            addMeta(5, "Año del evento:", currentYear)
+            ws.getRow(6).height = 6
+            const headerRow = ws.addRow(colHeaders)
+            headerRow.eachCell((cell: any) => {
+                cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 9 }
+                cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF16A34A" } }
+                cell.alignment = { horizontal: "center", vertical: "middle" }
+                cell.border = { top: { style: "thin" }, bottom: { style: "thin" }, left: { style: "thin" }, right: { style: "thin" } }
+            })
+            headerRow.height = 16
+            return ws
+        }
 
         if (reportType === "club") {
             const clubData = data as ClubMembershipItem[]
-            dataToExport = clubData.map(formatClubData)
-            const total = clubData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0)
-            dataToExport.push({
-                "Club": "Total General",
-                "Alias": "",
-                "Email": "",
-                "Asociación": "",
-                "Membresía": "",
-                "Estatus": "",
-                "Monto Pago": `$${total.toFixed(2)}`,
-                "Forma Pago": "",
-                "Comprobante": "",
-                "Lugar Pago": "",
-                "Fecha Pago": ""
+            const ExcelJS = (await import("exceljs")).default
+            const wb = new ExcelJS.Workbook()
+            const colHeaders = ["Club", "Alias", "Email", "Asociación", "Membresía", "Estatus", "Monto Pago", "Forma Pago", "Comprobante", "Lugar Pago", "Fecha Pago"]
+            const ws = await buildExcelHeader(wb, "Reporte", "Membresías de Clubes", "", colHeaders)
+            clubData.forEach(item => {
+                const f = formatClubData(item)
+                ws.addRow([f.Club, f.Alias, f.Email, f.Asociación, f.Membresía, f.Estatus, f["Monto Pago"], f["Forma Pago"], f.Comprobante, f["Lugar Pago"], f["Fecha Pago"]])
             })
+            const total = clubData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0)
+            const totalRow = ws.addRow(["", "", "", "", "", "Total General", `$${total.toFixed(2)}`, "", "", "", ""])
+            totalRow.getCell(6).font = { bold: true }
+            totalRow.getCell(7).font = { bold: true }
+            ws.columns = [{ width: 22 }, { width: 14 }, { width: 24 }, { width: 16 }, { width: 12 }, { width: 12 }, { width: 12 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 }]
+            const buffer = await wb.xlsx.writeBuffer()
+            const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement("a")
+            a.href = url; a.download = "reporte_clubes_membresia.xlsx"; a.click()
+            URL.revokeObjectURL(url)
+            return
         } else if (reportType === "affiliate") {
             const affiliateData = data as AfiliadoPaymentItem[]
-            dataToExport = affiliateData.map(formatAffiliateData)
-            const total = affiliateData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0)
-            dataToExport.push({
-                "ID Afiliado": "",
-                "Nombre Completo": "",
-                "Club": "",
-                "Membresía": "",
-                "Importe": `$${total.toFixed(2)}`,
-                "Fecha Pago": "",
-                "Forma Pago": "",
-                "Estatus": ""
+            const ExcelJS = (await import("exceljs")).default
+            const wb = new ExcelJS.Workbook()
+            const colHeaders = ["ID Afiliado", "Nombre Completo", "Club", "Membresía", "Importe", "Fecha Pago", "Forma Pago", "Estatus"]
+            const ws = await buildExcelHeader(wb, "Reporte", "Pagos de Afiliados", "", colHeaders)
+            affiliateData.forEach(item => {
+                const f = formatAffiliateData(item)
+                ws.addRow([f["ID Afiliado"], f["Nombre Completo"], f.Club, f.Membresía, f.Importe, f["Fecha Pago"], f["Forma Pago"], f.Estatus])
             })
+            const total = affiliateData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0)
+            const totalRow = ws.addRow(["", "", "", "Total General", `$${total.toFixed(2)}`, "", "", ""])
+            totalRow.getCell(4).font = { bold: true }
+            totalRow.getCell(5).font = { bold: true }
+            ws.columns = [{ width: 12 }, { width: 28 }, { width: 18 }, { width: 12 }, { width: 12 }, { width: 14 }, { width: 14 }, { width: 12 }]
+            const buffer = await wb.xlsx.writeBuffer()
+            const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement("a")
+            a.href = url; a.download = "reporte_pagos_afiliados.xlsx"; a.click()
+            URL.revokeObjectURL(url)
+            return
         } else if (reportType === "inscripciones") {
             const inscripcionesData = data as InscripcionReportItem[]
-            dataToExport = inscripcionesData.map(item => ({
-                "ID Evento": item.id_evento,
-                "Evento": item.evento,
-                "Club": item.club,
-                "ID Afiliado": item.id_afiliado,
-                "Afiliado": item.afiliado,
-                "Estatus": item.Status,
-                "Costo Individual": item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00",
-                "Total": item.Total ? `$${Number(item.Total).toFixed(2)}` : "$0.00"
-            }))
-            const totalCosto = inscripcionesData.reduce((sum, item) => sum + (Number(item.Costo_ind) || 0), 0)
-            dataToExport.push({
-                "ID Evento": "",
-                "Evento": "",
-                "Club": "",
-                "ID Afiliado": "",
-                "Afiliado": "Total General",
-                "Estatus": "",
-                "Costo Individual": `$${totalCosto.toFixed(2)}`,
-                "Total": ""
+            const first = inscripcionesData[0]
+            const formattedDownloadDate = new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" })
+            const currentYear = new Date().getFullYear().toString()
+            const totalCosta = inscripcionesData.reduce((sum, item) => sum + (Number(item.Costo_ind) || 0), 0)
+
+            const ExcelJS = (await import("exceljs")).default
+            const wb = new ExcelJS.Workbook()
+            const ws = wb.addWorksheet("Reporte")
+
+            const NUM_COLS = 13
+
+            // Helper: merge row, set value, bold + centered
+            const addTitle = (rowNum: number, value: string, fontSize = 11) => {
+                ws.mergeCells(rowNum, 1, rowNum, NUM_COLS)
+                const row = ws.getRow(rowNum)
+                row.height = fontSize + 6
+                const cell = row.getCell(1)
+                cell.value = value
+                cell.font = { bold: true, size: fontSize }
+                cell.alignment = { horizontal: "center", vertical: "middle" }
+            }
+
+            // Helper: left-aligned label + value pair
+            const addMeta = (rowNum: number, label: string, value: string) => {
+                const row = ws.getRow(rowNum)
+                row.getCell(1).value = label
+                row.getCell(1).font = { bold: true, size: 9 }
+                row.getCell(2).value = value
+                row.getCell(2).font = { size: 9 }
+            }
+
+            // ── Header rows ──
+            addTitle(1, "Listado de Inscritos", 13)
+            addTitle(2, first?.evento ?? "", 11)
+            addTitle(3, first?.Asociación ?? "", 10)
+            ws.getRow(4).height = 6  // spacer
+            addMeta(5, "Fecha de descarga:", formattedDownloadDate)
+            addMeta(6, "Año del evento:", currentYear)
+            ws.getRow(7).height = 6  // spacer
+
+            // ── Column header row (row 8) ──
+            const headerRow = ws.addRow([
+                "ID Evento", "Evento", "Club", "ID Afiliado", "Afiliado",
+                "CURP", "Fecha Nacimiento", "Edades", "Nivel",
+                "Sub División", "Concepto", "Asociación", "Costo Individual"
+            ])
+            headerRow.eachCell((cell) => {
+                cell.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 9 }
+                cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FF16A34A" } }
+                cell.alignment = { horizontal: "center", vertical: "middle" }
+                cell.border = {
+                    top: { style: "thin" }, bottom: { style: "thin" },
+                    left: { style: "thin" }, right: { style: "thin" }
+                }
             })
+            headerRow.height = 16
+
+            // ── Data rows ──
+            inscripcionesData.forEach(item => {
+                ws.addRow([
+                    item.id_evento, item.evento, item.club, item.id_afiliado, item.afiliado,
+                    item.Curp,
+                    item.Fecha_nacimiento ? item.Fecha_nacimiento.split("T")[0] : "",
+                    item.Edades, item.Nivel, item.Sub_División, item.Concepto, item.Asociación,
+                    item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00"
+                ])
+            })
+
+            // ── Total row ──
+            const totalRow = ws.addRow(["", "", "", "", "", "", "", "", "", "", "", "Total General", `$${totalCosta.toFixed(2)}`])
+            totalRow.getCell(12).font = { bold: true }
+            totalRow.getCell(13).font = { bold: true }
+
+            // ── Column widths ──
+            ws.columns = [
+                { width: 10 }, { width: 22 }, { width: 14 }, { width: 12 }, { width: 26 },
+                { width: 20 }, { width: 16 }, { width: 24 }, { width: 10 },
+                { width: 14 }, { width: 14 }, { width: 20 }, { width: 16 }
+            ]
+
+            const buffer = await wb.xlsx.writeBuffer()
+            const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement("a")
+            a.href = url
+            a.download = "reporte_inscripciones.xlsx"
+            a.click()
+            URL.revokeObjectURL(url)
+            return
         }
-
-        const worksheet = utils.json_to_sheet(dataToExport)
-        const workbook = utils.book_new()
-        utils.book_append_sheet(workbook, worksheet, "Reporte")
-
-        const fileName = reportType === "club" ? "reporte_clubes_membresia.xlsx" : reportType === "affiliate" ? "reporte_pagos_afiliados.xlsx" : "reporte_inscripciones.xlsx"
-
-        const wbout = write(workbook, { bookType: 'xlsx', type: 'array' })
-        const blob = new Blob([wbout], { type: 'application/octet-stream' })
-        const url = URL.createObjectURL(blob)
-        const a = document.createElement("a")
-        a.href = url
-        a.download = fileName
-        a.click()
-        URL.revokeObjectURL(url)
     }
 
     const generatePdf = () => {
@@ -346,9 +450,34 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
             title: fileName
         })
 
-        doc.text(title, 14, 15)
-        doc.setFontSize(10)
-        doc.text(`Fecha de generación: ${new Date().toLocaleDateString()}`, 14, 22)
+        // ── Shared PDF header helper ──
+        const addPdfHeader = (headerTitle: string, subtitle = "") => {
+            const pageWidth = doc.internal.pageSize.getWidth()
+            doc.setTextColor(0, 0, 0)
+            doc.setFontSize(13)
+            doc.setFont("helvetica", "bold")
+            doc.text(headerTitle, pageWidth / 2, 15, { align: "center" })
+            if (subtitle) {
+                doc.setFontSize(10)
+                doc.text(subtitle, pageWidth / 2, 22, { align: "center" })
+            }
+            let metaY = subtitle ? 30 : 22
+            const metaX = 20
+            const addMeta = (label: string, value: string) => {
+                doc.setFontSize(8)
+                doc.setFont("helvetica", "bold")
+                doc.setTextColor(0, 0, 0)
+                doc.text(`${label}:`, metaX, metaY)
+                doc.setFont("helvetica", "normal")
+                doc.text(value, metaX + 38, metaY)
+                metaY += 6
+            }
+            const fd = new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" })
+            addMeta("Fecha de descarga", fd)
+            addMeta("Año del evento", new Date().getFullYear().toString())
+            doc.setTextColor(0, 0, 0)
+            return metaY + 2
+        }
 
         if (reportType === "club") {
             const clubData = data as ClubMembershipItem[]
@@ -372,13 +501,14 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
             const total = clubData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0)
             tableData.push(["", "", "", "", "", "Total General:", `$${total.toFixed(2)}`, "", "", "", ""])
 
+            const clubStartY = addPdfHeader("Membresías de Clubes")
             autoTable(doc, {
-                startY: 25,
+                startY: clubStartY,
                 head: [["Club", "Alias", "Email", "Asociación", "Membresía", "Estatus", "Monto", "Forma Pago", "Comprobante", "Lugar Pago", "Fecha Pago"]],
                 body: tableData,
                 theme: 'grid',
                 styles: { fontSize: 7 },
-                headStyles: { fillColor: [22, 163, 74] } // Green color
+                headStyles: { fillColor: [22, 163, 74] }
             })
         } else if (reportType === "affiliate") {
             const affiliateData = data as AfiliadoPaymentItem[]
@@ -399,8 +529,9 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
             const total = affiliateData.reduce((sum, item) => sum + (Number(item.M_pago) || 0), 0)
             tableData.push(["", "", "", "Total General:", `$${total.toFixed(2)}`, "", "", ""])
 
+            const affiliateStartY = addPdfHeader("Pagos de Afiliados")
             autoTable(doc, {
-                startY: 25,
+                startY: affiliateStartY,
                 head: [["ID", "Nombre", "Club", "Membresía", "Importe", "Fecha Pago", "Forma Pago", "Estatus"]],
                 body: tableData,
                 theme: 'grid',
@@ -409,27 +540,66 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
             })
         } else if (reportType === "inscripciones") {
             const inscripcionesData = data as InscripcionReportItem[]
+            const first = inscripcionesData[0]
+            const pageWidth = doc.internal.pageSize.getWidth()
+            const formattedDownloadDate = new Date().toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" })
+            const currentYear = new Date().getFullYear().toString()
+
+            // — Header section —
+            doc.setTextColor(0, 0, 0)
+            doc.setFontSize(11)
+            doc.setFont("helvetica", "bold")
+            doc.text("Listado de Inscritos", pageWidth / 2, 15, { align: "center" })
+
+            doc.setFontSize(10)
+            doc.text(first?.evento ?? "", pageWidth / 2, 22, { align: "center" })
+
+            doc.setFontSize(9)
+            doc.setFont("helvetica", "normal")
+            doc.text(first?.Asociación ?? "", pageWidth / 2, 28, { align: "center" })
+
+            const metaX = 20
+            let metaY = 38
+
+            const addMeta = (label: string, value: string) => {
+                doc.setFontSize(8)
+                doc.setFont("helvetica", "bold")
+                doc.setTextColor(0, 0, 0)
+                doc.text(`${label}:`, metaX, metaY)
+                doc.setFont("helvetica", "normal")
+                doc.text(value, metaX + 38, metaY)
+                metaY += 6
+            }
+
+            addMeta("Fecha de descarga", formattedDownloadDate)
+            addMeta("Año del evento", currentYear)
+
+
             const tableData = inscripcionesData.map(item => ([
                 String(item.id_evento || ""),
                 String(item.evento || ""),
                 String(item.club || ""),
                 String(item.id_afiliado || ""),
                 String(item.afiliado || ""),
-                String(item.Status || ""),
-                String(item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00"),
-                String(item.Total ? `$${Number(item.Total).toFixed(2)}` : "$0.00")
+                String(item.Curp || ""),
+                String(item.Fecha_nacimiento ? item.Fecha_nacimiento.split("T")[0] : ""),
+                String(item.Edades || ""),
+                String(item.Nivel || ""),
+                String(item.Sub_División || ""),
+                String(item.Concepto || ""),
+                String(item.Asociación || ""),
+                String(item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00")
             ]))
 
-            // Calculate totals
             const totalCosto = inscripcionesData.reduce((sum, item) => sum + (Number(item.Costo_ind) || 0), 0)
-            tableData.push(["", "", "", "", "", "Total General:", `$${totalCosto.toFixed(2)}`, ""])
+            tableData.push(["", "", "", "", "", "", "", "", "", "", "", "Total General", `$${totalCosto.toFixed(2)}`])
 
             autoTable(doc, {
-                startY: 25,
-                head: [["ID Evento", "Evento", "Club", "ID Afiliado", "Afiliado", "Estatus", "Costo", "Total"]],
+                startY: metaY + 2,
+                head: [["ID Evento", "Evento", "Club", "ID Afiliado", "Afiliado", "CURP", "F. Nacimiento", "Edades", "Nivel", "Sub División", "Concepto", "Asociación", "Costo Individual"]],
                 body: tableData,
                 theme: 'grid',
-                styles: { fontSize: 8 },
+                styles: { fontSize: 6 },
                 headStyles: { fillColor: [22, 163, 74] }
             })
         }
@@ -768,9 +938,14 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
                                             <TableHead className="whitespace-nowrap">Club</TableHead>
                                             <TableHead className="whitespace-nowrap">ID Afiliado</TableHead>
                                             <TableHead className="whitespace-nowrap">Afiliado</TableHead>
-                                            <TableHead className="whitespace-nowrap">Estatus</TableHead>
-                                            <TableHead className="whitespace-nowrap text-right">Costo Unitario</TableHead>
-                                            <TableHead className="whitespace-nowrap text-right">Total</TableHead>
+                                            <TableHead className="whitespace-nowrap">CURP</TableHead>
+                                            <TableHead className="whitespace-nowrap">F. Nacimiento</TableHead>
+                                            <TableHead className="whitespace-nowrap">Edades</TableHead>
+                                            <TableHead className="whitespace-nowrap">Nivel</TableHead>
+                                            <TableHead className="whitespace-nowrap">Sub División</TableHead>
+                                            <TableHead className="whitespace-nowrap">Concepto</TableHead>
+                                            <TableHead className="whitespace-nowrap">Asociación</TableHead>
+                                            <TableHead className="whitespace-nowrap text-right">Costo Individual</TableHead>
                                         </>
                                     )}
                                 </TableRow>
@@ -883,24 +1058,21 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
                                                     <TableCell className="whitespace-nowrap">{item.club}</TableCell>
                                                     <TableCell className="whitespace-nowrap">{item.id_afiliado}</TableCell>
                                                     <TableCell className="whitespace-nowrap">{item.afiliado}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.Status === "Pagado" || item.Status === "En Curso"
-                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                                                            }`}>
-                                                            {item.Status}
-                                                        </span>
-                                                    </TableCell>
+                                                    <TableCell className="whitespace-nowrap font-mono text-xs">{item.Curp}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.Fecha_nacimiento ? item.Fecha_nacimiento.split("T")[0] : "—"}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.Edades}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.Nivel}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.Sub_División}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.Concepto}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.Asociación}</TableCell>
                                                     <TableCell className="whitespace-nowrap text-right">{item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00"}</TableCell>
-                                                    <TableCell className="whitespace-nowrap text-right">{item.Total ? `$${Number(item.Total).toFixed(2)}` : "$0.00"}</TableCell>
                                                 </TableRow>
                                             ))}
                                             <TableRow className="bg-muted/50 font-medium border-t-2">
-                                                <TableCell colSpan={6} className="text-right pr-4">Total General:</TableCell>
+                                                <TableCell colSpan={12} className="text-right pr-4">Total General:</TableCell>
                                                 <TableCell className="whitespace-nowrap text-right">
                                                     ${inscripcionesReportData.reduce((sum, item) => sum + (Number(item.Costo_ind) || 0), 0).toFixed(2)}
                                                 </TableCell>
-                                                <TableCell className="whitespace-nowrap text-right"></TableCell>
                                             </TableRow>
                                         </>
                                     ) : (
