@@ -1,7 +1,6 @@
 "use client"
 
 import * as React from "react"
-import { utils, write } from "xlsx"
 import { Download, Loader2, Search, FileText, Printer } from "lucide-react"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
@@ -12,9 +11,6 @@ import { Button } from "@/components/ui/button"
 import {
     Card,
     CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
 } from "@/components/ui/card"
 import {
     Select,
