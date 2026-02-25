@@ -222,11 +222,16 @@ export interface InscripcionReportItem {
     id_evento: number;
     evento: string;
     club: string;
-    afiliado: string;
     id_afiliado: number;
+    afiliado: string;
+    Curp: string;
+    Fecha_nacimiento: string;
+    Edades: string;
+    Nivel: string;
+    Sub_División: string;
     Costo_ind: number;
-    Total: number;
-    Status: string;
+    Concepto: string;
+    Asociación: string;
 }
 
 export interface GetInscripcionesReportResponse {

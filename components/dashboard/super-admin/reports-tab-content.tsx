@@ -43,9 +43,15 @@ import { InputGroup } from "@/components/ui/input-group"
 import { toast } from "sonner"
 import { useInscripcionesStore } from "@/lib/store/inscripciones-store"
 
-export function ReportsTabContent() {
+export interface ReportsTabContentProps {
+    defaultReportType?: "club" | "affiliate" | "inscripciones"
+    forcedClubId?: string
+    hideFilters?: string[]
+}
+
+export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters = [] }: ReportsTabContentProps = {}) {
     const [isLoading, setIsLoading] = React.useState(false)
-    const [reportType, setReportType] = React.useState<"club" | "affiliate" | "inscripciones">("club")
+    const [reportType, setReportType] = React.useState<"club" | "affiliate" | "inscripciones">(defaultReportType || "club")
 
     // Club Report State
     const [clubReportData, setClubReportData] = React.useState<ClubMembershipItem[]>([])
@@ -86,6 +92,17 @@ export function ReportsTabContent() {
         setIsFiltering,
         setHasSelectedEvent
     } = useInscripcionesStore()
+
+    React.useEffect(() => {
+        if (forcedClubId) {
+            setInscripcionesFilters({ ...inscripcionesFilters, club: forcedClubId })
+            // Also set for other report types if needed, or if they share state structure
+            setAffiliateFilters(prev => ({ ...prev, club: forcedClubId }))
+            // Club report likely filters by club name, which might be different from ID. 
+            // If forcedClubId is a name, it works. If ID, might need mapping.
+            // Assuming string matching "club" param in APIs.
+        }
+    }, [forcedClubId]) // eslint-disable-line react-hooks/exhaustive-deps
 
     // PDF Preview State
     const [showPdfPreview, setShowPdfPreview] = React.useState(false)
@@ -152,11 +169,11 @@ export function ReportsTabContent() {
         }
     }
 
-    // Initial fetch
-    React.useEffect(() => {
-        fetchReport()
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [reportType]) // Refetch when report type changes
+    // Initial fetch handled by the debounced effect below
+    // React.useEffect(() => {
+    //    fetchReport()
+    // }, [reportType]) 
+
 
     // Debounced filtering effect for Inscripciones
     React.useEffect(() => {
@@ -170,6 +187,16 @@ export function ReportsTabContent() {
 
         return () => clearTimeout(timer)
     }, [inscripcionesFilters, reportType, filterInscripcionesData, setIsFiltering])
+
+    // Debounced auto-fetch for all report types
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchReport()
+        }, 500)
+
+        return () => clearTimeout(timer)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [reportType, clubFilters, affiliateFilters, inscripcionesFilters.id_evento, inscripcionesFilters.nombre_event, inscripcionesFilters.club, inscripcionesFilters.id_afiliado, inscripcionesFilters.nom_afiliado, inscripcionesFilters.status])
 
     const handleSuggestionClick = (key: string, value: string) => {
         setInscripcionesFilters((prev) => ({ ...prev, [key]: value }))
@@ -269,9 +296,14 @@ export function ReportsTabContent() {
                 "Club": item.club,
                 "ID Afiliado": item.id_afiliado,
                 "Afiliado": item.afiliado,
-                "Estatus": item.Status,
-                "Costo Individual": item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00",
-                "Total": item.Total ? `$${Number(item.Total).toFixed(2)}` : "$0.00"
+                "CURP": item.Curp,
+                "Fecha Nacimiento": item.Fecha_nacimiento ? item.Fecha_nacimiento.split("T")[0] : "",
+                "Edades": item.Edades,
+                "Nivel": item.Nivel,
+                "Sub División": item.Sub_División,
+                "Concepto": item.Concepto,
+                "Asociación": item.Asociación,
+                "Costo Individual": item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00"
             }))
             const totalCosto = inscripcionesData.reduce((sum, item) => sum + (Number(item.Costo_ind) || 0), 0)
             dataToExport.push({
@@ -280,9 +312,14 @@ export function ReportsTabContent() {
                 "Club": "",
                 "ID Afiliado": "",
                 "Afiliado": "Total General",
-                "Estatus": "",
-                "Costo Individual": `$${totalCosto.toFixed(2)}`,
-                "Total": ""
+                "CURP": "",
+                "Fecha Nacimiento": "",
+                "Edades": "",
+                "Nivel": "",
+                "Sub División": "",
+                "Concepto": "",
+                "Asociación": "",
+                "Costo Individual": `$${totalCosto.toFixed(2)}`
             })
         }
 
@@ -388,21 +425,25 @@ export function ReportsTabContent() {
                 String(item.club || ""),
                 String(item.id_afiliado || ""),
                 String(item.afiliado || ""),
-                String(item.Status || ""),
-                String(item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00"),
-                String(item.Total ? `$${Number(item.Total).toFixed(2)}` : "$0.00")
+                String(item.Curp || ""),
+                String(item.Fecha_nacimiento ? item.Fecha_nacimiento.split("T")[0] : ""),
+                String(item.Edades || ""),
+                String(item.Nivel || ""),
+                String(item.Sub_División || ""),
+                String(item.Concepto || ""),
+                String(item.Asociación || ""),
+                String(item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00")
             ]))
 
-            // Calculate totals
             const totalCosto = inscripcionesData.reduce((sum, item) => sum + (Number(item.Costo_ind) || 0), 0)
-            tableData.push(["", "", "", "", "", "Total General:", `$${totalCosto.toFixed(2)}`, ""])
+            tableData.push(["", "", "", "", "Total General", "", "", "", "", "", "", "", `$${totalCosto.toFixed(2)}`])
 
             autoTable(doc, {
                 startY: 25,
-                head: [["ID Evento", "Evento", "Club", "ID Afiliado", "Afiliado", "Estatus", "Costo", "Total"]],
+                head: [["ID Evento", "Evento", "Club", "ID Afiliado", "Afiliado", "CURP", "F. Nacimiento", "Edades", "Nivel", "Sub División", "Concepto", "Asociación", "Costo"]],
                 body: tableData,
                 theme: 'grid',
-                styles: { fontSize: 8 },
+                styles: { fontSize: 6 },
                 headStyles: { fillColor: [22, 163, 74] }
             })
         }
@@ -434,27 +475,30 @@ export function ReportsTabContent() {
     }
 
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Generador de Reportes</CardTitle>
-                <CardDescription>
-                    Seleccione el tipo de reporte y utilice los filtros para consultar la información.
-                </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        <Card className="mt-4">
+            <CardContent className="px-0">
                 <div className="flex justify-between items-center bg-muted/20 p-4 rounded-md border">
                     <div className="flex items-center gap-4">
-                        <label className="text-sm font-medium">Tipo de Reporte:</label>
-                        <Select value={reportType} onValueChange={(val: "club" | "affiliate" | "inscripciones") => setReportType(val)}>
-                            <SelectTrigger className="w-[280px]">
-                                <SelectValue placeholder="Seleccione reporte" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="club">Membresías de Clubes</SelectItem>
-                                <SelectItem value="affiliate">Pagos de Afiliados</SelectItem>
-                                <SelectItem value="inscripciones">Inscripciones</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        {!hideFilters.includes("report_type") && (
+                            <>
+                                <label className="text-sm font-medium">Tipo de Reporte:</label>
+                                <Select value={reportType} onValueChange={(val: "club" | "affiliate" | "inscripciones") => setReportType(val)}>
+                                    <SelectTrigger className="w-[280px]">
+                                        <SelectValue placeholder="Seleccione reporte" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="club">Membresías de Clubes</SelectItem>
+                                        <SelectItem value="affiliate">Pagos de Afiliados</SelectItem>
+                                        <SelectItem value="inscripciones">Inscripciones</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </>
+                        )}
+                        {hideFilters.includes("report_type") && (
+                            <h3 className="text-lg font-semibold">
+                                {reportType === "club" ? "Reporte de Membresías" : reportType === "affiliate" ? "Reporte de Pagos de Afiliados" : "Reporte de Inscripciones"}
+                            </h3>
+                        )}
                     </div>
                     <div className="flex gap-2">
                         <Button onClick={handlePreviewPdf} disabled={(reportType === "club" ? clubReportData : reportType === "affiliate" ? affiliateReportData : inscripcionesReportData).length === 0} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
@@ -552,140 +596,106 @@ export function ReportsTabContent() {
                             </>
                         ) : (
                             <>
-                                <InputGroup label="ID Evento" htmlFor="id_evento" className="relative">
-                                    <Input
-                                        id="id_evento"
-                                        value={inscripcionesFilters.id_evento}
-                                        onChange={(e) => handleFilterChange("id_evento", e.target.value)}
-                                        onFocus={() => handleFocus("id_evento")}
-                                        onBlur={() => handleBlur("id_evento")}
-                                        placeholder="ID Evento"
-                                        autoComplete="off"
-                                    />
-                                    {showSuggestions["id_evento"] && suggestions["id_evento"]?.length > 0 && (
-                                        <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto mt-1 dark:bg-gray-800 dark:border-gray-700">
-                                            {suggestions["id_evento"].map((suggestion, index) => (
-                                                <li
-                                                    key={index}
-                                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700"
-                                                    onClick={() => handleSuggestionClick("id_evento", suggestion)}
-                                                >
-                                                    {suggestion}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </InputGroup>
-                                <InputGroup label="Nombre Evento" htmlFor="nombre_event" className="relative">
-                                    <Input
-                                        id="nombre_event"
-                                        value={inscripcionesFilters.nombre_event}
-                                        onChange={(e) => handleFilterChange("nombre_event", e.target.value)}
-                                        onFocus={() => handleFocus("nombre_event")}
-                                        onBlur={() => handleBlur("nombre_event")}
-                                        placeholder="Nombre del evento"
-                                        autoComplete="off"
-                                    />
-                                    {showSuggestions["nombre_event"] && suggestions["nombre_event"]?.length > 0 && (
-                                        <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto mt-1 dark:bg-gray-800 dark:border-gray-700">
-                                            {suggestions["nombre_event"].map((suggestion, index) => (
-                                                <li
-                                                    key={index}
-                                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700"
-                                                    onClick={() => handleSuggestionClick("nombre_event", suggestion)}
-                                                >
-                                                    {suggestion}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </InputGroup>
-                                <InputGroup label="Club" htmlFor="club_insc" className="relative">
-                                    <Input
-                                        id="club_insc"
-                                        value={inscripcionesFilters.club}
-                                        onChange={(e) => handleFilterChange("club", e.target.value)}
-                                        onFocus={() => handleFocus("club")}
-                                        onBlur={() => handleBlur("club")}
-                                        placeholder="Nombre del club"
-                                        autoComplete="off"
-                                    />
-                                    {showSuggestions["club"] && suggestions["club"]?.length > 0 && (
-                                        <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto mt-1 dark:bg-gray-800 dark:border-gray-700">
-                                            {suggestions["club"].map((suggestion, index) => (
-                                                <li
-                                                    key={index}
-                                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700"
-                                                    onClick={() => handleSuggestionClick("club", suggestion)}
-                                                >
-                                                    {suggestion}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </InputGroup>
-                                <InputGroup label="ID Afiliado" htmlFor="id_afiliado" className="relative">
-                                    <Input
-                                        id="id_afiliado"
-                                        value={inscripcionesFilters.id_afiliado}
-                                        onChange={(e) => handleFilterChange("id_afiliado", e.target.value)}
-                                        onFocus={() => handleFocus("id_afiliado")}
-                                        onBlur={() => handleBlur("id_afiliado")}
-                                        placeholder="ID Afiliado"
-                                        autoComplete="off"
-                                    />
-                                    {showSuggestions["id_afiliado"] && suggestions["id_afiliado"]?.length > 0 && (
-                                        <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto mt-1 dark:bg-gray-800 dark:border-gray-700">
-                                            {suggestions["id_afiliado"].map((suggestion, index) => (
-                                                <li
-                                                    key={index}
-                                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700"
-                                                    onClick={() => handleSuggestionClick("id_afiliado", suggestion)}
-                                                >
-                                                    {suggestion}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </InputGroup>
-                                <InputGroup label="Nombre Afiliado" htmlFor="nom_afiliado" className="relative">
-                                    <Input
-                                        id="nom_afiliado"
-                                        value={inscripcionesFilters.nom_afiliado}
-                                        onChange={(e) => handleFilterChange("nom_afiliado", e.target.value)}
-                                        onFocus={() => handleFocus("nom_afiliado")}
-                                        onBlur={() => handleBlur("nom_afiliado")}
-                                        placeholder="Nombre del afiliado"
-                                        autoComplete="off"
-                                    />
-                                    {showSuggestions["nom_afiliado"] && suggestions["nom_afiliado"]?.length > 0 && (
-                                        <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto mt-1 dark:bg-gray-800 dark:border-gray-700">
-                                            {suggestions["nom_afiliado"].map((suggestion, index) => (
-                                                <li
-                                                    key={index}
-                                                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700"
-                                                    onClick={() => handleSuggestionClick("nom_afiliado", suggestion)}
-                                                >
-                                                    {suggestion}
-                                                </li>
-                                            ))}
-                                        </ul>
-                                    )}
-                                </InputGroup>
-                                <InputGroup label="Estatus">
-                                    <Select value={inscripcionesFilters.status} onValueChange={(val) => handleFilterChange("status", val)}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Todos" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="todos">Todos</SelectItem>
-                                            <SelectItem value="Pagado">Pagado</SelectItem>
-                                            <SelectItem value="Pendiente">Pendiente</SelectItem>
-                                            <SelectItem value="Cancelado">Cancelado</SelectItem>
-                                            <SelectItem value="En Curso">En Curso</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </InputGroup>
+
+                                {!hideFilters.includes("id_evento") && (
+                                    <InputGroup label="ID Evento" htmlFor="id_evento" className="relative">
+                                        <Input
+                                            id="id_evento"
+                                            value={inscripcionesFilters.id_evento}
+                                            onChange={(e) => handleFilterChange("id_evento", e.target.value)}
+                                            onFocus={() => handleFocus("id_evento")}
+                                            onBlur={() => handleBlur("id_evento")}
+                                            placeholder="ID Evento"
+                                            autoComplete="off"
+                                        />
+                                        {showSuggestions["id_evento"] && suggestions["id_evento"]?.length > 0 && (
+                                            <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto mt-1 dark:bg-gray-800 dark:border-gray-700">
+                                                {suggestions["id_evento"].map((suggestion, index) => (
+                                                    <li
+                                                        key={index}
+                                                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700"
+                                                        onClick={() => handleSuggestionClick("id_evento", suggestion)}
+                                                    >
+                                                        {suggestion}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </InputGroup>
+                                )}
+                                {!hideFilters.includes("nombre_event") && (
+                                    <InputGroup label="Nombre Evento" htmlFor="nombre_event" className="relative">
+                                        <Input
+                                            id="nombre_event"
+                                            value={inscripcionesFilters.nombre_event}
+                                            onChange={(e) => handleFilterChange("nombre_event", e.target.value)}
+                                            onFocus={() => handleFocus("nombre_event")}
+                                            onBlur={() => handleBlur("nombre_event")}
+                                            placeholder="Nombre del evento"
+                                            autoComplete="off"
+                                        />
+                                        {showSuggestions["nombre_event"] && suggestions["nombre_event"]?.length > 0 && (
+                                            <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-md shadow-lg max-h-40 overflow-auto mt-1 dark:bg-gray-800 dark:border-gray-700">
+                                                {suggestions["nombre_event"].map((suggestion, index) => (
+                                                    <li
+                                                        key={index}
+                                                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer dark:hover:bg-gray-700"
+                                                        onClick={() => handleSuggestionClick("nombre_event", suggestion)}
+                                                    >
+                                                        {suggestion}
+                                                    </li>
+                                                ))}
+                                            </ul>
+                                        )}
+                                    </InputGroup>
+                                )}
+                                {!hideFilters.includes("club") && (
+                                    <InputGroup label="Club" htmlFor="club_insc">
+                                        <Input
+                                            id="club_insc"
+                                            value={inscripcionesFilters.club || ""}
+                                            onChange={(e) => handleFilterChange("club", e.target.value)}
+                                            placeholder="Nombre del club"
+                                            disabled={!!forcedClubId}
+                                            className={forcedClubId ? "bg-muted" : ""}
+                                        />
+                                    </InputGroup>
+                                )}
+                                {!hideFilters.includes("id_afiliado") && (
+                                    <InputGroup label="ID Afiliado" htmlFor="id_afiliado_insc">
+                                        <Input
+                                            id="id_afiliado_insc"
+                                            value={inscripcionesFilters.id_afiliado || ""}
+                                            onChange={(e) => handleFilterChange("id_afiliado", e.target.value)}
+                                            placeholder="ID Afiliado"
+                                        />
+                                    </InputGroup>
+                                )}
+                                {!hideFilters.includes("nom_afiliado") && (
+                                    <InputGroup label="Nombre Afiliado" htmlFor="nom_afiliado">
+                                        <Input
+                                            id="nom_afiliado"
+                                            value={inscripcionesFilters.nom_afiliado || ""}
+                                            onChange={(e) => handleFilterChange("nom_afiliado", e.target.value)}
+                                            placeholder="Nombre Afiliado"
+                                        />
+                                    </InputGroup>
+                                )}
+                                {!hideFilters.includes("status") && (
+                                    <InputGroup label="Estatus">
+                                        <Select value={inscripcionesFilters.status} onValueChange={(val) => handleFilterChange("status", val)}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Todos" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="todos">Todos</SelectItem>
+                                                <SelectItem value="Inscrito">Inscrito</SelectItem>
+                                                <SelectItem value="Pendiente">Pendiente</SelectItem>
+                                                <SelectItem value="Baja">Baja</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </InputGroup>
+                                )}
                             </>
 
                         )}
@@ -727,12 +737,6 @@ export function ReportsTabContent() {
                                 </InputGroup>
                             </>
                         )}
-                    </div>
-                    <div className="flex justify-end mt-2">
-                        <Button onClick={fetchReport} disabled={isLoading}>
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                            Buscar
-                        </Button>
                     </div>
                 </div>
 
@@ -778,9 +782,14 @@ export function ReportsTabContent() {
                                             <TableHead className="whitespace-nowrap">Club</TableHead>
                                             <TableHead className="whitespace-nowrap">ID Afiliado</TableHead>
                                             <TableHead className="whitespace-nowrap">Afiliado</TableHead>
-                                            <TableHead className="whitespace-nowrap">Estatus</TableHead>
-                                            <TableHead className="whitespace-nowrap text-right">Costo Unitario</TableHead>
-                                            <TableHead className="whitespace-nowrap text-right">Total</TableHead>
+                                            <TableHead className="whitespace-nowrap">CURP</TableHead>
+                                            <TableHead className="whitespace-nowrap">F. Nacimiento</TableHead>
+                                            <TableHead className="whitespace-nowrap">Edades</TableHead>
+                                            <TableHead className="whitespace-nowrap">Nivel</TableHead>
+                                            <TableHead className="whitespace-nowrap">Sub División</TableHead>
+                                            <TableHead className="whitespace-nowrap">Concepto</TableHead>
+                                            <TableHead className="whitespace-nowrap">Asociación</TableHead>
+                                            <TableHead className="whitespace-nowrap text-right">Costo Individual</TableHead>
                                         </>
                                     )}
                                 </TableRow>
@@ -893,24 +902,21 @@ export function ReportsTabContent() {
                                                     <TableCell className="whitespace-nowrap">{item.club}</TableCell>
                                                     <TableCell className="whitespace-nowrap">{item.id_afiliado}</TableCell>
                                                     <TableCell className="whitespace-nowrap">{item.afiliado}</TableCell>
-                                                    <TableCell className="whitespace-nowrap">
-                                                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${item.Status === "Pagado" || item.Status === "En Curso"
-                                                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300'
-                                                            : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300'
-                                                            }`}>
-                                                            {item.Status}
-                                                        </span>
-                                                    </TableCell>
+                                                    <TableCell className="whitespace-nowrap font-mono text-xs">{item.Curp}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.Fecha_nacimiento ? item.Fecha_nacimiento.split("T")[0] : "—"}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.Edades}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.Nivel}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.Sub_División}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.Concepto}</TableCell>
+                                                    <TableCell className="whitespace-nowrap">{item.Asociación}</TableCell>
                                                     <TableCell className="whitespace-nowrap text-right">{item.Costo_ind ? `$${Number(item.Costo_ind).toFixed(2)}` : "$0.00"}</TableCell>
-                                                    <TableCell className="whitespace-nowrap text-right">{item.Total ? `$${Number(item.Total).toFixed(2)}` : "$0.00"}</TableCell>
                                                 </TableRow>
                                             ))}
                                             <TableRow className="bg-muted/50 font-medium border-t-2">
-                                                <TableCell colSpan={6} className="text-right pr-4">Total General:</TableCell>
+                                                <TableCell colSpan={12} className="text-right pr-4">Total General:</TableCell>
                                                 <TableCell className="whitespace-nowrap text-right">
                                                     ${inscripcionesReportData.reduce((sum, item) => sum + (Number(item.Costo_ind) || 0), 0).toFixed(2)}
                                                 </TableCell>
-                                                <TableCell className="whitespace-nowrap text-right"></TableCell>
                                             </TableRow>
                                         </>
                                     ) : (
