@@ -79,8 +79,7 @@ export const getModalidadesAfil = async (id?: string) => {
 };
 
 export const getAfiliadosCatalogs = async (id?: number, tipo?: number) => {
-    // Construct params object dynamically
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
     const params: any = {};
     if (id !== undefined) params.id = id;
     if (tipo !== undefined) params.tipo = tipo;
@@ -198,5 +197,14 @@ export interface GetAffiliatePaymentReportResponse {
 export const getAffiliatePaymentReport = async (params: AfiliadoPaymentReportParams) => {
     console.log("getAffiliatePaymentReport params:", params);
     const response = await api.get<GetAffiliatePaymentReportResponse>("/GetRepo_afil_pago", { params });
+    return response.data;
+};
+
+
+export const delInscripcionAfiliado = async (id_Afiliado: number, id_evento: string) => {
+
+    const response = await api.post("/PutDelInscripcion", {
+        params: { id_Afiliado, id_evento }
+    });
     return response.data;
 };

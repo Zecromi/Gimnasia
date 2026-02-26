@@ -119,6 +119,11 @@ export function AfiliadosView() {
         setIsPaymentOpen(true)
     }, [])
 
+    const handleUnsubscribe = useCallback((afiliado: Afiliado) => {
+        console.log("Unsubscribe affiliate:", afiliado)
+        // TODO: Implement actual unsubscribe logic when API is ready
+    }, [])
+
     // Filtering Logic (Reactive)
     const filteredAfiliados = useMemo(() => {
         let filtered = [...afiliados]
@@ -164,7 +169,7 @@ export function AfiliadosView() {
         return Object.keys(rowSelection).map(index => filteredAfiliados[parseInt(index)]).filter(Boolean)
     }, [rowSelection, filteredAfiliados])
 
-    const columns = useMemo(() => getColumns(fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos, authData), [fetchData, handleEdit, handlePayment, clubs, Escolaridad, Estados, Niveles_tecnicos, authData])
+    const columns = useMemo(() => getColumns(fetchData, handleEdit, handlePayment, handleUnsubscribe, clubs, Escolaridad, Estados, Niveles_tecnicos, authData), [fetchData, handleEdit, handlePayment, handleUnsubscribe, clubs, Escolaridad, Estados, Niveles_tecnicos, authData])
 
     const handleClearFilters = () => {
         setFilterAfiliado("")

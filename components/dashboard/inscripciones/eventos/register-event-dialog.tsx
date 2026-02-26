@@ -475,7 +475,7 @@ export function RegisterEventDialog({
                 },
                 detalle_afiliados
             }
-            console.log(payload)
+            //console.log(payload)
             await postInscripcion(payload)
 
             toast.success("Inscripción exitosa", {

@@ -20,6 +20,7 @@ export const getColumns = (
     onSuccess: () => void,
     onEdit: (afiliado: Afiliado) => void,
     onPayment: (afiliado: Afiliado) => void,
+    onUnsubscribe: (afiliado: Afiliado) => void,
     clubs: ViewClubGral[] = [],
     escolaridadList: CatalogoItem[] = [],
     estadosList: Estado[] = [],
@@ -66,6 +67,7 @@ export const getColumns = (
                     afiliado={row.original}
                     onEdit={onEdit}
                     onPayment={onPayment}
+                    onUnsubscribe={onUnsubscribe}
                     authData={authData}
                 />
             ),

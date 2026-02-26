@@ -159,9 +159,9 @@ export const getAfiliadosEventos = async (id_Club: string) => {
 
 export const postInscripcion = async (body: any) => {
     console.log(body)
-    const response = await api.post("/SetInscripcion", body)
-    return response.data;
-    //return true;
+    //const response = await api.post("/SetInscripcion", body)
+    //return response.data;
+    //return false;
 };
 
 

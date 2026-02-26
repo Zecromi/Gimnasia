@@ -59,11 +59,11 @@ const items = [
         url: "/dashboard/super-admin",
         icon: Users,
     },
-    // {
-    //     title: "Noticias",
-    //     url: "/dashboard/noticias",
-    //     icon: Newspaper,
-    // },
+    {
+        title: "Noticias",
+        url: "/dashboard/noticias",
+        icon: Newspaper,
+    },
 
 ]
 
