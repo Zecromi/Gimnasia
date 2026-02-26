@@ -77,9 +77,6 @@ export const useInscripcionesStore = create<InscripcionesStore>((set, get) => ({
             const term = filters.nom_afiliado.toLowerCase()
             filtered = filtered.filter(item => item.afiliado?.toLowerCase().includes(term))
         }
-        if (filters.status && filters.status !== "todos") {
-            filtered = filtered.filter(item => item.Status === filters.status)
-        }
 
         // Suggestion generation
         const generateSuggestions = (key: keyof InscripcionesReportParams, field: keyof InscripcionReportItem) => {
