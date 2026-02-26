@@ -34,9 +34,9 @@ import { useCatalogStore } from "@/lib/store/catalog-store"
 import { useAuthStore } from "@/lib/store/auth-store"
 import { useClubStore } from "@/lib/store/club-store"
 import { ReportsTabContent } from "@/components/dashboard/super-admin/reports-tab-content"
-import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { FileText } from "lucide-react"
+import { FileText, XIcon } from "lucide-react"
 import { getClubs } from "@/lib/club-service"
 
 export function InscripcionesEventosView() {
@@ -342,7 +342,8 @@ export function InscripcionesEventosView() {
                                         </TooltipContent>
                                     </Tooltip>
                                     <DialogContent
-                                        className="max-w-4xl h-[90vh] overflow-y-auto"
+                                        showCloseButton={false}
+                                        className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0"
                                         onInteractOutside={(e) => e.preventDefault()}
                                         onEscapeKeyDown={(e) => e.preventDefault()}
                                     >
@@ -352,11 +353,21 @@ export function InscripcionesEventosView() {
                                                 Genera y visualiza el reporte de inscripciones para tu club.
                                             </DialogDescription>
                                         </DialogHeader>
-                                        <ReportsTabContent
-                                            defaultReportType="inscripciones"
-                                            forcedClubId={clubs.find(c => c.id === authData?.id)?.Club}
-                                            hideFilters={["id_evento", "id_afiliado", "nom_afiliado", "status", "report_type"]}
-                                        />
+                                        {/* Close button strip — stays fixed, never scrolls */}
+                                        <div className="flex justify-end px-3 pt-3 flex-shrink-0">
+                                            <DialogClose className="rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring transition-opacity">
+                                                <XIcon className="h-4 w-4" />
+                                                <span className="sr-only">Cerrar</span>
+                                            </DialogClose>
+                                        </div>
+                                        {/* Scrollable content */}
+                                        <div className="flex-1 overflow-y-auto px-6 pb-6">
+                                            <ReportsTabContent
+                                                defaultReportType="inscripciones"
+                                                forcedClubId={clubs.find(c => c.id === authData?.id)?.Club}
+                                                hideFilters={["id_evento", "id_afiliado", "nom_afiliado", "status", "report_type"]}
+                                            />
+                                        </div>
                                     </DialogContent>
                                 </Dialog>
                             )}
