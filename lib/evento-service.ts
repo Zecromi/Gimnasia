@@ -155,7 +155,7 @@ export const getAfiliadosEventos = async (id_Club: string) => {
     });
     return response.data;
 };
-
+//PutDelinscripcion
 
 export const postInscripcion = async (body: any) => {
     console.log(body)
