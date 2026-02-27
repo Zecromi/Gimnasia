@@ -232,6 +232,7 @@ export interface InscripcionReportItem {
     Costo_ind: number;
     Concepto: string;
     Asociación: string;
+    Status?: string;
 }
 
 export interface GetInscripcionesReportResponse {
