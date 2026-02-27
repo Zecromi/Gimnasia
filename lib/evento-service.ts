@@ -159,8 +159,8 @@ export const getAfiliadosEventos = async (id_Club: string) => {
 
 export const postInscripcion = async (body: any) => {
     console.log(body)
-    //const response = await api.post("/SetInscripcion", body)
-    //return response.data;
+    const response = await api.post("/SetInscripcion", body)
+    return response.data;
     //return false;
 };
 
@@ -245,3 +245,15 @@ export const getInscripcionesReport = async (params: InscripcionesReportParams) 
 };
 
 
+export const delInscripcion = async (id_evento: string, id_afiliado: string) => {
+    console.log(id_evento)
+    console.log(id_afiliado)
+    const response = await api.get("/PutDelInscripcion", {
+        params: {
+            id_afiliado: id_afiliado,
+            id_evento: id_evento,
+
+        },
+    });
+    return response.data;
+};

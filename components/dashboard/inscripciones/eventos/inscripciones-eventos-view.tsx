@@ -28,7 +28,7 @@ import {
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
-import { EventosConfiguradosItem, getEventos } from "@/lib/evento-service"
+import { EventosConfiguradosItem, getEventos, delInscripcion, InscripcionReportItem, InscripcionesReportParams } from "@/lib/evento-service"
 
 import { useCatalogStore } from "@/lib/store/catalog-store"
 import { useAuthStore } from "@/lib/store/auth-store"
@@ -36,14 +36,29 @@ import { useClubStore } from "@/lib/store/club-store"
 import { ReportsTabContent } from "@/components/dashboard/super-admin/reports-tab-content"
 import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle, DialogDescription, DialogClose } from "@/components/ui/dialog"
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
-import { FileText, XIcon } from "lucide-react"
+import { FileText, XIcon, Trash2 } from "lucide-react"
 import { getClubs } from "@/lib/club-service"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { toast } from "sonner"
 
 export function InscripcionesEventosView() {
     const { Catalogo_eventos, fetchCatalogs } = useCatalogStore()
     const { clubs, setClubs } = useClubStore()
     const authData = useAuthStore((state) => state.authData)
     const [isReportModalOpen, setIsReportModalOpen] = useState(false)
+    const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+    const [isConfirmDeleteDialogOpen, setIsConfirmDeleteDialogOpen] = useState(false)
+    const [itemToDelete, setItemToDelete] = useState<InscripcionReportItem | null>(null)
+    const [refreshTrigger, setRefreshTrigger] = useState(0)
 
     // eslint-disable-next-line eqeqeq
     const isClubAdmin = authData?.tipo_registro == 2
@@ -100,6 +115,27 @@ export function InscripcionesEventosView() {
         setSelectedEvento(evento)
         setIsRegisterOpen(true)
     }, [])
+
+    const handleDeleteClick = useCallback((item: InscripcionReportItem) => {
+        setItemToDelete(item)
+        setIsConfirmDeleteDialogOpen(true)
+    }, [])
+
+    const handleConfirmDelete = async () => {
+        if (!itemToDelete) return
+        try {
+            await delInscripcion(String(itemToDelete.id_evento), String(itemToDelete.id_afiliado))
+            toast.success("Inscripción eliminada correctamente")
+            setRefreshTrigger(prev => prev + 1)
+            fetchData() // Refresh main events list
+        } catch (error) {
+            console.error("Error deleting inscription:", error)
+            toast.error("Error al eliminar la inscripción")
+        } finally {
+            setIsConfirmDeleteDialogOpen(false)
+            setItemToDelete(null)
+        }
+    }
 
     const columns = useMemo(() => getColumns(fetchData, handleRegister), [fetchData, handleRegister])
 
@@ -324,53 +360,108 @@ export function InscripcionesEventosView() {
                         </div>
                         <div className="xl:col-span-1 flex flex-col items-center justify-center border-l pl-4 gap-2">
                             {isClubAdmin && (
-                                <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <DialogTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    size="icon"
-                                                    className="h-10 w-10 rounded-full border-green-200 bg-green-50 hover:bg-green-100 text-green-600 shadow-sm"
-                                                >
-                                                    <FileText className="h-5 w-5" />
-                                                </Button>
-                                            </DialogTrigger>
-                                        </TooltipTrigger>
-                                        <TooltipContent side="right">
-                                            <p>Generar Reporte</p>
-                                        </TooltipContent>
-                                    </Tooltip>
-                                    <DialogContent
-                                        showCloseButton={false}
-                                        className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0"
-                                        onInteractOutside={(e) => e.preventDefault()}
-                                        onEscapeKeyDown={(e) => e.preventDefault()}
-                                    >
-                                        <DialogHeader className="sr-only">
-                                            <DialogTitle>Reporte de Inscripciones</DialogTitle>
-                                            <DialogDescription>
-                                                Genera y visualiza el reporte de inscripciones para tu club.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        {/* Close button strip — stays fixed, never scrolls */}
-                                        <div className="flex justify-end px-3 pt-3 flex-shrink-0">
-                                            <DialogClose className="rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring transition-opacity">
-                                                <XIcon className="h-4 w-4" />
-                                                <span className="sr-only">Cerrar</span>
-                                            </DialogClose>
-                                        </div>
-                                        {/* Scrollable content */}
-                                        <div className="flex-1 overflow-y-auto px-6 pb-6">
-                                            <ReportsTabContent
-                                                defaultReportType="inscripciones"
-                                                forcedClubId={clubs.find(c => c.id === authData?.id)?.Club}
-                                                hideFilters={["id_evento", "id_afiliado", "nom_afiliado", "status", "report_type"]}
-                                            />
-                                        </div>
-                                    </DialogContent>
-                                </Dialog>
+                                <div className="flex flex-col gap-2">
+                                    <Dialog open={isReportModalOpen} onOpenChange={setIsReportModalOpen}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <DialogTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        className="h-10 w-10 rounded-full border-green-200 bg-green-50 hover:bg-green-100 text-green-600 shadow-sm"
+                                                    >
+                                                        <FileText className="h-5 w-5" />
+                                                    </Button>
+                                                </DialogTrigger>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="right">
+                                                <p>Generar Reporte</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                        <DialogContent
+                                            showCloseButton={false}
+                                            className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0"
+                                            onInteractOutside={(e) => e.preventDefault()}
+                                            onEscapeKeyDown={(e) => e.preventDefault()}
+                                        >
+                                            <DialogHeader className="sr-only">
+                                                <DialogTitle>Reporte de Inscripciones</DialogTitle>
+                                                <DialogDescription>
+                                                    Genera y visualiza el reporte de inscripciones para tu club.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            {/* Close button strip — stays fixed, never scrolls */}
+                                            <div className="flex justify-end px-3 pt-3 flex-shrink-0">
+                                                <DialogClose className="rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring transition-opacity">
+                                                    <XIcon className="h-4 w-4" />
+                                                    <span className="sr-only">Cerrar</span>
+                                                </DialogClose>
+                                            </div>
+                                            {/* Scrollable content */}
+                                            <div className="flex-1 overflow-y-auto px-6 pb-6">
+                                                <ReportsTabContent
+                                                    defaultReportType="inscripciones"
+                                                    forcedClubId={clubs.find(c => c.id === authData?.id)?.Club}
+                                                    hideFilters={["id_evento", "id_afiliado", "nom_afiliado", "status", "report_type"]}
+                                                />
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+
+                                    <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <DialogTrigger asChild>
+                                                    <Button
+                                                        variant="outline"
+                                                        size="icon"
+                                                        className="h-10 w-10 rounded-full border-red-200 bg-red-50 hover:bg-red-100 text-red-600 shadow-sm"
+                                                    >
+                                                        <Trash2 className="h-5 w-5" />
+                                                    </Button>
+                                                </DialogTrigger>
+                                            </TooltipTrigger>
+                                            <TooltipContent side="right">
+                                                <p>Eliminar Inscripciones</p>
+                                            </TooltipContent>
+                                        </Tooltip>
+                                        <DialogContent
+                                            showCloseButton={false}
+                                            className="max-w-4xl h-[90vh] flex flex-col p-0 gap-0"
+                                            onInteractOutside={(e) => e.preventDefault()}
+                                            onEscapeKeyDown={(e) => e.preventDefault()}
+                                        >
+                                            <DialogHeader className="sr-only">
+                                                <DialogTitle>Eliminar Inscripciones</DialogTitle>
+                                                <DialogDescription>
+                                                    Selecciona las inscripciones que deseas eliminar de los eventos.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            {/* Close button strip — stays fixed, never scrolls */}
+                                            <div className="flex justify-end px-3 pt-3 flex-shrink-0">
+                                                <DialogClose className="rounded-sm opacity-70 hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring transition-opacity">
+                                                    <XIcon className="h-4 w-4" />
+                                                    <span className="sr-only">Cerrar</span>
+                                                </DialogClose>
+                                            </div>
+                                            {/* Scrollable content */}
+                                            <div className="flex-1 overflow-y-auto px-6 pb-6">
+                                                <ReportsTabContent
+                                                    defaultReportType="inscripciones"
+                                                    forcedClubId={clubs.find(c => c.id === authData?.id)?.Club}
+                                                    hideFilters={["id_evento", "id_afiliado", "nom_afiliado", "status", "report_type"]}
+                                                    enableActions={true}
+                                                    onDeleteAction={handleDeleteClick}
+                                                    refreshKey={refreshTrigger}
+                                                    hideHeader={true}
+                                                />
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+                                </div>
                             )}
+
+
                         </div>
                     </div>
                 </CardContent>
@@ -413,6 +504,23 @@ export function InscripcionesEventosView() {
                     </Suspense>
                 )
             }
+
+            <AlertDialog open={isConfirmDeleteDialogOpen} onOpenChange={setIsConfirmDeleteDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Está seguro de eliminar esta inscripción?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Esta acción eliminará la inscripción del afiliado <strong>{itemToDelete?.afiliado}</strong> al evento <strong>{itemToDelete?.evento}</strong>. Esta acción no se puede deshacer.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-red-600 hover:bg-red-700">
+                            Eliminar
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div >
     )
 }

@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Download, Loader2, Search, FileText, Printer } from "lucide-react"
+import { Download, Loader2, Search, FileText, Printer, Trash2 } from "lucide-react"
 import jsPDF from "jspdf"
 import autoTable from "jspdf-autotable"
 import { getClubMembershipReport, ClubMembershipItem, ClubMembershipReportParams } from "@/lib/club-service"
@@ -43,9 +43,13 @@ export interface ReportsTabContentProps {
     defaultReportType?: "club" | "affiliate" | "inscripciones"
     forcedClubId?: string
     hideFilters?: string[]
+    enableActions?: boolean
+    onDeleteAction?: (item: InscripcionReportItem) => void
+    refreshKey?: number
+    hideHeader?: boolean
 }
 
-export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters = [] }: ReportsTabContentProps = {}) {
+export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters = [], enableActions, onDeleteAction, refreshKey, hideHeader }: ReportsTabContentProps = {}) {
     const [isLoading, setIsLoading] = React.useState(false)
     const [reportType, setReportType] = React.useState<"club" | "affiliate" | "inscripciones">(defaultReportType || "club")
 
@@ -192,7 +196,14 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
 
         return () => clearTimeout(timer)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [reportType, clubFilters, affiliateFilters, inscripcionesFilters.id_evento, inscripcionesFilters.nombre_event, inscripcionesFilters.club, inscripcionesFilters.id_afiliado, inscripcionesFilters.nom_afiliado, inscripcionesFilters.status])
+    }, [reportType, clubFilters, affiliateFilters, inscripcionesFilters.id_evento, inscripcionesFilters.nombre_event, inscripcionesFilters.club, inscripcionesFilters.id_afiliado, inscripcionesFilters.nom_afiliado, inscripcionesFilters.status, refreshKey])
+
+    // Immediate fetch on refresh trigger
+    React.useEffect(() => {
+        if (refreshKey && refreshKey > 0) {
+            fetchReport()
+        }
+    }, [refreshKey]) // eslint-disable-line react-hooks/exhaustive-deps
 
     const handleSuggestionClick = (key: string, value: string) => {
         setInscripcionesFilters((prev) => ({ ...prev, [key]: value }))
@@ -629,40 +640,42 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
     return (
         <Card className="mt-4">
             <CardContent className="px-0">
-                <div className="flex justify-between items-center bg-muted/20 p-4 rounded-md border">
-                    <div className="flex items-center gap-4">
-                        {!hideFilters.includes("report_type") && (
-                            <>
-                                <label className="text-sm font-medium">Tipo de Reporte:</label>
-                                <Select value={reportType} onValueChange={(val: "club" | "affiliate" | "inscripciones") => setReportType(val)}>
-                                    <SelectTrigger className="w-[280px]">
-                                        <SelectValue placeholder="Seleccione reporte" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="club">Membresías de Clubes</SelectItem>
-                                        <SelectItem value="affiliate">Pagos de Afiliados</SelectItem>
-                                        <SelectItem value="inscripciones">Inscripciones</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </>
-                        )}
-                        {hideFilters.includes("report_type") && (
-                            <h3 className="text-lg font-semibold">
-                                {reportType === "club" ? "Reporte de Membresías" : reportType === "affiliate" ? "Reporte de Pagos de Afiliados" : "Reporte de Inscripciones"}
-                            </h3>
-                        )}
+                {!hideHeader && (
+                    <div className="flex justify-between items-center bg-muted/20 p-4 rounded-md border mb-4">
+                        <div className="flex items-center gap-4">
+                            {!hideFilters.includes("report_type") && (
+                                <>
+                                    <label className="text-sm font-medium">Tipo de Reporte:</label>
+                                    <Select value={reportType} onValueChange={(val: "club" | "affiliate" | "inscripciones") => setReportType(val)}>
+                                        <SelectTrigger className="w-[280px]">
+                                            <SelectValue placeholder="Seleccione reporte" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="club">Membresías de Clubes</SelectItem>
+                                            <SelectItem value="affiliate">Pagos de Afiliados</SelectItem>
+                                            <SelectItem value="inscripciones">Inscripciones</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </>
+                            )}
+                            {hideFilters.includes("report_type") && (
+                                <h3 className="text-lg font-semibold">
+                                    {reportType === "club" ? "Reporte de Membresías" : reportType === "affiliate" ? "Reporte de Pagos de Afiliados" : "Reporte de Inscripciones"}
+                                </h3>
+                            )}
+                        </div>
+                        <div className="flex gap-2">
+                            <Button onClick={handlePreviewPdf} disabled={(reportType === "club" ? clubReportData : reportType === "affiliate" ? affiliateReportData : inscripcionesReportData).length === 0} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
+                                <Printer className="mr-2 h-4 w-4" />
+                                Ver PDF
+                            </Button>
+                            <Button onClick={handleDownload} disabled={(reportType === "club" ? clubReportData : reportType === "affiliate" ? affiliateReportData : inscripcionesReportData).length === 0} className="bg-green-600 hover:bg-green-700 text-white">
+                                <Download className="mr-2 h-4 w-4" />
+                                Descargar Excel
+                            </Button>
+                        </div>
                     </div>
-                    <div className="flex gap-2">
-                        <Button onClick={handlePreviewPdf} disabled={(reportType === "club" ? clubReportData : reportType === "affiliate" ? affiliateReportData : inscripcionesReportData).length === 0} variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
-                            <Printer className="mr-2 h-4 w-4" />
-                            Ver PDF
-                        </Button>
-                        <Button onClick={handleDownload} disabled={(reportType === "club" ? clubReportData : reportType === "affiliate" ? affiliateReportData : inscripcionesReportData).length === 0} className="bg-green-600 hover:bg-green-700 text-white">
-                            <Download className="mr-2 h-4 w-4" />
-                            Descargar Excel
-                        </Button>
-                    </div>
-                </div>
+                )}
 
                 {/* Filters */}
                 <div className="grid gap-4 p-4 border rounded-md bg-muted/20">
@@ -929,6 +942,7 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
                                         </>
                                     ) : (
                                         <>
+                                            {enableActions && <TableHead className="whitespace-nowrap text-center">Acciones</TableHead>}
                                             <TableHead className="whitespace-nowrap">ID Evento</TableHead>
                                             <TableHead className="whitespace-nowrap">Evento</TableHead>
                                             <TableHead className="whitespace-nowrap">Club</TableHead>
@@ -1049,6 +1063,18 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
                                         <>
                                             {inscripcionesReportData.map((item, index) => (
                                                 <TableRow key={`${item.id_evento}-${item.id_afiliado}-${index}`}>
+                                                    {enableActions && (
+                                                        <TableCell className="whitespace-nowrap text-center">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                                                                onClick={() => onDeleteAction?.(item)}
+                                                            >
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </TableCell>
+                                                    )}
                                                     <TableCell className="whitespace-nowrap">{item.id_evento}</TableCell>
                                                     <TableCell className="whitespace-nowrap">{item.evento}</TableCell>
                                                     <TableCell className="whitespace-nowrap">{item.club}</TableCell>
@@ -1065,7 +1091,8 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
                                                 </TableRow>
                                             ))}
                                             <TableRow className="bg-muted/50 font-medium border-t-2">
-                                                <TableCell colSpan={12} className="text-right pr-4">Total General:</TableCell>
+                                                {enableActions && <TableCell></TableCell>}
+                                                <TableCell colSpan={11} className="text-right pr-4">Total General:</TableCell>
                                                 <TableCell className="whitespace-nowrap text-right">
                                                     ${inscripcionesReportData.reduce((sum, item) => sum + (Number(item.Costo_ind) || 0), 0).toFixed(2)}
                                                 </TableCell>
