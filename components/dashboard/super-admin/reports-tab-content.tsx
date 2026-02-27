@@ -302,6 +302,25 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
             return ws
         }
 
+        const autoFitColumnWidths = (ws: any, colCount: number, startRow: number) => {
+            for (let i = 1; i <= colCount; i++) {
+                let maxLength = 0;
+                const column = ws.getColumn(i);
+                column.eachCell({ includeEmpty: true }, (cell: any, rowNumber: number) => {
+                    if (rowNumber >= startRow) {
+                        const cellValue = cell.value ? cell.value.toString() : "";
+                        const lines = cellValue.split(/\r?\n/);
+                        for (const line of lines) {
+                            if (line.length > maxLength) {
+                                maxLength = line.length;
+                            }
+                        }
+                    }
+                });
+                column.width = Math.min(Math.max(maxLength + 2, 10), 60);
+            }
+        };
+
         if (reportType === "club") {
             const clubData = data as ClubMembershipItem[]
             const ExcelJS = (await import("exceljs")).default
@@ -316,7 +335,7 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
             const totalRow = ws.addRow(["", "", "", "", "", "Total General", `$${total.toFixed(2)}`, "", "", "", ""])
             totalRow.getCell(6).font = { bold: true }
             totalRow.getCell(7).font = { bold: true }
-            ws.columns = [{ width: 22 }, { width: 14 }, { width: 24 }, { width: 16 }, { width: 12 }, { width: 12 }, { width: 12 }, { width: 14 }, { width: 14 }, { width: 14 }, { width: 14 }]
+            autoFitColumnWidths(ws, 11, 6)
             const buffer = await wb.xlsx.writeBuffer()
             const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
             const url = URL.createObjectURL(blob)
@@ -338,7 +357,7 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
             const totalRow = ws.addRow(["", "", "", "Total General", `$${total.toFixed(2)}`, "", "", ""])
             totalRow.getCell(4).font = { bold: true }
             totalRow.getCell(5).font = { bold: true }
-            ws.columns = [{ width: 12 }, { width: 28 }, { width: 18 }, { width: 12 }, { width: 12 }, { width: 14 }, { width: 14 }, { width: 12 }]
+            autoFitColumnWidths(ws, 8, 6)
             const buffer = await wb.xlsx.writeBuffer()
             const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
             const url = URL.createObjectURL(blob)
@@ -422,11 +441,7 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
             totalRow.getCell(13).font = { bold: true }
 
             // ── Column widths ──
-            ws.columns = [
-                { width: 10 }, { width: 22 }, { width: 14 }, { width: 12 }, { width: 26 },
-                { width: 20 }, { width: 16 }, { width: 24 }, { width: 10 },
-                { width: 14 }, { width: 14 }, { width: 20 }, { width: 16 }
-            ]
+            autoFitColumnWidths(ws, 13, 8)
 
             const buffer = await wb.xlsx.writeBuffer()
             const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" })
