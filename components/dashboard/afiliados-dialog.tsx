@@ -198,7 +198,7 @@ const PersonalDataSection = React.memo(({ afiliado, activeCatalogs }: { afiliado
                 <Input id="fechaNacimiento" name="fechaNacimiento" type="date" defaultValue={afiliado?.Fecha_nacimiento ? afiliado.Fecha_nacimiento.split('T')[0] : ''} />
             </InputGroup>
             <InputGroup label="CURP : *" htmlFor="curp" className="col-span-12 md:col-span-4">
-                <Input id="curp" name="curp" defaultValue={afiliado?.Curp} />
+                <Input id="curp" name="curp" defaultValue={afiliado?.Curp} maxLength={18} />
             </InputGroup>
             <div className="col-span-12 md:col-span-4 space-y-3">
                 <Label>Género : *</Label>
@@ -579,6 +579,11 @@ function AfiliadosForm({ className, id, afiliado, onSuccess, clubs: clubsProp, c
 
         if (selectedModalities.length === 0) {
             toast.error("Debe seleccionar al menos una modalidad")
+            return
+        }
+
+        if (data.curp && data.curp.trim().length !== 18) {
+            toast.error("El CURP debe contener exactamente 18 caracteres")
             return
         }
 

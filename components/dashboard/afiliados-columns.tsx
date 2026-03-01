@@ -166,6 +166,11 @@ export const getColumns = (
             header: "Género",
         },
         {
+            accessorKey: "Email",
+            header: "Correo",
+            cell: ({ row }) => row.getValue("Email") || ""
+        },
+        {
             accessorKey: "id_Escolaridad",
             header: "Escolaridad",
             cell: ({ row }) => {

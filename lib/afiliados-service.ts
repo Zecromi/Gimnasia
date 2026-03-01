@@ -38,6 +38,7 @@ export interface Afiliado {
     Comprobante: string;
     Lugar_p: string;
     fecha_p: string;
+    Email?: string | null;
 }
 
 export interface AfiliadosCatalogsResponse {
