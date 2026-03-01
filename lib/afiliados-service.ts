@@ -28,9 +28,11 @@ export interface Afiliado {
     Afiliacion_3: number | null;
     Afiliacion_4: number | null;
     id_nivel_tec: number;
-    Modalidad: number;
-    Afiliado: boolean | null;
-    Email: string | null;
+    Modalidad: string | number;
+    Modalidad2?: string | null;
+    Modalidad3?: string | null;
+    Modalidad4?: string | null;
+    Afiliado: any | null;
     M_pago: number;
     F_pago: string;
     Comprobante: string;

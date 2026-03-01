@@ -243,7 +243,7 @@ export const getColumns = (
         },
         {
             accessorKey: "id_nivel_tec",
-            header: "Nivel Tec",
+            header: "Nivel Tecnico",
             cell: ({ row }) => {
                 const idNivel = row.getValue("id_nivel_tec")
                 if (!idNivel) return "-"
@@ -253,7 +253,23 @@ export const getColumns = (
         },
         {
             accessorKey: "Modalidad",
-            header: "Modalidad",
+            header: "Modalidad 1",
+            cell: ({ row }) => row.getValue("Modalidad") || ""
+        },
+        {
+            accessorKey: "Modalidad2",
+            header: "Modalidad 2",
+            cell: ({ row }) => row.getValue("Modalidad2") || ""
+        },
+        {
+            accessorKey: "Modalidad3",
+            header: "Modalidad 3",
+            cell: ({ row }) => row.getValue("Modalidad3") || ""
+        },
+        {
+            accessorKey: "Modalidad4",
+            header: "Modalidad 4",
+            cell: ({ row }) => row.getValue("Modalidad4") || ""
         },
         {
             accessorKey: "M_pago",
