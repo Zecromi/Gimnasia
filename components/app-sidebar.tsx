@@ -8,6 +8,7 @@ import {
     Calendar,
     Ticket,
     Users,
+    BellPlus,
     Newspaper,
 } from "lucide-react"
 
@@ -59,11 +60,16 @@ const items = [
         url: "/dashboard/super-admin",
         icon: Users,
     },
-    // {
-    //     title: "Noticias",
-    //     url: "/dashboard/noticias",
-    //     icon: Newspaper,
-    // },
+    {
+        title: "Noticias",
+        url: "/dashboard/noticias",
+        icon: Newspaper,
+    },
+    {
+        title: "Administración de Noticias",
+        url: "/dashboard/noticias-admin",
+        icon: BellPlus,
+    },
 
 ]
 
