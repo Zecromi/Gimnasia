@@ -315,9 +315,10 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
                                 maxLength = line.length;
                             }
                         }
+                        cell.alignment = { horizontal: "left", vertical: "middle" };
                     }
                 });
-                column.width = Math.min(Math.max(maxLength + 2, 10), 60);
+                column.width = Math.min(Math.max(maxLength + 6, 10), 60);
             }
         };
 
@@ -400,8 +401,10 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
 
             // ── Header rows ──
             addTitle(1, "Listado de Inscritos", 13)
-            addTitle(2, first?.evento ?? "", 11)
-            addTitle(3, first?.Asociación ?? "", 10)
+            const isFilteredByEvent = Boolean(inscripcionesFilters.nombre_event || inscripcionesFilters.id_evento)
+            const eventTitle = isFilteredByEvent ? (inscripcionesFilters.nombre_event || first?.evento || "Información del Evento") : "Información general de inscripciones"
+            addTitle(2, eventTitle, 11)
+            addTitle(3, isFilteredByEvent ? (first?.Asociación ?? "") : "", 10)
             ws.getRow(4).height = 6  // spacer
             addMeta(5, "Fecha de descarga:", formattedDownloadDate)
             addMeta(6, "Año del evento:", currentYear)
@@ -573,12 +576,15 @@ export function ReportsTabContent({ defaultReportType, forcedClubId, hideFilters
             doc.setFont("helvetica", "bold")
             doc.text("Listado de Inscritos", pageWidth / 2, 15, { align: "center" })
 
+            const isFilteredByEvent = Boolean(inscripcionesFilters.nombre_event || inscripcionesFilters.id_evento)
+            const eventTitle = isFilteredByEvent ? (inscripcionesFilters.nombre_event || first?.evento || "Información del Evento") : "Información general de inscripciones"
+
             doc.setFontSize(10)
-            doc.text(first?.evento ?? "", pageWidth / 2, 22, { align: "center" })
+            doc.text(eventTitle, pageWidth / 2, 22, { align: "center" })
 
             doc.setFontSize(9)
             doc.setFont("helvetica", "normal")
-            doc.text(first?.Asociación ?? "", pageWidth / 2, 28, { align: "center" })
+            doc.text(isFilteredByEvent ? (first?.Asociación ?? "") : "", pageWidth / 2, 28, { align: "center" })
 
             const metaX = 20
             let metaY = 38
