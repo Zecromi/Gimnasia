@@ -43,6 +43,9 @@ import {
     putEventos,
     putEventosNiveles,
     getNiveles,
+    getAdicionales,
+    delAdicional,
+    AdicionalEventoItem,
     SetEventoPayload,
     ConfiguracionItem,
     NivelItem,
@@ -54,6 +57,16 @@ import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { Calendar } from "@/components/ui/calendar"
 import { CalendarPlus, Save, Calendar as CalendarIcon, Medal, Hash, AlertCircle, Plus, Trash2, ChevronsUpDown, Users } from "lucide-react"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import {
     Popover,
     PopoverContent,
@@ -346,10 +359,94 @@ import * as AccordionPrimitive from "@radix-ui/react-accordion"
 import { ChevronDown } from "lucide-react"
 import { cn } from "@/lib/utils"
 
+function DeleteAdicionalDialog({
+    item,
+    idEvento,
+    onSuccess,
+    onOpenChange
+}: {
+    item: AdicionalEventoItem | null,
+    idEvento: string,
+    onSuccess: () => void,
+    onOpenChange: (open: boolean) => void
+}) {
+    const handleConfirm = async () => {
+        if (!item) return
+        try {
+            await delAdicional(idEvento, String(item.id_aparato))
+            toast.success("Adicional eliminado exitosamente")
+            onSuccess()
+            onOpenChange(false)
+        } catch (error) {
+            console.error(error)
+            toast.error("Error al eliminar el adicional")
+        }
+    }
+
+    return (
+        <AlertDialog open={!!item} onOpenChange={onOpenChange}>
+            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>¿Está seguro de eliminar este adicional?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        Esta acción eliminará el adicional <strong>{item?.Descripcion}</strong> con un costo de <strong>${item?.Costo?.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</strong> del evento. Esta acción no se puede deshacer.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel type="button">Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                        type="button"
+                        onClick={(e) => {
+                            e.preventDefault()
+                            e.stopPropagation()
+                            handleConfirm()
+                        }}
+                        className="bg-red-600 hover:bg-red-700 text-white"
+                    >
+                        Eliminar
+                    </AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+    )
+}
+
 function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento, onSuccess?: () => void }) {
     const [modalidades, setModalidades] = React.useState<ModalidadItem[]>([])
     const [modalidadesDetalle, setModalidadesDetalle] = React.useState<ModalidadDetalleItem[]>([])
     const [isTableCollapsed, setIsTableCollapsed] = React.useState<Record<string, boolean>>({})
+    const [adicionales, setAdicionales] = React.useState<AdicionalEventoItem[]>([])
+    const [nuevosAdicionales, setNuevosAdicionales] = React.useState<Record<string, Array<{ id: string, costo: string, descripcion: string }>>>({})
+    const [itemParaEliminar, setItemParaEliminar] = React.useState<AdicionalEventoItem | null>(null)
+
+    const refreshAdicionales = async () => {
+        const eventAdicionales = await getAdicionales(String(evento.id))
+        if (eventAdicionales?.Adicionales) {
+            setAdicionales(eventAdicionales.Adicionales)
+        }
+    }
+
+    const addNivelAdicional = (modalityId: string) => {
+        const newId = Math.random().toString(36).substr(2, 9)
+        setNuevosAdicionales(prev => ({
+            ...prev,
+            [modalityId]: [...(prev[modalityId] || []), { id: newId, costo: "", descripcion: "" }]
+        }))
+    }
+
+    const removeNivelAdicional = (modalityId: string, id: string) => {
+        setNuevosAdicionales(prev => ({
+            ...prev,
+            [modalityId]: (prev[modalityId] || []).filter(item => item.id !== id)
+        }))
+    }
+
+    const updateNivelAdicional = (modalityId: string, id: string, field: 'costo' | 'descripcion', value: string) => {
+        setNuevosAdicionales(prev => ({
+            ...prev,
+            [modalityId]: (prev[modalityId] || []).map(item => item.id === id ? { ...item, [field]: value } : item)
+        }))
+    }
 
     const [selectedDetails, setSelectedDetails] = React.useState<Record<string, boolean>>({})
     const [detailValues, setDetailValues] = React.useState<Record<string, { costo: string, descripcion: string }>>({})
@@ -358,9 +455,9 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
     const [isValid, setIsValid] = React.useState(false)
 
     React.useEffect(() => {
-        const hasSelection = Object.values(selectedModalities).some(v => v)
+        const hasSelection = Object.values(selectedModalities).some(v => v) || Object.values(nuevosAdicionales).some(arr => arr.length > 0)
         setIsValid(hasSelection)
-    }, [selectedModalities])
+    }, [selectedModalities, nuevosAdicionales])
 
     const toggleModality = React.useCallback((id: string) => {
         setSelectedModalities(prev => ({
@@ -423,10 +520,15 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
     React.useEffect(() => {
         const fetchData = async () => {
             try {
-                const [data, eventNiveles] = await Promise.all([
+                const [data, eventNiveles, eventAdicionales] = await Promise.all([
                     getGlobalInfo(),
-                    getNiveles(String(evento.id))
+                    getNiveles(String(evento.id)),
+                    getAdicionales(String(evento.id))
                 ]);
+
+                if (eventAdicionales?.Adicionales) {
+                    setAdicionales(eventAdicionales.Adicionales);
+                }
 
                 if (data.Modalidades) {
                     const filteredModalities = data.Modalidades.filter(m => m.Nombre === evento.Modalidad);
@@ -506,18 +608,47 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
                 costo: String(nivel.costo)
             }))
 
-        if (lista_act_niv.length === 0) {
-            toast.info("No hay niveles seleccionados para actualizar")
+        const nuevosAdicionalesFlat: { descripcion: string, costo_base: string }[] = []
+        Object.keys(nuevosAdicionales).forEach(modId => {
+            nuevosAdicionales[modId].forEach(adj => {
+                if (adj.descripcion || adj.costo) {
+                    nuevosAdicionalesFlat.push({
+                        descripcion: adj.descripcion,
+                        costo_base: adj.costo
+                    })
+                }
+            })
+        })
+
+        if (lista_act_niv.length === 0 && nuevosAdicionalesFlat.length === 0) {
+            toast.info("No hay niveles o adicionales para actualizar")
             return
         }
 
         try {
-            await putEventosNiveles({ lista_act_niv })
-            toast.success("Niveles actualizados exitosamente")
+            const promises = []
+
+            if (lista_act_niv.length > 0) {
+                promises.push(putEventosNiveles({ lista_act_niv }))
+            }
+
+            if (nuevosAdicionalesFlat.length > 0) {
+                const payload = {
+                    uno: [],
+                    dos: [],
+                    tres: [],
+                    adicionales: nuevosAdicionalesFlat
+                }
+                promises.push(putEventos(String(evento.id), payload))
+            }
+
+            await Promise.all(promises)
+            toast.success("Evento actualizado exitosamente")
+            setNuevosAdicionales({}) // Clear new ones after success
             if (onSuccess) onSuccess()
         } catch (error) {
             console.error(error)
-            toast.error("Error al actualizar niveles")
+            toast.error("Error al actualizar niveles o adicionales")
         }
     }
 
@@ -668,11 +799,111 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
                                             </div>
                                         )}
 
+                                        {/* Nuevos Adicionales Section */}
+                                        <div className="space-y-4 pt-4 mt-6 border-t border-dashed">
+                                            <div className="flex items-center justify-between">
+                                                <h4 className="text-sm font-semibold flex items-center gap-2">
+                                                    <Plus className="h-4 w-4 text-teal-600" />
+                                                    Agregar Adicional para {modalidad.Nombre}
+                                                </h4>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="text-teal-600 hover:text-teal-700 hover:bg-teal-50"
+                                                    onClick={() => addNivelAdicional(String(modalidad.id))}
+                                                >
+                                                    <Plus className="mr-2 h-4 w-4" />
+                                                    Añadir
+                                                </Button>
+                                            </div>
+
+                                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                {(nuevosAdicionales[String(modalidad.id)] || []).map((adj, idx) => (
+                                                    <div key={adj.id} className="relative grid grid-cols-1 sm:grid-cols-[1fr_1fr_40px] gap-3 items-end p-3 rounded-lg border bg-muted/20 border-teal-100 dark:border-teal-900/30">
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Descripción ({idx + 1})</Label>
+                                                            <Input
+                                                                placeholder="Ej. Seguro"
+                                                                value={adj.descripcion}
+                                                                onChange={(e) => updateNivelAdicional(String(modalidad.id), adj.id, 'descripcion', e.target.value)}
+                                                                className="h-8 text-sm bg-background border-teal-100"
+                                                            />
+                                                        </div>
+                                                        <div className="space-y-1.5">
+                                                            <Label className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Costo Base</Label>
+                                                            <div className="relative">
+                                                                <span className="absolute left-2.5 top-2 text-xs text-muted-foreground">$</span>
+                                                                <Input
+                                                                    type="number"
+                                                                    placeholder="0.00"
+                                                                    value={adj.costo}
+                                                                    onChange={(e) => updateNivelAdicional(String(modalidad.id), adj.id, 'costo', e.target.value)}
+                                                                    className="h-8 pl-6 text-sm bg-background border-teal-100"
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                        <Button
+                                                            type="button"
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            className="h-8 w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50 mb-[1px]"
+                                                            onClick={() => removeNivelAdicional(String(modalidad.id), adj.id)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                ))}
+                                                {(!nuevosAdicionales[String(modalidad.id)] || nuevosAdicionales[String(modalidad.id)].length === 0) && (
+                                                    <div className="col-span-full py-4 text-center text-xs text-muted-foreground border border-dashed rounded-md bg-muted/5">
+                                                        No hay nuevos adicionales para esta modalidad
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
                                     </div>
                                 </AccordionContent>
                             </AccordionItem>
                         ))}
                     </Accordion>
+
+                    {/* Adicionales del Evento (Global/Existentes) */}
+                    <div className="space-y-4 pt-6 border-t">
+                        <div className="flex items-center justify-between">
+                            <h4 className="text-base font-semibold flex items-center gap-2">
+                                <Plus className="h-5 w-5 text-teal-600" />
+                                Adicionales Existentes del Evento
+                            </h4>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                            {adicionales.map((adj) => (
+                                <div key={adj.id_aparato} className="flex items-center justify-between p-4 rounded-lg border bg-background hover:bg-muted/5 transition-colors group shadow-sm">
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-sm font-semibold">{adj.Descripcion}</span>
+                                        <span className="text-sm text-teal-600 font-medium">$ {adj.Costo?.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-9 w-9 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setItemParaEliminar(adj);
+                                        }}
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            ))}
+                            {adicionales.length === 0 && (
+                                <div className="col-span-full py-10 text-center text-muted-foreground border-2 border-dashed rounded-xl bg-muted/5">
+                                    <p className="text-sm">No hay adicionales configurados actualmente para este evento.</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
                 </div>
             </div>
             <div className="p-4 border-t bg-background mt-auto">
@@ -694,7 +925,14 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
                     </Button>
                 </div>
             </div>
-        </form >
+
+            <DeleteAdicionalDialog
+                item={itemParaEliminar}
+                idEvento={String(evento.id)}
+                onOpenChange={(open) => !open && setItemParaEliminar(null)}
+                onSuccess={refreshAdicionales}
+            />
+        </form>
     )
 }
 

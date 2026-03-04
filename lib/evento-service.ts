@@ -112,6 +112,16 @@ export const putEventos = async (id_evento: string, body: any) => {
     return response.data;
 };
 
+export const delAdicional = async (evento: string, id_elemento: string) => {
+    const response = await api.post("/DeleteAdd", null, {
+        params: {
+            evento,
+            id_elemento
+        },
+    });
+    return response.data;
+};
+
 export const putEventosNiveles = async (body: any) => {
     console.log(body)
     const response = await api.post("/PutNiveles_insc_act", body);
