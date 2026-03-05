@@ -113,7 +113,7 @@ export const putEventos = async (id_evento: string, body: any) => {
 };
 
 export const delAdicional = async (evento: string, id_elemento: string) => {
-    const response = await api.post("/DeleteAdd", null, {
+    const response = await api.post("/DeleteAdd", {
         params: {
             evento,
             id_elemento
