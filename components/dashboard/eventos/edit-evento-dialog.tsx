@@ -84,7 +84,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { getGlobalInfo, ModalidadItem, ModalidadDetalleItem } from "@/lib/club-service"
 import { eventoSchema, EventoFormValues } from "@/lib/schemas/evento/evento-schema"
-import { editEventoSchema, EditEventoFormValues } from "@/lib/schemas/evento/edit-evento-schema"
+import { editEventoSchema, EditEventoFormValues, adicionalItemSchema } from "@/lib/schemas/evento/edit-evento-schema"
 import { toast } from "sonner"
 
 interface EditEventoDialogProps {
@@ -411,6 +411,53 @@ function DeleteAdicionalDialog({
     )
 }
 
+function AdicionalesExistentes({
+    adicionales,
+    setItemParaEliminar
+}: {
+    adicionales: AdicionalEventoItem[],
+    setItemParaEliminar: (item: AdicionalEventoItem) => void
+}) {
+    return (
+        <div className="space-y-4 pt-6 border-t">
+            <div className="flex items-center justify-between">
+                <h4 className="text-base font-semibold flex items-center gap-2">
+                    <Plus className="h-5 w-5 text-teal-600" />
+                    Adicionales Existentes del Evento
+                </h4>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {adicionales.map((adj) => (
+                    <div key={adj.id_aparato} className="flex items-center justify-between p-4 rounded-lg border bg-background hover:bg-muted/5 transition-colors group shadow-sm">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-sm font-semibold">{adj.Descripcion}</span>
+                            <span className="text-sm text-teal-600 font-medium">$ {adj.Costo?.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
+                        </div>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="h-9 w-9 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setItemParaEliminar(adj);
+                            }}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ))}
+                {adicionales.length === 0 && (
+                    <div className="col-span-full py-10 text-center text-muted-foreground border-2 border-dashed rounded-xl bg-muted/5">
+                        <p className="text-sm">No hay adicionales configurados actualmente para este evento.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    )
+}
+
 function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento, onSuccess?: () => void }) {
     const [modalidades, setModalidades] = React.useState<ModalidadItem[]>([])
     const [modalidadesDetalle, setModalidadesDetalle] = React.useState<ModalidadDetalleItem[]>([])
@@ -609,19 +656,31 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
             }))
 
         const nuevosAdicionalesFlat: { descripcion: string, costo_base: string }[] = []
+        let hasInvalidAdicionales = false
+
         Object.keys(nuevosAdicionales).forEach(modId => {
             nuevosAdicionales[modId].forEach(adj => {
                 if (adj.descripcion || adj.costo) {
-                    nuevosAdicionalesFlat.push({
-                        descripcion: adj.descripcion,
-                        costo_base: adj.costo
-                    })
+                    const result = adicionalItemSchema.safeParse(adj)
+                    if (!result.success) {
+                        hasInvalidAdicionales = true
+                    } else {
+                        nuevosAdicionalesFlat.push({
+                            descripcion: adj.descripcion,
+                            costo_base: adj.costo
+                        })
+                    }
                 }
             })
         })
 
+        if (hasInvalidAdicionales) {
+            toast.error("Por favor verifique que todos los adicionales nuevos tengan descripción y un costo mayor a 0")
+            return
+        }
+
         if (lista_act_niv.length === 0 && nuevosAdicionalesFlat.length === 0) {
-            toast.info("No hay niveles o adicionales para actualizar")
+            toast.info("No hay niveles o adicionales nuevos para actualizar")
             return
         }
 
@@ -868,42 +927,10 @@ function ModalidadesForm({ id, evento, onSuccess }: { id: string, evento: Evento
                     </Accordion>
 
                     {/* Adicionales del Evento (Global/Existentes) */}
-                    <div className="space-y-4 pt-6 border-t">
-                        <div className="flex items-center justify-between">
-                            <h4 className="text-base font-semibold flex items-center gap-2">
-                                <Plus className="h-5 w-5 text-teal-600" />
-                                Adicionales Existentes del Evento
-                            </h4>
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                            {adicionales.map((adj) => (
-                                <div key={adj.id_aparato} className="flex items-center justify-between p-4 rounded-lg border bg-background hover:bg-muted/5 transition-colors group shadow-sm">
-                                    <div className="flex flex-col gap-1">
-                                        <span className="text-sm font-semibold">{adj.Descripcion}</span>
-                                        <span className="text-sm text-teal-600 font-medium">$ {adj.Costo?.toLocaleString('es-MX', { minimumFractionDigits: 2 })}</span>
-                                    </div>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-9 w-9 text-muted-foreground hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setItemParaEliminar(adj);
-                                        }}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            ))}
-                            {adicionales.length === 0 && (
-                                <div className="col-span-full py-10 text-center text-muted-foreground border-2 border-dashed rounded-xl bg-muted/5">
-                                    <p className="text-sm">No hay adicionales configurados actualmente para este evento.</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <AdicionalesExistentes
+                        adicionales={adicionales}
+                        setItemParaEliminar={setItemParaEliminar}
+                    />
                 </div>
             </div>
             <div className="p-4 border-t bg-background mt-auto">

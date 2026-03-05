@@ -48,3 +48,10 @@ export const editEventoSchema = z.object({
 });
 
 export type EditEventoFormValues = z.infer<typeof editEventoSchema>
+
+export const adicionalItemSchema = z.object({
+    descripcion: z.string().min(1, "La descripción del adicional es obligatoria"),
+    costo: z.string().refine(val => !isNaN(parseFloat(val)) && parseFloat(val) > 0, {
+        message: "El costo del adicional debe ser un número mayor a 0"
+    })
+})
