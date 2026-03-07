@@ -169,7 +169,7 @@ export default function DashboardPage() {
                                 transition={{ delay: 0.6, duration: 0.5 }}
                             >
                                 <SummaryCard
-                                    title="Conteos Inscritos"
+                                    title="Eventos"
                                     total={<Badge variant="secondary" className="text-2xl"><CountUp end={totalAfilInscritos} /></Badge>}
                                     icon={ClipboardList}
                                     stats={[
