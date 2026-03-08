@@ -8,39 +8,68 @@ import { Button } from "@/components/ui/button";
 const slides = [
     {
         id: 1,
-        title: "Gran Campeonato Nacional de Gimnasia 2026",
-        description: "Los mejores atletas del país se reúnen para competir por el oro en las diferentes modalidades.",
-        image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=1470&auto=format&fit=crop",
-        category: "Evento Nacional",
+        title: "Afiliados",
+        description: "Los afiliados son el corazón de nuestra federación.",
+        image: "/gimnasia_2.png",
+        category: "Afiliados",
     },
     {
         id: 2,
-        title: "Nueva Escuela de Gimnasia Rítmica",
-        description: "Inauguramos nuevas instalaciones con equipamiento de nivel internacional.",
-        image: "https://images.unsplash.com/photo-1547844111-da4ca4fc1f23?q=80&w=1467&auto=format&fit=crop",
+        title: "HONOR Y ESPÍRITU DEPORTIVO",
+        description: "Por la superación de la gimnasia nacional",
+        image: "/gimnasia_1.png",
         category: "Institucional",
     },
     {
         id: 3,
-        title: "Capacitación para Entrenadores de Trampolín",
-        description: "Seminario especializado dictado por jueces internacionales de la FIG.",
-        image: "https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=1470&auto=format&fit=crop",
-        category: "Capacitación",
+        title: "Eventos",
+        description: "Mira los próximos eventos de la federación y participa en ellos",
+        image: "/gimnasia_3.jpg",
+        category: "Eventos",
     },
 ];
 
 export function NewsCarousel() {
     const [current, setCurrent] = useState(0);
+    const timerRef = React.useRef<NodeJS.Timeout | null>(null);
 
-    useEffect(() => {
-        const timer = setInterval(() => {
+    const startTimer = React.useCallback(() => {
+        stopTimer();
+        timerRef.current = setInterval(() => {
             setCurrent((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
         }, 6000);
-        return () => clearInterval(timer);
     }, []);
 
-    const nextSlide = () => setCurrent((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
-    const prevSlide = () => setCurrent((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+    const stopTimer = React.useCallback(() => {
+        if (timerRef.current) {
+            clearInterval(timerRef.current);
+            timerRef.current = null;
+        }
+    }, []);
+
+    const resetTimer = React.useCallback(() => {
+        startTimer();
+    }, [startTimer]);
+
+    useEffect(() => {
+        startTimer();
+        return () => stopTimer();
+    }, [startTimer, stopTimer]);
+
+    const nextSlide = () => {
+        setCurrent((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+        resetTimer();
+    };
+
+    const prevSlide = () => {
+        setCurrent((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+        resetTimer();
+    };
+
+    const goToSlide = (index: number) => {
+        setCurrent(index);
+        resetTimer();
+    };
 
     return (
         <div className="relative w-full h-[400px] md:h-[500px] overflow-hidden rounded-2xl shadow-xl">
@@ -68,7 +97,7 @@ export function NewsCarousel() {
                             animate={{ y: 0, opacity: 1 }}
                             transition={{ delay: 0.4 }}
                         >
-                            <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider bg-primary rounded-full mb-4 inline-block">
+                            <span className="px-3 py-1 text-xs font-semibold uppercase tracking-wider bg-primary text-white dark:bg-primary dark:text-black rounded-full mb-4 inline-block">
                                 {slides[current].category}
                             </span>
                             <h2 className="text-3xl md:text-5xl font-bold mb-4 max-w-2xl leading-tight">
@@ -110,7 +139,7 @@ export function NewsCarousel() {
                 {slides.map((_, index) => (
                     <button
                         key={index}
-                        onClick={() => setCurrent(index)}
+                        onClick={() => goToSlide(index)}
                         className={`h-1.5 rounded-full transition-all duration-300 ${index === current ? "w-8 bg-primary" : "w-2 bg-white/40"
                             }`}
                     />

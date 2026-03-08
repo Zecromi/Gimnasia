@@ -1,11 +1,16 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
+import dynamic from "next/dynamic";
 import { motion } from "framer-motion";
 import { Calendar, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+
+const NewsDetailDialog = dynamic(() => import("./news-detail-dialog").then(mod => mod.NewsDetailDialog), {
+    ssr: false,
+});
 
 const categories = [
     "Todos",
@@ -20,40 +25,47 @@ const categories = [
 const newsItems = [
     {
         id: 1,
-        title: "Resultados del Clasificatorio Estatal",
+        title: "Brillante desempeño en el Campeonato Nacional",
         date: "12 de Octubre, 2026",
-        description: "Se han publicado los resultados oficiales de la competencia estatal de gimnasia artística. Más de 200 atletas participaron.",
+        description: "Nuestras gimnastas logran podio en múltiples categorías. Consulta la tabla completa de posiciones y revive los mejores momentos de la competencia.",
         category: "Artística Femenil",
-        image: "https://images.unsplash.com/photo-1547844111-da4ca4fc1f23?q=80&w=400&h=250&auto=format&fit=crop",
+        image: "/gimnasia_1.png",
     },
     {
         id: 2,
-        title: "Nueva actualización del reglamento técnico",
+        title: "Actualización Técnica de la FIG 2026",
         date: "10 de Octubre, 2026",
-        description: "La federación ha emitido una circular con cambios importantes en el sistema de puntuación para el ciclo olímpico.",
+        description: "Descubre los cambios clave en el nuevo ciclo olímpico. Analizamos cómo el ajuste en los criterios de ejecución impactará las próximas participaciones internacionales.",
         category: "Rítmica",
-        image: "https://images.unsplash.com/photo-1551632811-561732d1e306?q=80&w=400&h=250&auto=format&fit=crop",
+        image: "/gimnasia_2.png",
     },
     {
         id: 3,
-        title: "Gala de Verano: Todo listo para el show",
+        title: "Gran Gala de Invierno: Venta de Boletos",
         date: "05 de Septiembre, 2026",
-        description: "Acompáñanos en una noche llena de magia y destreza física. Las entradas ya están a la venta de forma digital.",
+        description: "Prepárate para una noche de espectacularidad y elegancia. Asegura tu lugar en la gala anual donde se presentarán los mejores mosaicos acrobáticos del país.",
         category: "Acrobática",
-        image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=400&h=250&auto=format&fit=crop",
+        image: "/gimnasia_3.jpg",
     },
     {
         id: 4,
-        title: "Entrevistas: El camino hacia la excelencia",
+        title: "Convocatoria para el Seminario Superior",
         date: "28 de Agosto, 2026",
-        description: "Hablamos con los entrenadores más destacados de la región sobre sus métodos y visión del deporte.",
-        category: "Trampolín",
-        image: "https://images.unsplash.com/photo-1547844111-da4ca4fc1f23?q=80&w=400&h=250&auto=format&fit=crop",
+        description: "Inicia el registro para el programa de formación de alto rendimiento. Un espacio diseñado para entrenadores y jueces que buscan la excelencia técnica en trampolín.",
+        category: "Para todos",
+        image: "/gimnasia_4.jpg",
     },
 ];
 
 export function NewsSection() {
     const [activeCategory, setActiveCategory] = useState("Todos");
+    const [selectedNews, setSelectedNews] = useState<any | null>(null);
+    const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+    const handleNewsClick = (news: any) => {
+        setSelectedNews(news);
+        setIsDialogOpen(true);
+    };
 
     const filteredNews = activeCategory === "Todos"
         ? newsItems
@@ -91,7 +103,10 @@ export function NewsSection() {
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: index * 0.1 }}
                     >
-                        <Card className="overflow-hidden group cursor-pointer hover:shadow-2xl transition-all duration-500 border-none bg-accent/50 dark:bg-accent/10">
+                        <Card
+                            onClick={() => handleNewsClick(news)}
+                            className="overflow-hidden group cursor-pointer hover:shadow-2xl transition-all duration-500 border-none bg-accent/50 dark:bg-accent/10"
+                        >
                             <div className="relative h-48 w-full overflow-hidden">
                                 <img
                                     src={news.image}
@@ -117,7 +132,14 @@ export function NewsSection() {
                                 </CardDescription>
                             </CardContent>
                             <CardFooter>
-                                <Button variant="link" className="px-0 text-primary font-bold group-hover:gap-2 transition-all">
+                                <Button
+                                    variant="link"
+                                    className="px-0 text-primary font-bold group-hover:gap-2 transition-all"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleNewsClick(news);
+                                    }}
+                                >
                                     Leer más <ArrowRight className="h-4 w-4 ml-1 opacity-0 group-hover:opacity-100 transition-all" />
                                 </Button>
                             </CardFooter>
@@ -125,6 +147,14 @@ export function NewsSection() {
                     </motion.div>
                 ))}
             </div>
+
+            <Suspense fallback={null}>
+                <NewsDetailDialog
+                    news={selectedNews}
+                    open={isDialogOpen}
+                    onOpenChange={setIsDialogOpen}
+                />
+            </Suspense>
         </section>
     );
 }

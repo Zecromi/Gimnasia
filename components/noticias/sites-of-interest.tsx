@@ -1,32 +1,38 @@
 "use client";
 
 import React from "react";
-import { ExternalLink, Info, ShieldCheck, Trophy, Globe } from "lucide-react";
+import { ExternalLink, ShieldCheck, Trophy, Globe, Award, Map } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 const sites = [
     {
-        title: "Federación Internacional de Gimnasia (FIG)",
-        url: "https://www.gymnastics.sport",
+        title: "FIG - Federación Internacional de Gimnasia",
+        url: "https://www.gymnastics.sport/site/",
         icon: Globe,
         color: "bg-blue-500/10 text-blue-500",
     },
     {
-        title: "Comité Olímpico Nacional",
-        url: "#",
+        title: "UPAG - Unión Panamericana de Gimnasia",
+        url: "https://upag-pagu.com/",
+        icon: Map,
+        color: "bg-emerald-500/10 text-emerald-500",
+    },
+    {
+        title: "COM - Comité Olímpico Mexicano",
+        url: "https://www.com.org.mx/",
         icon: Trophy,
         color: "bg-amber-500/10 text-amber-500",
     },
     {
-        title: "Reglamento Técnico General",
-        url: "#",
-        icon: ShieldCheck,
-        color: "bg-emerald-500/10 text-emerald-500",
+        title: "CONADE - Cultura Física y Deporte",
+        url: "https://www.gob.mx/conade",
+        icon: Award,
+        color: "bg-red-500/10 text-red-500",
     },
     {
-        title: "Manual de Jueces y Puntajes",
-        url: "#",
-        icon: Info,
+        title: "CODEME - Confederación Deportiva Mexicana",
+        url: "https://www.codeme.com.mx/",
+        icon: ShieldCheck,
         color: "bg-purple-500/10 text-purple-500",
     },
 ];

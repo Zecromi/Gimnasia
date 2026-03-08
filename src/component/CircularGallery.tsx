@@ -154,6 +154,7 @@ interface MediaProps {
   textColor: string;
   borderRadius?: number;
   font?: string;
+  bgColor?: string;
 }
 
 class Media {
@@ -172,6 +173,7 @@ class Media {
   textColor: string;
   borderRadius: number;
   font?: string;
+  bgColor: string;
   program!: Program;
   plane!: Mesh;
   title!: Title;
@@ -198,7 +200,8 @@ class Media {
     bend,
     textColor,
     borderRadius = 0,
-    font
+    font,
+    bgColor = "transparent"
   }: MediaProps) {
     this.geometry = geometry;
     this.gl = gl;
@@ -214,6 +217,7 @@ class Media {
     this.textColor = textColor;
     this.borderRadius = borderRadius;
     this.font = font;
+    this.bgColor = bgColor;
     this.createShader();
     this.createMesh();
     this.createTitle();
@@ -249,6 +253,8 @@ class Media {
         uniform vec2 uPlaneSizes;
         uniform sampler2D tMap;
         uniform float uBorderRadius;
+        uniform vec3 uBgColor;
+        uniform float uHasBg;
         varying vec2 vUv;
         
         float roundedBoxSDF(vec2 p, vec2 b, float r) {
@@ -265,14 +271,27 @@ class Media {
             vUv.x * ratio.x + (1.0 - ratio.x) * 0.5,
             vUv.y * ratio.y + (1.0 - ratio.y) * 0.5
           );
-          vec4 color = texture2D(tMap, uv);
+
+          // Zoom/Scale factor to make the image smaller within the card
+          float zoom = 1.25; 
+          vec2 centeredUv = (uv - 0.5) * zoom + 0.5;
+          
+          vec4 color = vec4(0.0);
+          if (centeredUv.x >= 0.0 && centeredUv.x <= 1.0 && centeredUv.y >= 0.0 && centeredUv.y <= 1.0) {
+            color = texture2D(tMap, centeredUv);
+          }
+          
+          vec3 finalColor = color.rgb;
+          if (uHasBg > 0.5) {
+            finalColor = mix(uBgColor, color.rgb, color.a);
+          }
           
           float d = roundedBoxSDF(vUv - 0.5, vec2(0.5 - uBorderRadius), uBorderRadius);
           
           float edgeSmooth = 0.002;
           float alpha = 1.0 - smoothstep(-edgeSmooth, edgeSmooth, d);
           
-          gl_FragColor = vec4(color.rgb, alpha);
+          gl_FragColor = vec4(finalColor, alpha);
         }
       `,
       uniforms: {
@@ -281,7 +300,9 @@ class Media {
         uImageSizes: { value: [0, 0] },
         uSpeed: { value: 0 },
         uTime: { value: 100 * Math.random() },
-        uBorderRadius: { value: this.borderRadius }
+        uBorderRadius: { value: this.borderRadius },
+        uBgColor: { value: this.hexToRgb(this.bgColor) },
+        uHasBg: { value: this.bgColor !== "transparent" ? 1.0 : 0.0 }
       },
       transparent: true
     });
@@ -292,6 +313,14 @@ class Media {
       texture.image = img;
       this.program.uniforms.uImageSizes.value = [img.naturalWidth, img.naturalHeight];
     };
+  }
+
+  hexToRgb(hex: string) {
+    if (hex === "transparent") return [0, 0, 0];
+    const r = parseInt(hex.slice(1, 3), 16) / 255;
+    const g = parseInt(hex.slice(3, 5), 16) / 255;
+    const b = parseInt(hex.slice(5, 7), 16) / 255;
+    return [r, g, b];
   }
 
   createMesh() {
@@ -375,7 +404,7 @@ class Media {
 }
 
 interface AppConfig {
-  items?: { image: string; text: string }[];
+  items?: { image: string; text: string; bgColor?: string }[];
   bend?: number;
   textColor?: string;
   borderRadius?: number;
@@ -402,7 +431,7 @@ class App {
   scene!: Transform;
   planeGeometry!: Plane;
   medias: Media[] = [];
-  mediasImages: { image: string; text: string }[] = [];
+  mediasImages: { image: string; text: string; bgColor?: string }[] = [];
   screen!: { width: number; height: number };
   viewport!: { width: number; height: number };
   raf: number = 0;
@@ -476,7 +505,7 @@ class App {
   }
 
   createMedias(
-    items: { image: string; text: string }[] | undefined,
+    items: { image: string; text: string; bgColor?: string }[] | undefined,
     bend: number = 1,
     textColor: string,
     borderRadius: number,
@@ -549,7 +578,8 @@ class App {
         bend,
         textColor,
         borderRadius,
-        font
+        font,
+        bgColor: data.bgColor
       });
     });
   }
@@ -697,7 +727,7 @@ class App {
 }
 
 interface CircularGalleryProps {
-  items?: { image: string; text: string }[];
+  items?: { image: string; text: string; bgColor?: string }[];
   bend?: number;
   textColor?: string;
   borderRadius?: number;

@@ -16,30 +16,28 @@ export function ModalitiesGallery() {
     const [selectedModality, setSelectedModality] = useState<ModalityData | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-    // Generamos las "imágenes" de color dinámicamente usando SVG
+    // Mapeo de imágenes para cada modalidad
+    const imagePaths: Record<string, string> = {
+        "acrobatica": "/gm_acrobatica.png",
+        "aerobica": "/gm_aerobica.png",
+        "artistica-femenil": "/gm_artistica_femenil.png",
+        "artistica-varonil": "/gm_artistica_varonil.png",
+        "trampolin": "/gm_trampolin.png",
+        "ritmica": "/gm_ritmica.png",
+        "para-todos": "/gm_para_todos.png",
+        "parkour": "/gm_parkour.png"
+    };
+
+    // Generamos las modalidades con imágenes directas y color de fondo
     const modalities = useMemo(() => {
         return MODALITIES_DATA.map((mod) => {
             const color = currentTheme === "dark" ? mod.color.dark : mod.color.light;
-            const gradId = `cardGradient-${mod.id}`;
-            const svg = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="400" height="500">
-                    <defs>
-                        <linearGradient id="${gradId}" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <stop offset="0%" style="stop-color:${color};stop-opacity:1" />
-                            <stop offset="100%" style="stop-color:${color};stop-opacity:0.8" />
-                        </linearGradient>
-                    </defs>
-                    <rect width="100%" height="100%" fill="url(#${gradId})" />
-                    <rect width="100%" height="100%" fill="none" stroke="white" stroke-opacity="0.1" stroke-width="2" />
-                </svg>
-            `;
-
-            const utf8Bytes = new TextEncoder().encode(svg);
-            const base64Svg = btoa(String.fromCharCode(...utf8Bytes));
+            const imgPath = imagePaths[mod.id] || "";
 
             return {
                 text: mod.title,
-                image: `data:image/svg+xml;base64,${base64Svg}`,
+                image: imgPath,
+                bgColor: color
             };
         });
     }, [currentTheme]);
