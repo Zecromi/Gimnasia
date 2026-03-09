@@ -102,10 +102,10 @@ export default function HomePage() {
                 </Button>
               )}
 
-              <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 shadow-md transition-all hover:scale-105">
+              <Button asChild className="bg-[#008f80]/90 dark:bg-[#008f80]/20 text-white rounded-full px-6 shadow-md transition-all hover:scale-105">
                 <Link href="/login" className="flex items-center gap-2">
                   <LogIn className="h-4 w-4" />
-                  Iniciar Sesión
+                  Intranet
                 </Link>
               </Button>
             </div>
