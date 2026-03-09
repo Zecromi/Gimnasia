@@ -490,6 +490,7 @@ export function InscripcionesEventosView() {
                             open={isRegisterOpen}
                             onOpenChange={setIsRegisterOpen}
                             eventoId={String(selectedEvento.id)}
+                            idEvento={String(selectedEvento.id_Evento)}
                             eventoName={selectedEvento.Nombre}
                             modalidad={selectedEvento.Modalidad}
                             costo={selectedEvento.Costo_base}

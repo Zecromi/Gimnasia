@@ -87,6 +87,7 @@ interface RegisterEventDialogProps {
     open?: boolean
     onOpenChange?: (open: boolean) => void
     eventoId: string
+    idEvento?: string
     eventoName?: string
     modalidad: string
     costo: string
@@ -102,6 +103,7 @@ export function RegisterEventDialog({
     open: externalOpen,
     onOpenChange: setExternalOpen,
     eventoId,
+    idEvento,
     eventoName,
     modalidad,
     costo,
@@ -111,6 +113,7 @@ export function RegisterEventDialog({
     limiteParticipantes = 0,
     onSuccess
 }: RegisterEventDialogProps) {
+
     const { authData } = useAuthStore()
     const clubIdToUse = id_Club || authData?.id?.toString()
 
@@ -137,7 +140,7 @@ export function RegisterEventDialog({
         fetchPayCatalogs()
         fetchGlobalCatalogs()
         if (clubIdToUse) {
-            fetchAfiliadosEventos(clubIdToUse)
+            fetchAfiliadosEventos(clubIdToUse, idEvento || eventoId)
         }
 
         const fetchAdicionales = async () => {
