@@ -157,10 +157,12 @@ export interface AfiliadosEventosResponse {
     Afiliados_base: AfiliadoItem[];
 }
 
-export const getAfiliadosEventos = async (id_Club: string) => {
+export const getAfiliadosEventos = async (id_Club: string, id_Evento: string) => {
     const response = await api.get<AfiliadosEventosResponse>("/GetAfiliados_base", {
         params: {
             id_Club,
+            id_Evento,
+            tipo_user: "1",
         },
     });
     return response.data;

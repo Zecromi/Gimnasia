@@ -60,10 +60,10 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-zinc-950">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-zinc-950 ">
       {/* Header / Navigation */}
       <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/80 dark:bg-zinc-950/80 backdrop-blur-md border-b border-gray-100 dark:border-zinc-800 py-3 shadow-sm" : "bg-transparent py-5"
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/60 dark:bg-zinc-950/80 backdrop-blur-md border-b border-gray-100 dark:border-zinc-800 py-3 shadow-sm" : "bg-transparent py-5"
           }`}
       >
         <div className="max-w-[1400px] mx-auto px-4 md:px-8 flex items-center justify-between">
@@ -85,9 +85,9 @@ export default function HomePage() {
           {/* Desktop Nav */}
           <div className="hidden md:flex items-center gap-8">
             <nav className="flex items-center gap-6">
-              <Link href="#noticias" className="text-sm font-medium hover:text-blue-600 transition-colors">Noticias</Link>
-              <Link href="#modalidades" className="text-sm font-medium hover:text-blue-600 transition-colors">Modalidades</Link>
-              <Link href="#eventos" className="text-sm font-medium hover:text-blue-600 transition-colors">Eventos</Link>
+              <Link href="#noticias" className="text-sm font-medium hover:text-teal-600 dark:hover:text-teal-600 transition-colors">Noticias</Link>
+              <Link href="#modalidades" className="text-sm font-medium hover:text-teal-600 dark:hover:text-teal-600 transition-colors">Modalidades</Link>
+              <Link href="#eventos" className="text-sm font-medium hover:text-teal-600 dark:hover:text-teal-600 transition-colors">Eventos</Link>
             </nav>
 
             <div className="flex items-center gap-4 border-l pl-8 border-gray-100 dark:border-zinc-800">
@@ -127,12 +127,12 @@ export default function HomePage() {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="md:hidden bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800 overflow-hidden"
+              className="md:hidden bg-white dark:bg-zinc-900 border-b border-gray-100 dark:border-zinc-800 overflow-hidden "
             >
               <div className="px-4 py-6 space-y-4 flex flex-col items-center">
-                <Link href="#noticias" onClick={() => setIsMenuOpen(false)} className="text-lg font-medium">Noticias</Link>
-                <Link href="#modalidades" onClick={() => setIsMenuOpen(false)} className="text-lg font-medium">Modalidades</Link>
-                <Link href="#eventos" onClick={() => setIsMenuOpen(false)} className="text-lg font-medium">Eventos</Link>
+                <Link href="#noticias" onClick={() => setIsMenuOpen(false)} className="text-lg font-medium hover:text-teal-600 dark:hover:text-teal-600">Noticias</Link>
+                <Link href="#modalidades" onClick={() => setIsMenuOpen(false)} className="text-lg font-medium hover:text-teal-600 dark:hover:text-teal-600">Modalidades</Link>
+                <Link href="#eventos" onClick={() => setIsMenuOpen(false)} className="text-lg font-medium hover:text-teal-600 dark:hover:text-teal-600">Eventos</Link>
 
                 <div className="flex flex-col items-center gap-4 w-full pt-4 border-t border-gray-100 dark:border-zinc-800">
                   {mounted && (
@@ -169,8 +169,8 @@ export default function HomePage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 pt-20">
-        <div className="max-w-[1400px] mx-auto px-4 md:px-8 py-8 space-y-16">
+      <main className="flex-1 pt-20 ">
+        <div className="max-w-[1400px] bg-gray-50 dark:bg-zinc-950 mx-auto px-4 md:px-8 py-8 space-y-16 rounded-xl">
 
           {/* Section 1: Hero Carousel */}
           <section id="carousel">

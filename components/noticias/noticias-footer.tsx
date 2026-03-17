@@ -10,7 +10,7 @@ const PrivacyNotice = dynamic(() => import("./privacy-notice").then(mod => mod.P
 
 export function NoticiasFooter() {
     return (
-        <footer className="mt-20 pb-10 border-t bg-muted/30 pt-16">
+        <footer className="mt-20 pb-10 border-t bg-gray-100 dark:bg-zinc-900 pt-16">
             <div className="container px-4 mx-auto grid grid-cols-1 lg:grid-cols-3 gap-12 text-center lg:text-left">
                 {/* About column */}
                 <div className="space-y-6 flex flex-col items-center lg:items-start">
