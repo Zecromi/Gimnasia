@@ -151,6 +151,7 @@ export interface AfiliadoItem {
     id: number;
     id_nivel: number;
     id_categoria: number;
+    Edad: string;
 }
 
 export interface AfiliadosEventosResponse {
@@ -158,14 +159,18 @@ export interface AfiliadosEventosResponse {
 }
 
 export const getAfiliadosEventos = async (id_Club: string, id_Evento: string) => {
+    console.log("id_Club", id_Club)
+    console.log("id_Evento", id_Evento)
     const response = await api.get<AfiliadosEventosResponse>("/GetAfiliados_base", {
         params: {
-            id_Club,
-            id_Evento,
-            tipo_user: "1",
+            id_Club
+
+
         },
     });
+    console.log(response.data)
     return response.data;
+
 };
 //PutDelinscripcion
 

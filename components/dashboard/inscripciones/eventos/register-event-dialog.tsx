@@ -134,6 +134,31 @@ export function RegisterEventDialog({
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [searchQuery, setSearchQuery] = useState("")
 
+    const resetForm = useCallback(() => {
+        setSelectedMembers(new Set())
+        setSelectedPaymentMethod(null)
+        setSearchQuery("")
+        setMemberConfigs(prev => {
+            const resetConfigs: Record<string, MemberConfig> = {}
+            Object.keys(prev).forEach(key => {
+                resetConfigs[key] = {
+                    additionalItemIds: [],
+                    selectedNivelId: undefined,
+                    selectedCategoryId: undefined,
+                    isFullDiscount: false,
+                    discountAmount: 0
+                }
+            })
+            return resetConfigs
+        })
+    }, [])
+
+    useEffect(() => {
+        if (!open) {
+            resetForm()
+        }
+    }, [open, resetForm])
+
     useEffect(() => {
         if (!open) return
 
@@ -226,24 +251,6 @@ export function RegisterEventDialog({
             return fullName.includes(query);
         });
     }, [afiliados, searchQuery]);
-
-    const resetForm = useCallback(() => {
-        setSelectedMembers(new Set())
-        setSelectedPaymentMethod(null)
-        setMemberConfigs(prev => {
-            const resetConfigs: Record<string, MemberConfig> = {}
-            Object.keys(prev).forEach(key => {
-                resetConfigs[key] = {
-                    additionalItemIds: [],
-                    selectedNivelId: undefined,
-                    selectedCategoryId: undefined,
-                    isFullDiscount: false,
-                    discountAmount: 0
-                }
-            })
-            return resetConfigs
-        })
-    }, [])
 
     const handleNivelSelect = (memberId: string, nivelId: string, categoryId: string) => {
         setMemberConfigs(prev => {
@@ -551,7 +558,23 @@ export function RegisterEventDialog({
                                                 checked={isSelected}
                                                 onCheckedChange={(checked) => handleSelectMember(memberId, !!checked)}
                                             />
-                                            <span className="text-sm font-medium truncate" title={fullName}>{fullName}</span>
+                                            <div className="flex items-center gap-2 overflow-hidden">
+                                                {member.Edad && (
+                                                    <TooltipProvider delayDuration={300}>
+                                                        <Tooltip>
+                                                            <TooltipTrigger asChild>
+                                                                <Badge className="text-[10px] px-1.5 py-0 h-5 shrink-0 cursor-default bg-teal-500 text-gray-50 dark:bg-teal-500 dark:text-black">
+                                                                    {member.Edad}
+                                                                </Badge>
+                                                            </TooltipTrigger>
+                                                            <TooltipContent>
+                                                                <p>Edad</p>
+                                                            </TooltipContent>
+                                                        </Tooltip>
+                                                    </TooltipProvider>
+                                                )}
+                                                <span className="text-sm font-medium truncate" title={fullName}>{fullName}</span>
+                                            </div>
 
                                             <Popover>
                                                 <PopoverTrigger asChild>
@@ -599,14 +622,21 @@ export function RegisterEventDialog({
                                                     <Command>
                                                         <CommandInput placeholder="Buscar nivel/categoria..." />
                                                         <CommandList>
-                                                            <CommandEmpty>No se encontraron niveles.</CommandEmpty>
+                                                            <CommandEmpty>No se encontraron niveles para la edad del afiliado.</CommandEmpty>
                                                             <CommandGroup>
                                                                 {niveles.map((item) => {
                                                                     const match = View_Modalidades_detalle.find(d =>
-
                                                                         d.id_nivel === item.id_nivel &&
                                                                         d.id_categoria === item.id_categoria
                                                                     );
+
+                                                                    if (match && member.Edad) {
+                                                                        const edadNum = parseInt(member.Edad, 10);
+                                                                        if (!isNaN(edadNum) && (edadNum < match.edad_ini || edadNum > match.edad_fin)) {
+                                                                            return null;
+                                                                        }
+                                                                    }
+
                                                                     const fullDesc = match ? `${match.Nivel} (Edad: ${match.edad_ini}-${match.edad_fin})` : `Nivel ${item.id_nivel} - Cat ${item.id_categoria}`;
                                                                     const itemKey = `${item.id_nivel}-${item.id_categoria}`;
                                                                     const isSelected = memberConfigs[memberId]?.selectedNivelId === String(item.id_nivel) &&

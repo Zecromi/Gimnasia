@@ -4,6 +4,12 @@ import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
 import { EventosConfiguradosItem } from "@/lib/evento-service"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 export const getColumns = (
     onSuccess: () => void,
@@ -15,15 +21,24 @@ export const getColumns = (
             cell: ({ row }) => {
                 return (
                     <div className="flex items-center pl-2">
-                        <Button
-                            variant="ghost"
-                            size="icon-xs"
-                            className="hover:bg-teal-100 text-teal-700"
-                            onClick={() => onRegister(row.original)}
-                        >
-                            <TicketPlus className="h-3.5 w-3.5" />
-                            <span className="sr-only">Inscribirse</span>
-                        </Button>
+                        <TooltipProvider delayDuration={300}>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-xs"
+                                        className="hover:bg-teal-100 text-teal-700"
+                                        onClick={() => onRegister(row.original)}
+                                    >
+                                        <TicketPlus className="h-3.5 w-3.5" />
+
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="right">
+                                    <p>Registrar inscripción</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </div>
                 )
             },
