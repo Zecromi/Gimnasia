@@ -102,7 +102,7 @@ export default function DashboardPage() {
                     {/* Main Content (Only for Non-Clubs) */}
                     {/* eslint-disable-next-line eqeqeq */}
                     {authData?.tipo_registro != 2 && (
-                        <div className="space-y-6 sm:col-span-12 md:col-span-12 lg:col-span-12">
+                        <div className="space-y-12 sm:col-span-12 md:col-span-12 lg:col-span-12 pt-4">
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -110,7 +110,7 @@ export default function DashboardPage() {
                             >
                                 <SummaryCard
                                     title="Resumen de Clubes"
-                                    total={<Badge variant="secondary" className="text-2xl"><CountUp end={totalClubes} /></Badge>}
+                                    total={<Badge variant="secondary" className="text-2xl text-semibold"><CountUp end={totalClubes} /></Badge>}
                                     icon={Building2}
                                     stats={clubStats.length > 0 ? clubStats : [
                                         { label: "Activos", value: <Badge variant="secondary" className="text-2xl"><CountUp end={0} /></Badge>, icon: ShieldCheck },
@@ -120,6 +120,8 @@ export default function DashboardPage() {
                                     ]}
                                 />
                             </motion.div>
+                            <hr className="border-border/40" />
+
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -143,7 +145,7 @@ export default function DashboardPage() {
                 {/* eslint-disable-next-line eqeqeq */}
                 {authData?.tipo_registro == 2 && dataAfil && (
                     <div className="grid gap-6 lg:grid-cols-12 mt-6">
-                        <div className="space-y-6 sm:col-span-12 md:col-span-12 lg:col-span-12">
+                        <div className="space-y-12 sm:col-span-12 md:col-span-12 lg:col-span-12 pt-4">
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
@@ -162,6 +164,8 @@ export default function DashboardPage() {
                                     ]}
                                 />
                             </motion.div>
+
+                            <hr className="border-border/40" />
 
                             <motion.div
                                 initial={{ opacity: 0, y: 20 }}

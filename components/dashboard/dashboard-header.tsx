@@ -12,10 +12,10 @@ export function DashboardHeader() {
             className="relative w-full rounded-3xl overflow-hidden"
         >
             {/* Background Gradient */}
-            <div className="absolute inset-0 bg-gradient-to-r from-teal-400 via-emerald-400 to-cyan-400 dark:from-teal-900 dark:via-emerald-900 dark:to-cyan-900 opacity-90 blur-xl scale-125" />
+            <div className=" absolute inset-0 bg-gradient-to-r from-teal-400 via-emerald-400 to-cyan-400 dark:from-teal-900 dark:via-emerald-900 dark:to-cyan-900 opacity-90 blur-xl scale-125" />
 
             {/* Content Container */}
-            <div className="relative z-10 flex flex-col justify-center items-start p-2 md:p-6 min-h-[300px] bg-white/30 dark:bg-emerald-950/30 backdrop-blur-md rounded-3xl border border-white/20 shadow-lg">
+            <div className=" border-none relative z-10 flex flex-col justify-center items-start p-2 md:p-6 min-h-[300px] bg-white/30 dark:bg-emerald-950/30 backdrop-blur-md rounded-3xl border border-white/20 shadow-lg">
                 <div className="space-y-4 max-w-2xl">
                     <motion.h1
                         initial={{ opacity: 0, x: -20 }}
@@ -44,10 +44,13 @@ export function DashboardHeader() {
                     >
                         <Button
                             variant="link"
-                            className="group p-0 h-auto font-semibold text-teal-950 dark:text-emerald-300 hover:no-underline"
+                            className="group p-0 h-auto font-semibold text-teal-400 dark:text-teal-900 bg-black dark:bg-white m-2 p-2 rounded-full hover:no-underline"
+                            asChild
                         >
-                            Ver guía de usuario
-                            <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            <a href="/api/download-manual" target="_blank" rel="noopener noreferrer">
+                                Ver manual de GUEM
+                                <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                            </a>
                         </Button>
                     </motion.div>
                 </div>
