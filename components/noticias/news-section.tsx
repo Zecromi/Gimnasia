@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import dynamic from "next/dynamic";
+import { useNoticiasStore } from "@/lib/store/noticias-store";
 import { motion } from "framer-motion";
-import { Calendar, ArrowRight } from "lucide-react";
+import { Calendar, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -22,58 +23,62 @@ const categories = [
     "Acrobática",
 ];
 
-const newsItems = [
-    {
-        id: 1,
-        title: "Brillante desempeño en el Campeonato Nacional",
-        date: "12 de Octubre, 2026",
-        description: "Nuestras gimnastas logran podio en múltiples categorías. Consulta la tabla completa de posiciones y revive los mejores momentos de la competencia.",
-        category: "Artística Femenil",
-        image: "/gimnasia_1.png",
-    },
-    {
-        id: 2,
-        title: "Actualización Técnica de la FIG 2026",
-        date: "10 de Octubre, 2026",
-        description: "Descubre los cambios clave en el nuevo ciclo olímpico. Analizamos cómo el ajuste en los criterios de ejecución impactará las próximas participaciones internacionales.",
-        category: "Rítmica",
-        image: "/gimnasia_2.png",
-    },
-    {
-        id: 3,
-        title: "Gran Gala de Invierno: Venta de Boletos",
-        date: "05 de Septiembre, 2026",
-        description: "Prepárate para una noche de espectacularidad y elegancia. Asegura tu lugar en la gala anual donde se presentarán los mejores mosaicos acrobáticos del país.",
-        category: "Acrobática",
-        image: "/gimnasia_3.jpg",
-    },
-    {
-        id: 4,
-        title: "Convocatoria para el Seminario Superior",
-        date: "28 de Agosto, 2026",
-        description: "Inicia el registro para el programa de formación de alto rendimiento. Un espacio diseñado para entrenadores y jueces que buscan la excelencia técnica en trampolín.",
-        category: "Para todos",
-        image: "/gimnasia_4.jpg",
-    },
-];
+const PAGE_SIZE = 8;
 
 export function NewsSection() {
     const [activeCategory, setActiveCategory] = useState("Todos");
     const [selectedNews, setSelectedNews] = useState<any | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    const [loadingMore, setLoadingMore] = useState(false);
+    const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+    const { noticias, isLoading, fetchNoticias } = useNoticiasStore();
+
+    useEffect(() => {
+        fetchNoticias();
+    }, [fetchNoticias]);
+
+    const filteredNews = activeCategory === "Todos"
+        ? noticias
+        : noticias.filter(item => item.category === activeCategory);
+
+    const visibleNews = filteredNews.slice(0, visibleCount);
+    const hasMore = visibleCount < filteredNews.length;
+
+    // Reset visible count when category changes
+    useEffect(() => {
+        setVisibleCount(PAGE_SIZE);
+    }, [activeCategory]);
+
+    // IntersectionObserver — loads next 8 when sentinel enters viewport
+    const handleIntersect = useCallback((entries: IntersectionObserverEntry[]) => {
+        const [entry] = entries;
+        if (entry.isIntersecting && hasMore && !loadingMore) {
+            setLoadingMore(true);
+            setTimeout(() => {
+                setVisibleCount(prev => prev + PAGE_SIZE);
+                setLoadingMore(false);
+            }, 400);
+        }
+    }, [hasMore, loadingMore]);
+
+    useEffect(() => {
+        const sentinel = sentinelRef.current;
+        if (!sentinel) return;
+        const observer = new IntersectionObserver(handleIntersect, { threshold: 0.1 });
+        observer.observe(sentinel);
+        return () => observer.disconnect();
+    }, [handleIntersect]);
 
     const handleNewsClick = (news: any) => {
         setSelectedNews(news);
         setIsDialogOpen(true);
     };
 
-    const filteredNews = activeCategory === "Todos"
-        ? newsItems
-        : newsItems.filter(item => item.category === activeCategory);
-
     return (
         <section className="py-12 space-y-8">
-            {/* Categories Horizontal Scroll/Flex */}
+            {/* Categories */}
             <div className="flex flex-wrap gap-2 pb-2">
                 {categories.map((category) => (
                     <Button
@@ -89,64 +94,91 @@ export function NewsSection() {
 
             <div className="flex items-center justify-between">
                 <h3 className="text-2xl font-bold tracking-tight">Últimas Noticias</h3>
-                <Button variant="ghost" className="gap-2">
-                    Ver todas <ArrowRight className="h-4 w-4" />
-                </Button>
             </div>
 
             {/* News Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                {filteredNews.map((news, index) => (
-                    <motion.div
-                        key={news.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                    >
-                        <Card
-                            onClick={() => handleNewsClick(news)}
-                            className="overflow-hidden group cursor-pointer hover:shadow-2xl transition-all duration-500 border-none bg-accent/50 dark:bg-accent/10"
-                        >
-                            <div className="relative h-48 w-full overflow-hidden">
-                                <img
-                                    src={news.image}
-                                    alt={news.title}
-                                    className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
-                                />
-                                <Badge className="absolute top-4 left-4 font-medium backdrop-blur-md bg-primary/80 border-none">
-                                    {news.category}
-                                </Badge>
-                            </div>
-                            <CardHeader className="space-y-2">
-                                <div className="flex items-center text-xs text-muted-foreground gap-1.5 font-medium">
-                                    <Calendar className="h-3 w-3" />
-                                    {news.date}
-                                </div>
-                                <CardTitle className="text-xl line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-                                    {news.title}
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <CardDescription className="line-clamp-3 text-sm leading-relaxed">
-                                    {news.description}
-                                </CardDescription>
-                            </CardContent>
-                            <CardFooter>
-                                <Button
-                                    variant="link"
-                                    className="px-0 text-primary font-bold group-hover:gap-2 transition-all"
-                                    onClick={(e) => {
-                                        e.stopPropagation();
-                                        handleNewsClick(news);
-                                    }}
+            {isLoading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+                        <div key={i} className="rounded-xl bg-primary/5 animate-pulse h-72" />
+                    ))}
+                </div>
+            ) : filteredNews.length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-16 text-center gap-3 text-muted-foreground">
+                    <span className="text-4xl">📰</span>
+                    <p className="text-base font-medium">No hay noticias disponibles por el momento.</p>
+                    <p className="text-sm">Sin noticias por el momento.</p>
+                </div>
+            ) : (
+                <>
+                <div className="overflow-y-auto max-h-[720px] pr-1">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {visibleNews.map((news, index) => (
+                            <motion.div
+                                key={news.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: (index % PAGE_SIZE) * 0.05 }}
+                            >
+                                <Card
+                                    onClick={() => handleNewsClick(news)}
+                                    className="overflow-hidden group cursor-pointer hover:shadow-2xl transition-all duration-500 border-none bg-primary/5 hover:bg-primary/10"
                                 >
-                                    Leer más <ArrowRight className="h-4 w-4 ml-1 opacity-0 group-hover:opacity-100 transition-all" />
-                                </Button>
-                            </CardFooter>
-                        </Card>
-                    </motion.div>
-                ))}
-            </div>
+                                    <div className="relative h-48 w-full overflow-hidden">
+                                        <img
+                                            src={news.image}
+                                            alt={news.title}
+                                            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+                                            onError={(e) => {
+                                                (e.currentTarget as HTMLImageElement).src = "/logo-gimnasios.png";
+                                            }}
+                                        />
+                                        <Badge className="absolute top-4 left-4 font-medium backdrop-blur-md bg-primary/80 border-none">
+                                            {news.category}
+                                        </Badge>
+                                    </div>
+                                    <CardHeader className="space-y-2">
+                                        <div className="flex items-center text-xs text-muted-foreground gap-1.5 font-medium">
+                                            <Calendar className="h-3 w-3" />
+                                            {news.date}
+                                        </div>
+                                        <CardTitle className="text-xl line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+                                            {news.title}
+                                        </CardTitle>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <CardDescription className="line-clamp-3 text-sm leading-relaxed">
+                                            {news.description}
+                                        </CardDescription>
+                                    </CardContent>
+                                    <CardFooter>
+                                        <Button
+                                            variant="link"
+                                            className="px-0 text-primary font-bold group-hover:gap-2 transition-all"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleNewsClick(news);
+                                            }}
+                                        >
+                                            Leer más <ArrowRight className="h-4 w-4 ml-1 opacity-0 group-hover:opacity-100 transition-all" />
+                                        </Button>
+                                    </CardFooter>
+                                </Card>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    {/* Infinite scroll sentinel */}
+                    {hasMore && (
+                        <div ref={sentinelRef} className="flex justify-center py-6">
+                            {loadingMore && (
+                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                            )}
+                        </div>
+                    )}
+                </div>
+                </>
+            )}
 
             <Suspense fallback={null}>
                 <NewsDetailDialog

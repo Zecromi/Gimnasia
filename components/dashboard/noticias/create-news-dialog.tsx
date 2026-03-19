@@ -4,6 +4,9 @@ import * as React from "react"
 import { Plus, Save, Image as ImageIcon, Newspaper } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
+import { cargaImagen, postNoticia } from "@/lib/noticias-service"
+import { useAuthStore } from "@/lib/store/auth-store"
+import { useCatalogStore } from "@/lib/store/catalog-store"
 import {
     Dialog,
     DialogContent,
@@ -26,14 +29,8 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
 
-const categories = [
-    "Artística Varonil",
-    "Artística Femenil",
-    "Rítmica",
-    "Trampolín",
-    "Aeróbica",
-    "Acrobática",
-]
+// Remove hardcoded categories array
+
 
 interface CreateNewsDialogProps {
     onSuccess?: () => void
@@ -43,10 +40,19 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
     const [open, setOpen] = React.useState(false)
     const [isLoading, setIsLoading] = React.useState(false)
     const [imagePreview, setImagePreview] = React.useState<string | null>(null)
+    const [selectedFile, setSelectedFile] = React.useState<File | null>(null)
+
+    const authData = useAuthStore((state) => state.authData)
+    const { Modalidades, fetchCatalogs } = useCatalogStore()
+
+    React.useEffect(() => {
+        fetchCatalogs()
+    }, [fetchCatalogs])
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) {
+            setSelectedFile(file)
             const reader = new FileReader()
             reader.onloadend = () => {
                 setImagePreview(reader.result as string)
@@ -57,24 +63,66 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
+        if (!selectedFile || !imagePreview) {
+            toast.error("Por favor seleccione una imagen")
+            return
+        }
+
         setIsLoading(true)
 
         const formData = new FormData(e.currentTarget)
-        const data = Object.fromEntries(formData.entries())
+        const titulo = formData.get("titulo") as string
+        const modalidadID = formData.get("categoria") as string // Will map based on value since they are strings
+        const resumen = formData.get("descripcion") as string
+        const contenido = formData.get("contenido") as string
+        const isCarousel = formData.get("carousel") === "true"
+        const tipo = isCarousel ? "1" : "0"
 
-        console.log("Saving news:", {
-            ...data,
-            imagen: formData.get("imagen") // This will be the File object
-        })
+        // De acuerdo con la indicación: autorID es el "tipo_registro" de quien inicio sesion (ej. 1 o 3)
+        const autorID = authData?.tipo_registro?.toString() || "1"
 
-        // Mock API call
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        const extension = selectedFile.name.split('.').pop() || "jpg"
 
-        toast.success("Noticia creada exitosamente")
-        setIsLoading(false)
-        setOpen(false)
-        setImagePreview(null)
-        onSuccess?.()
+        try {
+            // 1. Crear la Noticia
+            const noticiaRes = await postNoticia({
+                titulo,
+                resumen,
+                contenido,
+                autorID,
+                modalidadID,
+                tipo,
+            })
+
+            // PostNoticia returns [{"Column1": "2004"}]
+            const noticiaId = noticiaRes?.[0]?.Column1 ?? null
+
+            if (!noticiaId) {
+                // If we cannot determine the ID, abort image upload to avoid attaching it to the wrong record
+                console.error("[PostNoticia] No se pudo extraer el ID de la noticia. Respuesta:", noticiaRes)
+                toast.warning("Noticia creada, pero no se pudo identificar el ID para subir la imagen. Revisa la consola.")
+                setOpen(false)
+                setImagePreview(null)
+                setSelectedFile(null)
+                onSuccess?.()
+                return
+            }
+
+            // 2. Cargar la imagen atada a la nueva Noticia usando multipart/form-data
+            await cargaImagen(noticiaId.toString(), extension, selectedFile)
+
+            toast.success("Noticia e imagen creadas exitosamente")
+            setOpen(false)
+            setImagePreview(null)
+            setSelectedFile(null)
+            onSuccess?.()
+        } catch (error: any) {
+            console.error("Error al publicar la noticia:", error?.response?.data || error)
+            const errorMsg = error?.response?.data?.message || error?.response?.data || "Ocurrió un error al cargar la noticia"
+            toast.error(typeof errorMsg === 'string' ? errorMsg : "Ocurrió un error al cargar la noticia")
+        } finally {
+            setIsLoading(false)
+        }
     }
 
     return (
@@ -117,9 +165,9 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
                                                 <SelectValue placeholder="Seleccionar modalidad" />
                                             </SelectTrigger>
                                             <SelectContent>
-                                                {categories.map((category) => (
-                                                    <SelectItem key={category} value={category}>
-                                                        {category}
+                                                {Modalidades && Modalidades.map((modality: any) => (
+                                                    <SelectItem key={modality.id} value={modality.id.toString()}>
+                                                        {modality.Nombre}
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -137,13 +185,25 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
                                     </InputGroup>
                                 </div>
 
-                                <div className="space-y-2 flex-1 flex flex-col">
-                                    <Label htmlFor="descripcion">Descripción / Resumen : *</Label>
+                                <div className="space-y-2 flex-1 flex flex-col p-1">
+                                    <Label htmlFor="descripcion">Resumen : *</Label>
                                     <textarea
                                         id="descripcion"
                                         name="descripcion"
-                                        className="flex-1 min-h-[150px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                        className="h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
                                         placeholder="Escriba un breve resumen de la noticia..."
+                                        maxLength={150}
+                                        required
+                                    />
+                                </div>
+
+                                <div className="space-y-2 flex-1 flex flex-col p-1">
+                                    <Label htmlFor="contenido">Contenido Completo : *</Label>
+                                    <textarea
+                                        id="contenido"
+                                        name="contenido"
+                                        className="flex-1 min-h-[150px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                                        placeholder="Escriba el contenido completo de la noticia..."
                                         required
                                     />
                                 </div>
@@ -166,7 +226,10 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
                                                         type="button"
                                                         variant="destructive"
                                                         size="sm"
-                                                        onClick={() => setImagePreview(null)}
+                                                        onClick={() => {
+                                                            setImagePreview(null)
+                                                            setSelectedFile(null)
+                                                        }}
                                                     >
                                                         Cambiar Imagen
                                                     </Button>

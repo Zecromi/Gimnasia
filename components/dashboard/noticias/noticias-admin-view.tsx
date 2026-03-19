@@ -1,43 +1,22 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { Plus, Newspaper, Search } from "lucide-react"
+import { useState, useMemo, useEffect } from "react"
+import { Newspaper, Search, Loader2 } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { getColumns, Noticia } from "./noticias-columns"
 import { DataTable } from "../data-table"
 import { CreateNewsDialog } from "./create-news-dialog"
-
-// Mock data
-const MOCK_NOTICIAS: Noticia[] = [
-    {
-        id: 1,
-        titulo: "Inscripciones Abiertas - Nacional GAF 2024",
-        resumen: "Ya se encuentran abiertas las inscripciones para el campeonato nacional de gimnasia artística femenina.",
-        fecha: "2024-03-01",
-        estatus: "Publicado",
-        autor: "Administrador"
-    },
-    {
-        id: 2,
-        titulo: "Nuevo Reglamento de Competencia",
-        resumen: "Se ha publicado el nuevo reglamento técnico para el ciclo 2024-2025.",
-        fecha: "2024-02-15",
-        estatus: "Borrador",
-        autor: "Coordinación Técnica"
-    },
-    {
-        id: 3,
-        titulo: "Resultados Estatales 2024",
-        resumen: "Consulta los resultados del pasado evento estatal celebrado en el Club Benito Juárez.",
-        fecha: "2024-02-10",
-        estatus: "Publicado",
-        autor: "Prensa"
-    }
-]
+import { useNoticiasStore } from "@/lib/store/noticias-store"
 
 export function NoticiasAdminView() {
     const [searchTerm, setSearchTerm] = useState("")
+
+    const { rawNoticias, isLoading, fetchNoticias } = useNoticiasStore()
+
+    useEffect(() => {
+        fetchNoticias()
+    }, [fetchNoticias])
 
     const handleView = (noticia: Noticia) => {
         console.log("Viewing noticia:", noticia)
@@ -51,19 +30,14 @@ export function NoticiasAdminView() {
         console.log("Deleting noticia:", noticia)
     }
 
-    const fetchData = () => {
-        console.log("Fetching news data...")
-        // In a real app, this would re-fetch from API
-    }
-
     const columns = useMemo(() => getColumns(handleEdit, handleDelete, handleView), [])
 
     const filteredData = useMemo(() => {
-        return MOCK_NOTICIAS.filter(n =>
-            n.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            n.autor.toLowerCase().includes(searchTerm.toLowerCase())
+        return rawNoticias.filter(n =>
+            n.Titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            n.Resumen.toLowerCase().includes(searchTerm.toLowerCase())
         )
-    }, [searchTerm])
+    }, [rawNoticias, searchTerm])
 
     return (
         <div className="space-y-4">
@@ -78,14 +52,14 @@ export function NoticiasAdminView() {
                             Carga, edita y gestiona las noticias y comunicados del portal.
                         </p>
                     </div>
-                    <CreateNewsDialog onSuccess={fetchData} />
+                    <CreateNewsDialog onSuccess={() => fetchNoticias()} />
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-center space-x-2 mb-4">
                         <div className="relative flex-1">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                             <Input
-                                placeholder="Buscar por título o autor..."
+                                placeholder="Buscar por título o resumen..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
                                 className="pl-10 h-10 rounded-xl bg-white dark:bg-zinc-950 border-gray-200 dark:border-zinc-800 focus:ring-blue-500"
@@ -93,12 +67,19 @@ export function NoticiasAdminView() {
                         </div>
                     </div>
 
-                    <DataTable
-                        columns={columns}
-                        data={filteredData}
-                        headerClassName="bg-white dark:bg-zinc-950"
-                        tableHeight="h-[500px]"
-                    />
+                    {isLoading ? (
+                        <div className="flex items-center justify-center py-16 gap-3 text-muted-foreground">
+                            <Loader2 className="h-5 w-5 animate-spin" />
+                            <span className="text-sm font-medium">Cargando noticias...</span>
+                        </div>
+                    ) : (
+                        <DataTable
+                            columns={columns}
+                            data={filteredData}
+                            headerClassName="bg-white dark:bg-zinc-950"
+                            tableHeight="h-[500px]"
+                        />
+                    )}
                 </CardContent>
             </Card>
         </div>
