@@ -1,10 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { Plus, Save, Image as ImageIcon, Newspaper } from "lucide-react"
+import { Save, Image as ImageIcon, Newspaper } from "lucide-react"
 import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
-import { cargaImagen, postNoticia } from "@/lib/noticias-service"
+import { putNoticia, cargaImagen } from "@/lib/noticias-service"
 import { useAuthStore } from "@/lib/store/auth-store"
 import { useCatalogStore } from "@/lib/store/catalog-store"
 import {
@@ -12,7 +12,6 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogTrigger,
     DialogFooter,
     DialogDescription,
 } from "@/components/ui/dialog"
@@ -28,20 +27,20 @@ import {
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { ScrollArea } from "@/components/ui/scroll-area"
+import { NoticiaRaw } from "@/lib/store/noticias-store"
 
-// Remove hardcoded categories array
-
-
-interface CreateNewsDialogProps {
+interface EditNewsDialogProps {
+    noticia: NoticiaRaw | null
+    open: boolean
+    onOpenChange: (open: boolean) => void
     onSuccess?: () => void
 }
 
-export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
-    const [open, setOpen] = React.useState(false)
+export function EditNewsDialog({ noticia, open, onOpenChange, onSuccess }: EditNewsDialogProps) {
     const [isLoading, setIsLoading] = React.useState(false)
     const [imagePreview, setImagePreview] = React.useState<string | null>(null)
     const [selectedFile, setSelectedFile] = React.useState<File | null>(null)
-    const [tipoState, setTipoState] = React.useState(false)
+    const [tipoState, setTipoState] = React.useState<boolean>(false)
 
     const authData = useAuthStore((state) => state.authData)
     const { Modalidades, fetchCatalogs } = useCatalogStore()
@@ -50,117 +49,100 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
         fetchCatalogs()
     }, [fetchCatalogs])
 
+    // Reset file/tipo state when dialog opens with a new noticia
+    React.useEffect(() => {
+        if (open && noticia) {
+            setTipoState(noticia.Tipo === 1)
+        }
+        if (!open) {
+            setImagePreview(null)
+            setSelectedFile(null)
+        }
+    }, [open, noticia])
+
+    if (!noticia) return null
+
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0]
         if (file) {
             setSelectedFile(file)
             const reader = new FileReader()
-            reader.onloadend = () => {
-                setImagePreview(reader.result as string)
-            }
+            reader.onloadend = () => setImagePreview(reader.result as string)
             reader.readAsDataURL(file)
         }
     }
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        if (!selectedFile || !imagePreview) {
-            toast.error("Por favor seleccione una imagen")
-            return
-        }
-
         setIsLoading(true)
 
         const formData = new FormData(e.currentTarget)
         const titulo = formData.get("titulo") as string
-        const modalidadID = formData.get("categoria") as string // Will map based on value since they are strings
+        const modalidadID = formData.get("categoria") as string
         const resumen = formData.get("descripcion") as string
         const contenido = formData.get("contenido") as string
         const tipo = tipoState ? "1" : "2"
-
-        // De acuerdo con la indicación: autorID es el "tipo_registro" de quien inicio sesion (ej. 1 o 3)
         const autorID = authData?.tipo_registro?.toString() || "1"
 
-        const extension = selectedFile.name.split('.').pop() || "jpg"
+        const payload = { titulo, resumen, contenido, autorID, modalidadID, tipo }
+        console.log("[PutNoticia] Payload enviado:", payload)
 
         try {
-            // 1. Crear la Noticia
-            const noticiaRes = await postNoticia({
-                titulo,
-                resumen,
-                contenido,
-                autorID,
-                modalidadID,
-                tipo,
-            })
+            // 1. Update noticia text fields
+            await putNoticia(noticia.id.toString(), payload)
 
-            // PostNoticia returns [{"Column1": "2004"}]
-            const noticiaId = noticiaRes?.[0]?.Column1 ?? null
-
-            if (!noticiaId) {
-                // If we cannot determine the ID, abort image upload to avoid attaching it to the wrong record
-                console.error("[PostNoticia] No se pudo extraer el ID de la noticia. Respuesta:", noticiaRes)
-                toast.warning("Noticia creada, pero no se pudo identificar el ID para subir la imagen. Revisa la consola.")
-                setOpen(false)
-                setImagePreview(null)
-                setSelectedFile(null)
-                onSuccess?.()
-                return
+            // 2. Upload new image only if a file was selected
+            if (selectedFile) {
+                const extension = selectedFile.name.split(".").pop() || "jpg"
+                await cargaImagen(noticia.id.toString(), extension, selectedFile)
             }
 
-            // 2. Cargar la imagen atada a la nueva Noticia usando multipart/form-data
-            await cargaImagen(noticiaId.toString(), extension, selectedFile)
-
-            toast.success("Noticia e imagen creadas exitosamente")
-            setOpen(false)
-            setImagePreview(null)
-            setSelectedFile(null)
+            toast.success("Noticia actualizada exitosamente")
+            onOpenChange(false)
             onSuccess?.()
         } catch (error: any) {
-            console.error("Error al publicar la noticia:", error?.response?.data || error)
-            const errorMsg = error?.response?.data?.message || error?.response?.data || "Ocurrió un error al cargar la noticia"
-            toast.error(typeof errorMsg === 'string' ? errorMsg : "Ocurrió un error al cargar la noticia")
+            console.error("Error al actualizar la noticia:", error?.response?.data || error)
+            const errorMsg = error?.response?.data?.message || error?.response?.data || "Ocurrió un error al actualizar la noticia"
+            toast.error(typeof errorMsg === "string" ? errorMsg : "Ocurrió un error al actualizar la noticia")
         } finally {
             setIsLoading(false)
         }
     }
 
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
-            <DialogTrigger asChild>
-                <Button className="bg-blue-600 hover:bg-blue-700 text-white rounded-full px-6 transition-all hover:scale-105 active:scale-95 shadow-md">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Crear Noticia
-                </Button>
-            </DialogTrigger>
-            <DialogContent className="!w-[90vw] !max-w-[90vw] h-[80vh] p-0 overflow-hidden flex flex-col">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent
+                className="!w-[90vw] !max-w-[90vw] h-[80vh] p-0 overflow-hidden flex flex-col"
+                onInteractOutside={(e) => e.preventDefault()}
+                onEscapeKeyDown={(e) => e.preventDefault()}
+            >
                 <DialogHeader className="px-6 py-4 border-b bg-gray-50 dark:bg-zinc-900 shrink-0">
                     <DialogTitle className="flex items-center gap-2">
                         <Newspaper className="h-5 w-5 text-blue-600" />
-                        Nueva Noticia
+                        Editar Noticia <span className="text-muted-foreground font-normal text-sm">#{noticia.id}</span>
                     </DialogTitle>
                     <DialogDescription>
-                        Complete los campos para publicar una nueva noticia en el portal.
+                        Modifica los campos que deseas actualizar. La imagen es opcional — si no seleccionas una nueva, se conserva la actual.
                     </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
                     <ScrollArea className="flex-1 h-full">
                         <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-8 h-full">
-                            {/* Columna Izquierda: Información de la Noticia */}
+                            {/* Columna Izquierda: Información */}
                             <div className="space-y-6 flex flex-col">
                                 <InputGroup label="Título de la Noticia : *" htmlFor="titulo">
                                     <Input
                                         id="titulo"
                                         name="titulo"
-                                        placeholder="Ej: Gran Campeonato Nacional 2026"
+                                        defaultValue={noticia.Titulo}
                                         required
                                     />
                                 </InputGroup>
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <InputGroup label="Modalidad : *" htmlFor="categoria">
-                                        <Select name="categoria" required>
+                                        <Select name="categoria" defaultValue={noticia.ModalidadID?.toString()} required>
                                             <SelectTrigger id="categoria">
                                                 <SelectValue placeholder="Seleccionar modalidad" />
                                             </SelectTrigger>
@@ -173,16 +155,6 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
                                             </SelectContent>
                                         </Select>
                                     </InputGroup>
-
-                                    <InputGroup label="Fecha : *" htmlFor="fecha">
-                                        <Input
-                                            id="fecha"
-                                            name="fecha"
-                                            type="date"
-                                            defaultValue={new Date().toISOString().split('T')[0]}
-                                            required
-                                        />
-                                    </InputGroup>
                                 </div>
 
                                 <div className="space-y-2 flex-1 flex flex-col p-1">
@@ -190,8 +162,8 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
                                     <textarea
                                         id="descripcion"
                                         name="descripcion"
+                                        defaultValue={noticia.Resumen}
                                         className="h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                        placeholder="Escriba un breve resumen de la noticia..."
                                         maxLength={150}
                                         required
                                     />
@@ -202,34 +174,27 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
                                     <textarea
                                         id="contenido"
                                         name="contenido"
+                                        defaultValue={noticia.Contenido}
                                         className="flex-1 min-h-[150px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-                                        placeholder="Escriba el contenido completo de la noticia..."
                                         required
                                     />
                                 </div>
                             </div>
 
-                            {/* Columna Derecha: Imagen y Configuración */}
+                            {/* Columna Derecha: Imagen y Tipo */}
                             <div className="space-y-6 flex flex-col">
                                 <div className="space-y-3">
-                                    <Label>Imagen de la Noticia : *</Label>
+                                    <Label>Imagen de la Noticia <span className="text-muted-foreground text-xs">(opcional — cambia solo si seleccionas una nueva)</span></Label>
                                     <div className="grid gap-4">
                                         {imagePreview ? (
                                             <div className="relative group w-full aspect-video rounded-xl overflow-hidden border-2 border-dashed border-blue-200 dark:border-blue-900/30 bg-black/5">
-                                                <img
-                                                    src={imagePreview}
-                                                    alt="Preview"
-                                                    className="w-full h-full object-cover"
-                                                />
+                                                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
                                                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                                                     <Button
                                                         type="button"
                                                         variant="destructive"
                                                         size="sm"
-                                                        onClick={() => {
-                                                            setImagePreview(null)
-                                                            setSelectedFile(null)
-                                                        }}
+                                                        onClick={() => { setImagePreview(null); setSelectedFile(null) }}
                                                     >
                                                         Cambiar Imagen
                                                     </Button>
@@ -242,18 +207,19 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
                                                         <ImageIcon className="w-8 h-8 text-blue-600" />
                                                     </div>
                                                     <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">
-                                                        <span className="font-semibold text-blue-600">Haga clic</span> o arrastre
+                                                        <span className="font-semibold text-blue-600">Clic</span> para cambiar imagen
                                                     </p>
-                                                    <p className="text-xs text-gray-400">SVG, PNG, JPG (MAX. 800x400px)</p>
+                                                    {noticia.extension && (
+                                                        <p className="text-xs text-muted-foreground">Imagen actual: <span className="font-semibold">.{noticia.extension}</span></p>
+                                                    )}
                                                 </div>
                                                 <Input
-                                                    id="imagen"
+                                                    id="imagen-edit"
                                                     name="imagen"
                                                     type="file"
                                                     accept="image/*"
                                                     className="absolute inset-0 opacity-0 cursor-pointer h-full w-full"
                                                     onChange={handleImageChange}
-                                                    required
                                                 />
                                             </div>
                                         )}
@@ -262,7 +228,7 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
 
                                 <div className="flex items-start space-x-3 bg-blue-50 dark:bg-blue-900/20 p-4 rounded-xl border border-blue-100 dark:border-blue-900/30">
                                     <Checkbox
-                                        id="carousel"
+                                        id="carousel-edit"
                                         name="carousel"
                                         value="true"
                                         checked={tipoState}
@@ -271,13 +237,13 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
                                     />
                                     <div className="grid gap-1.5 leading-none">
                                         <label
-                                            htmlFor="carousel"
+                                            htmlFor="carousel-edit"
                                             className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
                                         >
                                             Mostrar en el carrusel principal
                                         </label>
                                         <p className="text-xs text-muted-foreground leading-relaxed mt-1">
-                                            Al activar esta opción, la noticia se fijará en la cabecera principal de la página de inicio, destacando sobre las demás publicaciones.
+                                            Al activar esta opción, la noticia se fijará en la cabecera principal de la página de inicio.
                                         </p>
                                     </div>
                                 </div>
@@ -289,7 +255,7 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
                         <Button
                             type="button"
                             variant="ghost"
-                            onClick={() => setOpen(false)}
+                            onClick={() => onOpenChange(false)}
                             disabled={isLoading}
                         >
                             Cancelar
@@ -304,7 +270,7 @@ export function CreateNewsDialog({ onSuccess }: CreateNewsDialogProps) {
                             ) : (
                                 <Save className="mr-2 h-4 w-4" />
                             )}
-                            Guardar Noticia
+                            Guardar Cambios
                         </Button>
                     </DialogFooter>
                 </form>
