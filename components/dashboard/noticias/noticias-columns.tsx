@@ -1,7 +1,7 @@
 "use client"
 
 import { ColumnDef } from "@tanstack/react-table"
-import { Edit, Trash2, Eye } from "lucide-react"
+import { Edit, Trash2, Check, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -21,6 +21,7 @@ export interface Noticia {
     ModalidadID: number
     Tipo: number
     extension: string | null
+    Estado: string
 }
 
 export const getColumns = (
@@ -67,6 +68,26 @@ export const getColumns = (
             }
         },
         {
+            accessorKey: "Estado",
+            header: "Estado",
+            cell: ({ row }) => {
+                const estado = row.original.Estado
+                return (
+                    <Badge
+                        variant="outline"
+                        className={cn(
+                            "px-2 py-0.5",
+                            estado === "Activo"
+                                ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/20 dark:text-emerald-400 dark:border-emerald-800"
+                                : "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800"
+                        )}
+                    >
+                        {estado === "Activo" ? "Visible" : "Oculto"}
+                    </Badge>
+                )
+            }
+        },
+        {
             accessorKey: "extension",
             header: "Imagen",
             cell: ({ row }) => {
@@ -88,12 +109,22 @@ export const getColumns = (
                                     variant="ghost"
                                     size="icon-xs"
                                     onClick={() => onView(row.original)}
-                                    className="hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                                    className={cn(
+                                        row.original.Estado === "Activo"
+                                            ? "hover:bg-blue-100 dark:hover:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+                                            : "hover:bg-gray-100 dark:hover:bg-zinc-800 text-gray-500 dark:text-gray-400"
+                                    )}
                                 >
-                                    <Eye className="h-4 w-4" />
+                                    {row.original.Estado === "Activo" ? (
+                                        <Check className="h-4 w-4" />
+                                    ) : (
+                                        <X className="h-4 w-4" />
+                                    )}
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent side="top">Visible</TooltipContent>
+                            <TooltipContent side="top">
+                                {row.original.Estado === "Activo" ? "Ocultar" : "Mostrar"}
+                            </TooltipContent>
                         </Tooltip>
 
                         <Tooltip>

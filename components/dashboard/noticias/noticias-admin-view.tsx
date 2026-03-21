@@ -36,13 +36,9 @@ export function NoticiasAdminView() {
     }, [fetchNoticias])
 
     const handleView = async (noticia: Noticia) => {
-        // Here we assume "Estatus_Publicacion" or similar exists, but since we don't have it explicitly mapped in Noticia interface yet,
-        // we'll find it from rawNoticias. If we can't find Estatus, we default to sending "1" (visible)
-        const raw = rawNoticias.find(n => n.id === noticia.id)
-        // If it's already visible (e.g., Estatus_Publicacion might be 1), we send 2 to hide it. Otherwise 1 to show it.
-        // Assuming raw object has Estatus_Publicacion. Let's cast it to any to read it safely.
-        const currentStatus = (raw as any)?.Estatus_Publicacion
-        const newTipo = currentStatus === 1 ? "2" : "1"
+        // "Activo" means visible -> send "2" to hide it.
+        // "Inactivo" means hidden -> send "1" to show it.
+        const newTipo = noticia.Estado === "Activo" ? "2" : "1"
         const actionText = newTipo === "1" ? "visible" : "oculta"
 
         try {

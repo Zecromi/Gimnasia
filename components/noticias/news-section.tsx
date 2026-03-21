@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback, Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useNoticiasStore } from "@/lib/store/noticias-store";
+import { useCatalogStore } from "@/lib/store/catalog-store";
 import { motion } from "framer-motion";
 import { Calendar, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,16 +14,7 @@ const NewsDetailDialog = dynamic(() => import("./news-detail-dialog").then(mod =
     ssr: false,
 });
 
-const categories = [
-    "Todos",
-    "Artística Varonil",
-    "Artística Femenil",
-    "Rítmica",
-    "Trampolín",
-    "Aeróbica",
-    "Acrobática",
-];
-
+// Removed static categories array
 const PAGE_SIZE = 8;
 
 export function NewsSection() {
@@ -34,10 +26,15 @@ export function NewsSection() {
     const sentinelRef = useRef<HTMLDivElement | null>(null);
 
     const { noticias, isLoading, fetchNoticias } = useNoticiasStore();
+    const { Modalidades, fetchCatalogs } = useCatalogStore();
 
     useEffect(() => {
         fetchNoticias();
-    }, [fetchNoticias]);
+        fetchCatalogs();
+    }, [fetchNoticias, fetchCatalogs]);
+
+    // Build dynamic categories array from Modalidades
+    const categories = ["Todos", ...(Modalidades?.map((m: any) => m.Nombre) || [])];
 
     const filteredNews = activeCategory === "Todos"
         ? noticias

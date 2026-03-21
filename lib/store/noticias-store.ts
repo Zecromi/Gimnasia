@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import { getNoticias, getImagenNoticiaUrl } from "@/lib/noticias-service";
+import { useCatalogStore } from "@/lib/store/catalog-store";
 
 export interface NoticiaItem {
     id: number;
@@ -21,6 +22,7 @@ export interface NoticiaRaw {
     ModalidadID: number;
     Tipo: number;
     extension: string | null;
+    Estado: string;
 }
 
 interface NoticiasStore {
@@ -46,10 +48,17 @@ export const useNoticiasStore = create<NoticiasStore>((set, get) => ({
 
         set({ isLoading: true, error: null });
         try {
+            // Ensure modalities are loaded to map category names correctly
+            await useCatalogStore.getState().fetchCatalogs();
+            const modalities = useCatalogStore.getState().Modalidades || [];
+
             const data = await getNoticias();
             const resultados: any[] = data?.resultados ?? [];
 
-            const noticias: NoticiaItem[] = resultados.map((item) => ({
+            const noticias: NoticiaItem[] = resultados
+                // Filter out inactive news so they don't show on the public cards
+                .filter((item) => item.Estado === "Activo")
+                .map((item) => ({
                 id: item.id,
                 title: item.Titulo,
                 date: new Date().toLocaleDateString("es-ES", {
@@ -59,7 +68,7 @@ export const useNoticiasStore = create<NoticiasStore>((set, get) => ({
                 }),
                 description: item.Resumen,
                 content: item.Contenido,
-                category: "Artística Varonil",
+                category: modalities.find((m: any) => m.id.toString() === item.ModalidadID?.toString())?.Nombre || "General",
                 image: getImagenNoticiaUrl(item.id),
             }));
 
@@ -72,6 +81,7 @@ export const useNoticiasStore = create<NoticiasStore>((set, get) => ({
                 ModalidadID: item.ModalidadID,
                 Tipo: item.Tipo,
                 extension: item.extension,
+                Estado: item.Estado || "Inactivo",
             }));
 
             set({ noticias, rawNoticias, isLoading: false });
