@@ -14,6 +14,20 @@ export const postNoticia = async (payload: CreateNoticiaPayload) => {
     return response.data;
 };
 
+export const putNoticia = async (id: string, payload: CreateNoticiaPayload) => {
+    const response = await api.post("/PutNoticia", payload, {
+        params: { id },
+    });
+    return response.data;
+};
+
+export const postPresentaNoticia = async (id: string, tipo: string) => {
+    const response = await api.post("/Post_Presenta_Noticia", null, {
+        params: { id, tipo },
+    });
+    return response.data;
+};
+
 export const cargaImagen = async (id: string, extension: string, file: File) => {
     const formData = new FormData();
     formData.append("imagen", file);

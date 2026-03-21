@@ -7,10 +7,27 @@ import { Input } from "@/components/ui/input"
 import { getColumns, Noticia } from "./noticias-columns"
 import { DataTable } from "../data-table"
 import { CreateNewsDialog } from "./create-news-dialog"
-import { useNoticiasStore } from "@/lib/store/noticias-store"
+import { EditNewsDialog } from "./edit-news-dialog"
+import { useNoticiasStore, NoticiaRaw } from "@/lib/store/noticias-store"
+import { postPresentaNoticia } from "@/lib/noticias-service"
+import { toast } from "sonner"
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export function NoticiasAdminView() {
     const [searchTerm, setSearchTerm] = useState("")
+    const [editingNoticia, setEditingNoticia] = useState<NoticiaRaw | null>(null)
+    const [isEditOpen, setIsEditOpen] = useState(false)
+    const [deletingNoticia, setDeletingNoticia] = useState<Noticia | null>(null)
+    const [isDeleting, setIsDeleting] = useState(false)
 
     const { rawNoticias, isLoading, fetchNoticias } = useNoticiasStore()
 
@@ -18,19 +35,63 @@ export function NoticiasAdminView() {
         fetchNoticias()
     }, [fetchNoticias])
 
-    const handleView = (noticia: Noticia) => {
-        console.log("Viewing noticia:", noticia)
+    const handleView = async (noticia: Noticia) => {
+        // Here we assume "Estatus_Publicacion" or similar exists, but since we don't have it explicitly mapped in Noticia interface yet,
+        // we'll find it from rawNoticias. If we can't find Estatus, we default to sending "1" (visible)
+        const raw = rawNoticias.find(n => n.id === noticia.id)
+        // If it's already visible (e.g., Estatus_Publicacion might be 1), we send 2 to hide it. Otherwise 1 to show it.
+        // Assuming raw object has Estatus_Publicacion. Let's cast it to any to read it safely.
+        const currentStatus = (raw as any)?.Estatus_Publicacion
+        const newTipo = currentStatus === 1 ? "2" : "1"
+        const actionText = newTipo === "1" ? "visible" : "oculta"
+
+        try {
+            await postPresentaNoticia(noticia.id.toString(), newTipo)
+            toast.success(`Noticia marcada como ${actionText}`)
+            handleEditSuccess() // Refresh the table
+        } catch (error) {
+            console.error("Error cambiando visibilidad:", error)
+            toast.error("Error al cambiar la visibilidad de la noticia")
+        }
     }
 
     const handleEdit = (noticia: Noticia) => {
-        console.log("Editing noticia:", noticia)
+        setEditingNoticia(noticia as NoticiaRaw)
+        setIsEditOpen(true)
     }
 
     const handleDelete = (noticia: Noticia) => {
-        console.log("Deleting noticia:", noticia)
+        setDeletingNoticia(noticia)
     }
 
-    const columns = useMemo(() => getColumns(handleEdit, handleDelete, handleView), [])
+    const confirmDelete = async () => {
+        if (!deletingNoticia) return
+        
+        setIsDeleting(true)
+        try {
+            await postPresentaNoticia(deletingNoticia.id.toString(), "3")
+            toast.success("Noticia eliminada correctamente")
+            handleEditSuccess() // Refresh the table
+        } catch (error) {
+            console.error("Error eliminando noticia:", error)
+            toast.error("Error al eliminar la noticia")
+        } finally {
+            setIsDeleting(false)
+            setDeletingNoticia(null)
+        }
+    }
+
+    const handleEditSuccess = () => {
+        // Invalidate cache so the table refreshes with fresh data
+        useNoticiasStore.setState({ noticias: [], rawNoticias: [] })
+        fetchNoticias()
+    }
+
+    const columns = useMemo(
+        () => getColumns(handleEdit, handleDelete, handleView),
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        []
+    )
 
     const filteredData = useMemo(() => {
         return rawNoticias.filter(n =>
@@ -52,7 +113,10 @@ export function NoticiasAdminView() {
                             Carga, edita y gestiona las noticias y comunicados del portal.
                         </p>
                     </div>
-                    <CreateNewsDialog onSuccess={() => fetchNoticias()} />
+                    <CreateNewsDialog onSuccess={() => {
+                        useNoticiasStore.setState({ noticias: [], rawNoticias: [] })
+                        fetchNoticias()
+                    }} />
                 </CardHeader>
                 <CardContent>
                     <div className="flex items-center space-x-2 mb-4">
@@ -82,6 +146,37 @@ export function NoticiasAdminView() {
                     )}
                 </CardContent>
             </Card>
+
+            <EditNewsDialog
+                noticia={editingNoticia}
+                open={isEditOpen}
+                onOpenChange={setIsEditOpen}
+                onSuccess={handleEditSuccess}
+            />
+
+            <AlertDialog open={!!deletingNoticia} onOpenChange={(open) => !open && setDeletingNoticia(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>¿Eliminar noticia?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            ¿Estás seguro de que deseas eliminar la noticia id: {deletingNoticia?.id}? Esta acción no se puede deshacer.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={(e) => {
+                                e.preventDefault();
+                                confirmDelete();
+                            }}
+                            className="bg-red-600 hover:bg-red-700 text-white"
+                            disabled={isDeleting}
+                        >
+                            {isDeleting ? "Eliminando..." : "Eliminar"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     )
 }
