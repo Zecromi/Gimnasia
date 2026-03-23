@@ -1,7 +1,7 @@
 "use client";
 
 import React, { Suspense } from "react";
-import { Facebook, Instagram, Twitter, Mail, MapPin, Phone, Youtube } from "lucide-react";
+import { Instagram, Mail, MapPin, Phone } from "lucide-react";
 import dynamic from "next/dynamic";
 
 const PrivacyNotice = dynamic(() => import("./privacy-notice").then(mod => mod.PrivacyNotice), {
@@ -14,24 +14,16 @@ export function NoticiasFooter() {
             <div className="container px-4 mx-auto grid grid-cols-1 lg:grid-cols-3 gap-12 text-center lg:text-left">
                 {/* About column */}
                 <div className="space-y-6 flex flex-col items-center lg:items-start">
-                    <h4 className="text-2xl font-black italic tracking-tighter text-primary">
-                        GUEM<span className="text-foreground"></span>
+                    <h4 className="flex flex-col text-2xl font-black italic tracking-tighter text-primary">
+                        GUEM
+                        <span className="text-sm font-medium not-italic text-foreground mt-1">Gimnasios Unidos del Estado de México</span>
                     </h4>
                     <p className="text-sm text-muted-foreground leading-relaxed max-w-sm">
-                        Plataforma integral para la gestión y difusión del deporte gimnástico nacional. Comprometidos con la excelencia y el desarrollo de nuestros atletas.
+                        Asociación comprometida con la excelencia y el desarrollo de nuestros atletas en el ámbito gimnástico.
                     </p>
                     <div className="flex gap-4">
-                        <a href="#" className="p-2 bg-background rounded-full hover:text-primary transition-colors shadow-sm border border-muted">
-                            <Facebook className="h-4 w-4" />
-                        </a>
-                        <a href="#" className="p-2 bg-background rounded-full hover:text-primary transition-colors shadow-sm border border-muted">
-                            <Instagram className="h-4 w-4" />
-                        </a>
-                        <a href="#" className="p-2 bg-background rounded-full hover:text-primary transition-colors shadow-sm border border-muted">
-                            <Twitter className="h-4 w-4" />
-                        </a>
-                        <a href="#" className="p-2 bg-background rounded-full hover:text-primary transition-colors shadow-sm border border-muted">
-                            <Youtube className="h-4 w-4" />
+                        <a href="https://www.instagram.com/guem.edomex?igsh=cXI1MXRyM2Y4MGNo&utm_source=qr" target="_blank" rel="noreferrer" title="Instagram" className="p-2 bg-background rounded-full hover:text-primary transition-colors shadow-sm border border-muted">
+                         <Instagram className="h-4 w-4" />
                         </a>
                     </div>
                 </div>
@@ -62,28 +54,25 @@ export function NoticiasFooter() {
                         <div className="flex flex-col items-center lg:items-start gap-3">
                             <div className="flex items-center gap-2">
                                 <MapPin className="h-5 w-5 text-primary shrink-0" />
-                                <p className="font-bold text-foreground">FEDERACIÓN MEXICANA DE GIMNASIA AC</p>
+                                <p className="font-bold text-foreground">Dirección</p>
                             </div>
-                            <div className="space-y-1">
-                                <p>Calle Tenayuca # 55 Oficina 403. Col. Letrán Valle.</p>
-                                <p>Alcaldía Benito Juárez, Ciudad de México. CP. 03650.</p>
+                            <div className="space-y-1 text-center lg:text-left">
+                                <p>Calle 2 de Marzo, Mz 34 Lt 38. Col. Jacalones I.</p>
+                                <p>San Miguel, Chalco, Estado de México. CP 56604.</p>
+                                <p className="text-xs italic text-muted-foreground pt-1">Entre Calle Iztaccihuatl y Calle 5 de Mayo</p>
                             </div>
                         </div>
-                        <div className="flex items-center justify-center lg:justify-start gap-3">
+                        <div className="flex items-center justify-center lg:justify-start gap-3 pt-2">
                             <Phone className="h-4 w-4 text-primary shrink-0" />
-                            <span>Teléfono: 55-8984-7848</span>
+                            <a href="tel:+525568780440" className="hover:text-primary transition-colors">Teléfono: +52 55 6878 0440</a>
                         </div>
                         <div className="flex items-center justify-center lg:justify-start gap-3">
                             <Mail className="h-4 w-4 text-primary shrink-0" />
-                            <span>E-mail : info@fmgimnasia.org.mx</span>
+                            <a href="mailto:guemasociacion@gmail.com" className="hover:text-primary transition-colors">E-mail: guemasociacion@gmail.com</a>
                         </div>
                     </div>
                 </div>
             </div>
-
-            <Suspense fallback={<div className="h-20" />}>
-                <PrivacyNotice />
-            </Suspense>
         </footer>
     );
 }
