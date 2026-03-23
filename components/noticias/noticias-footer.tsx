@@ -11,7 +11,7 @@ const PrivacyNotice = dynamic(() => import("./privacy-notice").then(mod => mod.P
 export function NoticiasFooter() {
     return (
         <footer className="mt-20 pb-10 border-t bg-gray-100 dark:bg-zinc-900 pt-16">
-            <div className="container px-4 mx-auto grid grid-cols-1 lg:grid-cols-3 gap-12 text-center lg:text-left">
+            <div className="container px-4 mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 text-center lg:text-left">
                 {/* About column */}
                 <div className="space-y-6 flex flex-col items-center lg:items-start">
                     <h4 className="flex flex-col text-2xl font-black italic tracking-tighter text-primary">
@@ -28,24 +28,6 @@ export function NoticiasFooter() {
                     </div>
                 </div>
 
-                {/* Quick Links */}
-                <div className="space-y-6 flex flex-col items-center lg:items-start">
-                    <h5 className="font-bold text-lg uppercase tracking-wider">Consejo Directivo</h5>
-                    <ul className="space-y-3 text-sm text-muted-foreground">
-                        <li className="hover:text-primary transition-colors cursor-pointer flex items-center justify-center lg:justify-start gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
-                            Comité ejecutivo
-                        </li>
-                        <li className="hover:text-primary transition-colors cursor-pointer flex items-center justify-center lg:justify-start gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
-                            Comité técnico superior
-                        </li>
-                        <li className="hover:text-primary transition-colors cursor-pointer flex items-center justify-center lg:justify-start gap-2">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary/40" />
-                            Asociaciones y clubes
-                        </li>
-                    </ul>
-                </div>
 
                 {/* Contact Info */}
                 <div className="space-y-6 flex flex-col items-center lg:items-start">
