@@ -80,9 +80,13 @@ export function NewsSection() {
                 {categories.map((category) => (
                     <Button
                         key={category}
-                        variant={activeCategory === category ? "default" : "outline"}
+                        variant="outline"
                         onClick={() => setActiveCategory(category)}
-                        className="rounded-full transition-all duration-300"
+                        className={`rounded-full transition-all duration-300 ${
+                          activeCategory === category 
+                            ? "bg-[#008f80] text-white hover:bg-teal-700 border-[#008f80] hover:text-white" 
+                            : "text-gray-600 dark:text-gray-300 border-gray-200 dark:border-zinc-800 hover:bg-gray-50 hover:text-[#008f80] dark:hover:bg-zinc-800"
+                        }`}
                     >
                         {category}
                     </Button>
@@ -97,18 +101,18 @@ export function NewsSection() {
             {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                        <div key={i} className="rounded-xl bg-primary/5 animate-pulse h-72" />
+                        <div key={i} className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/50 animate-pulse h-[380px]" />
                     ))}
                 </div>
             ) : filteredNews.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center gap-3 text-muted-foreground">
-                    <span className="text-4xl">📰</span>
-                    <p className="text-base font-medium">No hay noticias disponibles por el momento.</p>
-                    <p className="text-sm">Sin noticias por el momento.</p>
+                <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 border-dashed text-center">
+                    <span className="text-5xl opacity-80 mb-4">📰</span>
+                    <p className="text-lg font-medium text-gray-700 dark:text-gray-200">No hay noticias disponibles</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Intenta con otra categoría de búsqueda.</p>
                 </div>
             ) : (
                 <>
-                <div className="overflow-y-auto max-h-[720px] pr-1">
+                <div className="overflow-y-auto max-h-[720px] pr-2 pb-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                         {visibleNews.map((news, index) => (
                             <motion.div
@@ -116,50 +120,54 @@ export function NewsSection() {
                                 initial={{ opacity: 0, y: 20 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: (index % PAGE_SIZE) * 0.05 }}
+                                className="h-full"
                             >
                                 <Card
                                     onClick={() => handleNewsClick(news)}
-                                    className="overflow-hidden group cursor-pointer hover:shadow-2xl transition-all duration-500 border-none bg-primary/5 hover:bg-primary/10"
+                                    className="h-full flex flex-col hover:shadow-2xl transition-all duration-500 border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl overflow-hidden relative group cursor-pointer"
                                 >
-                                    <div className="relative h-48 w-full overflow-hidden">
+                                    <div className="relative h-48 w-full overflow-hidden bg-gray-100 dark:bg-zinc-800">
                                         <img
                                             src={news.image}
                                             alt={news.title}
-                                            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+                                            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-105"
                                             onError={(e) => {
                                                 (e.currentTarget as HTMLImageElement).src = "/logo-gimnasios.png";
                                             }}
                                         />
-                                        <Badge className="absolute top-4 left-4 font-medium backdrop-blur-md bg-primary/80 border-none">
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                        <span className="absolute top-4 left-4 px-3 py-1 bg-white/95 dark:bg-zinc-900/95 backdrop-blur-sm text-[#00A389] text-[11px] font-bold tracking-wider uppercase rounded-md shadow-sm">
                                             {news.category}
-                                        </Badge>
+                                        </span>
                                     </div>
-                                    <CardHeader className="space-y-2">
-                                        <div className="flex items-center text-xs text-muted-foreground gap-1.5 font-medium">
-                                            <Calendar className="h-3 w-3" />
-                                            {news.date}
-                                        </div>
-                                        <CardTitle className="text-xl line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-                                            {news.title}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <CardDescription className="line-clamp-3 text-sm leading-relaxed">
-                                            {news.description}
-                                        </CardDescription>
-                                    </CardContent>
-                                    <CardFooter>
-                                        <Button
-                                            variant="link"
-                                            className="px-0 text-primary font-bold group-hover:gap-2 transition-all"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleNewsClick(news);
-                                            }}
-                                        >
-                                            Leer más <ArrowRight className="h-4 w-4 ml-1 opacity-0 group-hover:opacity-100 transition-all" />
-                                        </Button>
-                                    </CardFooter>
+                                    <div className="flex-1 flex flex-col">
+                                        <CardHeader className="pt-5 pb-3 px-5">
+                                            <div className="flex items-center text-[12px] text-gray-500 dark:text-gray-400 gap-1.5 font-medium mb-3">
+                                                <Calendar className="h-3.5 w-3.5" />
+                                                {news.date}
+                                            </div>
+                                            <CardTitle className="text-[17px] font-bold leading-snug group-hover:text-[#008f80] transition-colors line-clamp-2">
+                                                {news.title}
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent className="px-5 pb-4 flex-1">
+                                            <CardDescription className="line-clamp-3 text-sm leading-relaxed text-gray-600 dark:text-gray-300">
+                                                {news.description}
+                                            </CardDescription>
+                                        </CardContent>
+                                        <CardFooter className="px-5 pb-5 pt-0 mt-auto">
+                                            <Button
+                                                variant="link"
+                                                className="px-0 h-auto py-0 text-[#008f80] font-semibold hover:no-underline group-hover:text-teal-700 dark:group-hover:text-teal-400 transition-colors"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleNewsClick(news);
+                                                }}
+                                            >
+                                                Leer más <ArrowRight className="h-4 w-4 ml-1 transform group-hover:translate-x-1 transition-transform" />
+                                            </Button>
+                                        </CardFooter>
+                                    </div>
                                 </Card>
                             </motion.div>
                         ))}
