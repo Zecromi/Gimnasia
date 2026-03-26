@@ -110,7 +110,7 @@ export default function DashboardPage() {
                             >
                                 <SummaryCard
                                     title="Resumen de Clubes"
-                                    total={<Badge variant="secondary" className="text-2xl text-semibold"><CountUp end={totalClubes} /></Badge>}
+                                    total={<Badge variant="secondary" className="text-2xl "><CountUp end={totalClubes} /></Badge>}
                                     icon={Building2}
                                     stats={clubStats.length > 0 ? clubStats : [
                                         { label: "Activos", value: <Badge variant="secondary" className="text-2xl"><CountUp end={0} /></Badge>, icon: ShieldCheck },

@@ -7,7 +7,7 @@ import { useForm, FormProvider, useFormContext } from "react-hook-form"
 import { MapContainer, TileLayer, Marker, useMapEvents, useMap, Popup } from "react-leaflet"
 import "leaflet/dist/leaflet.css"
 import { toast } from "sonner"
-import { updateClub, mapStateToClubPayload, getClubDetail, getGlobalInfo, Estado, setSeg, SetSegPayload } from "@/lib/club-service"
+import { updateClub, mapStateToClubPayload, getClubDetail, getGlobalInfo, Estado, setSeg, SetSegPayload, postClubLocation } from "@/lib/club-service"
 import { useAuthStore } from "@/lib/store/auth-store"
 
 
@@ -852,7 +852,7 @@ function LocationMarker({ currentLat, currentLng, setLocation, icon, currentAddr
             setLocation(e.latlng.lat, e.latlng.lng);
         },
     });
-    
+
     return currentLat !== 0 ? (
         <Marker position={[currentLat, currentLng]} {...(icon ? { icon } : {})}>
             {currentAddress && (
@@ -924,15 +924,53 @@ function UbicacionForm({ club }: { club: ViewClubGral }) {
         if (!searchQuery.trim()) return;
         setIsSearching(true);
         try {
-            const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(searchQuery)}`);
-            const data = await response.json();
+            // Limpiar abreviaturas comunes y preparar variaciones (fallbacks) para Google Maps strings
+            let cleanQuery = searchQuery
+                .replace(/Méx\./gi, "Estado de México")
+                .replace(/Edo\.? de Méx\./gi, "Estado de México")
+                .replace(/Edo\./gi, "Estado de")
+                .replace(/CDMX/gi, "Ciudad de México");
+
+            const parts = cleanQuery.split(',').map(p => p.trim());
+            let queriesToTry = [cleanQuery];
+
+            if (parts.length > 1) {
+                // 1. Quitar la primera parte (frecuentemente calle específica y número)
+                queriesToTry.push(parts.slice(1).join(', '));
+
+                // 2. Tomar las últimas 2 partes (usualmente Municipio, Estado), quitando el CP
+                const lastTwo = parts.slice(-2).join(', ')
+                    .replace(/\b\d{4,5}\b/g, '') // Quita el CP
+                    .replace(/  +/g, ' ')        // Evita dobles espacios
+                    .trim();
+
+                // Limpiar posibles comas huerfanas al inicio
+                const cleanLastTwo = lastTwo.replace(/^,\s*/, '');
+                if (cleanLastTwo) queriesToTry.push(cleanLastTwo);
+            }
+
+            // Quitar duplicados por si acaso quedaron iguales
+            queriesToTry = [...new Set(queriesToTry)].filter(q => q.length > 0);
+
+            let data = null;
+            for (const query of queriesToTry) {
+                const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=1`, {
+                    headers: { 'Accept-Language': 'es' }
+                });
+                const result = await response.json();
+                if (result && result.length > 0) {
+                    data = result;
+                    break;
+                }
+            }
+
             if (data && data.length > 0) {
                 const lat = parseFloat(data[0].lat);
                 const lon = parseFloat(data[0].lon);
                 setMapCenter([lat, lon]);
-                setLocation(lat, lon); 
+                setLocation(lat, lon);
             } else {
-                toast.error("Ubicación no encontrada");
+                toast.error("Ubicación no encontrada. Intenta buscar solo por municipio o estado.");
             }
         } catch (error) {
             console.error("Error buscando ubicación:", error);
@@ -942,10 +980,20 @@ function UbicacionForm({ club }: { club: ViewClubGral }) {
         }
     };
 
-    const handleSaveLocation = () => {
+    const handleSaveLocation = async () => {
         const vals = getValues();
-        console.log("Ubicación guardada:", vals.latitud, vals.longitud);
-        toast.success("Ubicación marcada como lista. No olvides Guardar los cambios generales del club.");
+        if (!club?.id) {
+            toast.error("Error: ID del club no encontrado.");
+            return;
+        }
+        
+        try {
+            await postClubLocation(club.id.toString(), vals.latitud, vals.longitud);
+            toast.success("Ubicación actualizada correctamente.");
+        } catch (error) {
+            console.error("Error al guardar ubicación:", error);
+            toast.error("Error al actualizar la ubicación.");
+        }
     }
 
     return (
@@ -958,10 +1006,10 @@ function UbicacionForm({ club }: { club: ViewClubGral }) {
                 <div className="text-sm text-muted-foreground mb-[-1rem]">
                     Busca una dirección o haz clic en el mapa para ubicar el marcador del club.
                 </div>
-                
+
                 <div className="flex gap-2">
-                    <Input 
-                        placeholder="Buscar dirección, ciudad o lugar..." 
+                    <Input
+                        placeholder="Buscar dirección, ciudad o lugar..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleSearch())}
@@ -974,10 +1022,10 @@ function UbicacionForm({ club }: { club: ViewClubGral }) {
 
                 <div className="w-full h-[400px] rounded-lg overflow-hidden border">
                     {mounted ? (
-                        <MapContainer 
-                            center={[currentLat !== 0 ? currentLat : defaultCenter.lat, currentLng !== 0 ? currentLng : defaultCenter.lng]} 
-                            zoom={currentLat !== 0 && currentLat !== defaultCenter.lat ? 15 : 5} 
-                            scrollWheelZoom={true} 
+                        <MapContainer
+                            center={[currentLat !== 0 ? currentLat : defaultCenter.lat, currentLng !== 0 ? currentLng : defaultCenter.lng]}
+                            zoom={currentLat !== 0 && currentLat !== defaultCenter.lat ? 15 : 5}
+                            scrollWheelZoom={true}
                             style={{ height: '100%', width: '100%' }}
                         >
                             <TileLayer
@@ -993,22 +1041,29 @@ function UbicacionForm({ club }: { club: ViewClubGral }) {
                         </div>
                     )}
                 </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                         <Label>Latitud</Label>
-                         <Input readOnly value={latitudStr || "0"} className="bg-muted" />
-                    </div>
-                    <div className="space-y-2">
-                         <Label>Longitud</Label>
-                         <Input readOnly value={longitudStr || "0"} className="bg-muted" />
+
+                <div className="space-y-2">
+                    <Label>Coordenadas para Google Maps (Copiar y pegar)</Label>
+                    <div className="flex gap-2">
+                        <Input readOnly value={`${latitudStr || "0"}, ${longitudStr || "0"}`} className="bg-muted font-mono" />
+                        <CopyButton value={`${latitudStr || "0"}, ${longitudStr || "0"}`} />
+                        <Button type="button" variant="outline" className="hidden sm:flex" asChild>
+                            <a href={`https://www.google.com/maps/search/?api=1&query=${latitudStr || "0"},${longitudStr || "0"}`} target="_blank" rel="noopener noreferrer">
+                                Abrir Google Maps
+                            </a>
+                        </Button>
+                        <Button type="button" variant="outline" size="icon" className="sm:hidden flex-shrink-0" asChild>
+                            <a href={`https://www.google.com/maps/search/?api=1&query=${latitudStr || "0"},${longitudStr || "0"}`} target="_blank" rel="noopener noreferrer">
+                                <MapPin className="h-4 w-4" />
+                            </a>
+                        </Button>
                     </div>
                 </div>
 
                 <div className="flex justify-start">
                     <Button type="button" onClick={handleSaveLocation} className="mt-4 bg-teal-600 hover:bg-teal-700 text-white">
                         <Save className="mr-2 h-4 w-4" />
-                        Aceptar Ubicación
+                        Guardar Ubicación
                     </Button>
                 </div>
             </div>

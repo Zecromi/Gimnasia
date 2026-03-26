@@ -202,6 +202,8 @@ export interface ViewClubGral {
     Comprobante?: string
     Lugar_p?: string
     fecha_p?: string | null
+    latitud?: number
+    longitud?: number
 }
 
 export interface GetClubesResponse {
@@ -346,6 +348,17 @@ export const getClubMembershipReport = async (params: ClubMembershipReportParams
     // Determine if we need to send query params (GET)
     // The requirement says GET with query params.
     const response = await api.get<ClubMembershipItem[]>("/GetRepo_club_mem", { params });
+    return response.data;
+};
+
+export const postClubLocation = async (id: string, latitud: string, longitud: string) => {
+    console.log("enviando datos para actualizar la ubicación del club", id, latitud, longitud);
+    const response = await api.post("/Post_Ubicacion", {
+        id,
+        latitud,
+        longitud,
+    });
+    console.log(response.data);
     return response.data;
 };
 
