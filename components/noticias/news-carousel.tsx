@@ -82,13 +82,23 @@ export function NewsCarousel() {
                     transition={{ duration: 0.8 }}
                     className="absolute inset-0"
                 >
-                    {/* Background Image with Overlay */}
+                    {/* Blurred Background Layer */}
                     <div
-                        className="absolute inset-0 bg-cover bg-center"
+                        className="absolute inset-0 bg-cover bg-center scale-110 blur-xl opacity-60 dark:opacity-40"
                         style={{ backgroundImage: `url(${slides[current].image})` }}
-                    >
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
+                    />
+
+                    {/* Main Image Layer (no cropping) */}
+                    <div className="absolute inset-0 flex items-center justify-center p-0 shadow-inner">
+                        <img
+                            src={slides[current].image}
+                            alt={slides[current].title}
+                            className="max-w-full max-h-full rounded-2xl shadow-2xl object-contain transition-all duration-300"
+                        />
                     </div>
+
+                    {/* Dark gradient overlay so text stays readable */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-black/10" />
 
                     {/* Content */}
                     <div className="absolute inset-0 flex flex-col justify-end p-8 md:p-16 text-white">

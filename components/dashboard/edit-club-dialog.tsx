@@ -988,6 +988,7 @@ function UbicacionForm({ club }: { club: ViewClubGral }) {
         }
 
         try {
+
             await postClubLocation({
                 id: club.id.toString(),
                 latitud: vals.latitud,

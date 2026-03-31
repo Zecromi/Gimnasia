@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ScrollToTop } from "@/components/ui/scroll-to-top";
 import { useTheme } from "next-themes";
+import { cn } from "@/lib/utils";
 import {
   CarouselSkeleton,
   GallerySkeleton,
@@ -57,6 +58,20 @@ export default function HomePage() {
   const [scrolled, setScrolled] = useState(false);
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [activeTab, setActiveTab] = useState("inicio");
+  const [visitedTabs, setVisitedTabs] = useState<Set<string>>(new Set(["inicio"]));
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setVisitedTabs((prev) => {
+      if (!prev.has(value)) {
+        const next = new Set(prev);
+        next.add(value);
+        return next;
+      }
+      return prev;
+    });
+  };
 
   // Avoid hydration mismatch
   useEffect(() => {
@@ -183,7 +198,7 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="flex-1 pt-20 ">
         <div className="max-w-[1400px] bg-gray-50 dark:bg-zinc-950 mx-auto px-4 md:px-8 py-8 space-y-8 rounded-xl">
-          <Tabs defaultValue="inicio" className="w-full">
+          <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <div className="flex justify-center w-full mb-8">
               <TabsList className="grid w-[120px] grid-cols-2 h-11 shadow-sm rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 p-1">
                 <Tooltip>
@@ -209,53 +224,65 @@ export default function HomePage() {
               </TabsList>
             </div>
 
-            <TabsContent value="inicio" className="space-y-16 animate-in fade-in-50 duration-500 mt-0">
-              {/* Section 1: Hero Carousel */}
-              <section id="carousel">
-                <Suspense fallback={<CarouselSkeleton />}>
-                  <NewsCarousel />
-                </Suspense>
-              </section>
+            <TabsContent 
+              value="inicio" 
+              className={cn("space-y-16 animate-in fade-in-50 duration-500 mt-0", activeTab !== "inicio" && "hidden")}
+              forceMount={true}
+            >
+              {visitedTabs.has("inicio") && (
+                <>
+                  {/* Section 1: Hero Carousel */}
+                  <section id="carousel">
+                    <Suspense fallback={<CarouselSkeleton />}>
+                      <NewsCarousel />
+                    </Suspense>
+                  </section>
 
-              {/* Section 1.5: Modalities Gallery */}
-              <section id="modalidades">
-                <LazySection fallback={<GallerySkeleton />} rootMargin="100px">
-                  <Suspense fallback={<GallerySkeleton />}>
-                    <ModalitiesGallery />
-                  </Suspense>
-                </LazySection>
-              </section>
+                  {/* Section 1.5: Modalities Gallery */}
+                  <section id="modalidades">
+                    <LazySection fallback={<GallerySkeleton />} rootMargin="100px">
+                      <Suspense fallback={<GallerySkeleton />}>
+                        <ModalitiesGallery />
+                      </Suspense>
+                    </LazySection>
+                  </section>
 
-              {/* Section 2: News Grid & Categories */}
-              <section id="noticias">
-                <LazySection fallback={<NewsGridSkeleton />} rootMargin="100px">
-                  <Suspense fallback={<NewsGridSkeleton />}>
-                    <NewsSection />
-                  </Suspense>
-                </LazySection>
-              </section>
+                  {/* Section 2: News Grid & Categories */}
+                  <section id="noticias">
+                    <LazySection fallback={<NewsGridSkeleton />} rootMargin="100px">
+                      <Suspense fallback={<NewsGridSkeleton />}>
+                        <NewsSection />
+                      </Suspense>
+                    </LazySection>
+                  </section>
 
-              {/* Section 3: Upcoming Events */}
-              <section id="eventos">
-                <LazySection fallback={<EventsSkeleton />} rootMargin="100px">
-                  <Suspense fallback={<EventsSkeleton />}>
-                    <UpcomingEvents />
-                  </Suspense>
-                </LazySection>
-              </section>
+                  {/* Section 3: Upcoming Events */}
+                  <section id="eventos">
+                    <LazySection fallback={<EventsSkeleton />} rootMargin="100px">
+                      <Suspense fallback={<EventsSkeleton />}>
+                        <UpcomingEvents />
+                      </Suspense>
+                    </LazySection>
+                  </section>
 
-              {/* Section 4: Sites of Interest */}
-              <section id="interes">
-                <LazySection fallback={<SitesSkeleton />} rootMargin="100px">
-                  <Suspense fallback={<SitesSkeleton />}>
-                    <SitesOfInterest />
-                  </Suspense>
-                </LazySection>
-              </section>
+                  {/* Section 4: Sites of Interest */}
+                  <section id="interes">
+                    <LazySection fallback={<SitesSkeleton />} rootMargin="100px">
+                      <Suspense fallback={<SitesSkeleton />}>
+                        <SitesOfInterest />
+                      </Suspense>
+                    </LazySection>
+                  </section>
+                </>
+              )}
             </TabsContent>
 
-            <TabsContent value="clubes" className="animate-in fade-in-50 duration-500 mt-0">
-              <ClubesList />
+            <TabsContent 
+              value="clubes" 
+              className={cn("animate-in fade-in-50 duration-500 mt-0", activeTab !== "clubes" && "hidden")}
+              forceMount={true}
+            >
+              {visitedTabs.has("clubes") && <ClubesList />}
             </TabsContent>
           </Tabs>
         </div>
