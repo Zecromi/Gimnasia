@@ -6,16 +6,8 @@ export async function GET() {
     try {
         // 
         // Aquí agregaremos un auth para que solo los usuarios logueados puedan descargar el PDF
-
-
-
         const pdfPath = path.join(process.cwd(), 'private', 'GUEM-MANUAL-ACTUALIZACIÓN 2026.pdf')
-
-
         const fileBuffer = await fs.readFile(pdfPath)
-
-
-
         return new NextResponse(fileBuffer, {
             headers: {
                 'Content-Type': 'application/pdf',

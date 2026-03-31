@@ -986,9 +986,13 @@ function UbicacionForm({ club }: { club: ViewClubGral }) {
             toast.error("Error: ID del club no encontrado.");
             return;
         }
-        
+
         try {
-            await postClubLocation(club.id.toString(), vals.latitud, vals.longitud);
+            await postClubLocation({
+                id: club.id.toString(),
+                latitud: vals.latitud,
+                longitud: vals.longitud,
+            });
             toast.success("Ubicación actualizada correctamente.");
         } catch (error) {
             console.error("Error al guardar ubicación:", error);

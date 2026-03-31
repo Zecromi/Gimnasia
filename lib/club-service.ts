@@ -351,13 +351,15 @@ export const getClubMembershipReport = async (params: ClubMembershipReportParams
     return response.data;
 };
 
-export const postClubLocation = async (id: string, latitud: string, longitud: string) => {
-    console.log("enviando datos para actualizar la ubicación del club", id, latitud, longitud);
-    const response = await api.post("/Post_Ubicacion", {
-        id,
-        latitud,
-        longitud,
-    });
+export interface ClubLocationParams {
+    id: string;
+    latitud: string;
+    longitud: string;
+}
+
+export const postClubLocation = async (params: ClubLocationParams) => {
+    console.log("enviando datos para actualizar la ubicación del club", params);
+    const response = await api.post("/Post_Ubicacion", { params });
     console.log(response.data);
     return response.data;
 };

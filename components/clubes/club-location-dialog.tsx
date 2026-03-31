@@ -59,9 +59,28 @@ export function ClubLocationDialog({ club }: ClubLocationDialogProps) {
   }, [open]);
 
   // Handle strings if coordinates somehow come as strings from DB
-  const lat = parseFloat(club.latitud as unknown as string) || defaultCenter.lat;
-  const lng = parseFloat(club.longitud as unknown as string) || defaultCenter.lng;
-  const hasCoordinates = !!club.latitud && !!club.longitud && (lat !== 0 || lng !== 0);
+  const rawLat = club.latitud ?? (club as any).Latitud ?? (club as any).LATITUD;
+  const rawLng = club.longitud ?? (club as any).Longitud ?? (club as any).LONGITUD;
+  
+  const parsedLat = parseFloat(rawLat as unknown as string);
+  const parsedLng = parseFloat(rawLng as unknown as string);
+  
+  const lat = !isNaN(parsedLat) && parsedLat !== 0 ? parsedLat : defaultCenter.lat;
+  const lng = !isNaN(parsedLng) && parsedLng !== 0 ? parsedLng : defaultCenter.lng;
+  
+  const hasCoordinates = !!rawLat && !!rawLng && !isNaN(parsedLat) && !isNaN(parsedLng) && (parsedLat !== 0 || parsedLng !== 0);
+
+  useEffect(() => {
+    if (open) {
+      console.log("====== DATOS DEL CLUB (UBICACIÓN) ======");
+      console.log("Club:", club);
+      console.log("Valores crudos -> latitud:", rawLat, "longitud:", rawLng);
+      console.log("Valores parseados -> lat:", parsedLat, "lng:", parsedLng);
+      console.log("¿Tiene coordenadas válidas?:", hasCoordinates);
+      console.log("Coordenadas finales a usar:", { lat, lng });
+      console.log("========================================");
+    }
+  }, [open, club, rawLat, rawLng, parsedLat, parsedLng, hasCoordinates, lat, lng]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -77,11 +96,25 @@ export function ClubLocationDialog({ club }: ClubLocationDialogProps) {
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[700px] p-0 overflow-hidden" onInteractOutside={(e) => e.preventDefault()}>
-        <DialogHeader className="px-6 py-4 border-b bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800">
+        <DialogHeader className="px-6 py-4 border-b bg-white dark:bg-zinc-900 border-gray-100 dark:border-zinc-800 sm:flex-row sm:items-center sm:justify-between space-y-0">
           <DialogTitle className="flex items-center gap-2 text-lg">
             <MapPin className="h-5 w-5 text-[#3dd8c5]" />
             Ubicación: <span className="text-gray-600 dark:text-gray-300 ml-1">{club.Club}</span>
           </DialogTitle>
+          {hasCoordinates && (
+            <div className="flex items-center gap-2 pr-6 mt-4 sm:mt-0">
+              <Button type="button" variant="outline" size="sm" className="hidden sm:flex bg-[#00A389]/10 text-[#00A389] hover:bg-[#00A389]/20 hover:text-[#00A389] border-[#00A389]/20 transition-colors" asChild>
+                <a href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`} target="_blank" rel="noopener noreferrer">
+                  Abrir Google Maps
+                </a>
+              </Button>
+              <Button type="button" variant="outline" size="icon" className="sm:hidden flex-shrink-0 h-8 w-8 bg-[#00A389]/10 text-[#00A389] hover:bg-[#00A389]/20 hover:text-[#00A389] border-[#00A389]/20 transition-colors" asChild>
+                <a href={`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`} target="_blank" rel="noopener noreferrer">
+                  <MapPin className="h-4 w-4" />
+                </a>
+              </Button>
+            </div>
+          )}
         </DialogHeader>
 
         <div className="w-full h-[500px] bg-muted/10 relative">
