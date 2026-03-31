@@ -15,8 +15,8 @@ const slides = [
     },
     {
         id: 2,
-        title: "HONOR Y ESPÍRITU DEPORTIVO",
-        description: "Por la superación de la gimnasia nacional",
+        title: "POR LA SUPERACIÓN DE LA GIMNASIA MEXIQUENSE",
+        description: "Gimnasios Unidos del Estado de México.",
         image: "/gimnasia_1.png",
         category: "Institucional",
     },
