@@ -84,15 +84,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         if (item.title === "Eventos") {
             // During SSR and hydration, emulate the server state (authData is undefined/null)
             if (!isMounted) return false
-            return authData?.tipo_registro === 1
+            return authData?.tipo_registro === 1 || authData?.tipo_registro === 3
         }
         if (item.title === "Admin") {
             if (!isMounted) return false
-            return authData?.tipo_registro === 1
+            return authData?.tipo_registro === 1 || authData?.tipo_registro === 3
         }
-                if (item.title === "Administración de Noticias") {
+        if (item.title === "Administración de Noticias") {
             if (!isMounted) return false
-            return authData?.tipo_registro === 1
+            return authData?.tipo_registro === 1 || authData?.tipo_registro === 3
         }
         return true
     })
