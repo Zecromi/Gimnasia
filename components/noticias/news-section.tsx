@@ -9,6 +9,7 @@ import { Calendar, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 const NewsDetailDialog = dynamic(() => import("./news-detail-dialog").then(mod => mod.NewsDetailDialog), {
     ssr: false,
@@ -80,9 +81,12 @@ export function NewsSection() {
                 {categories.map((category) => (
                     <Button
                         key={category}
-                        variant={activeCategory === category ? "default" : "outline"}
+                        variant="outline"
                         onClick={() => setActiveCategory(category)}
-                        className="rounded-full transition-all duration-300"
+                        className={`rounded-full transition-all duration-300 ${activeCategory === category
+                            ? "bg-[#008f80] text-white hover:bg-teal-700 border-[#008f80] hover:text-white"
+                            : "text-gray-600 dark:text-gray-300 border-gray-200 dark:border-zinc-800 hover:bg-gray-50 hover:text-[#008f80] dark:hover:bg-zinc-800"
+                            }`}
                     >
                         {category}
                     </Button>
@@ -97,83 +101,84 @@ export function NewsSection() {
             {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {Array.from({ length: PAGE_SIZE }).map((_, i) => (
-                        <div key={i} className="rounded-xl bg-primary/5 animate-pulse h-72" />
+                        <div key={i} className="rounded-xl border border-gray-100 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/50 animate-pulse h-[380px]" />
                     ))}
                 </div>
             ) : filteredNews.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-16 text-center gap-3 text-muted-foreground">
-                    <span className="text-4xl">📰</span>
-                    <p className="text-base font-medium">No hay noticias disponibles por el momento.</p>
-                    <p className="text-sm">Sin noticias por el momento.</p>
+                <div className="flex flex-col items-center justify-center py-20 bg-white dark:bg-zinc-900 rounded-2xl border border-gray-100 dark:border-zinc-800 border-dashed text-center">
+                    <span className="text-5xl opacity-80 mb-4">📰</span>
+                    <p className="text-lg font-medium text-gray-700 dark:text-gray-200">No hay noticias disponibles</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">Intenta con otra categoría de búsqueda.</p>
                 </div>
             ) : (
                 <>
-                <div className="overflow-y-auto max-h-[720px] pr-1">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {visibleNews.map((news, index) => (
-                            <motion.div
-                                key={news.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: (index % PAGE_SIZE) * 0.05 }}
-                            >
-                                <Card
-                                    onClick={() => handleNewsClick(news)}
-                                    className="overflow-hidden group cursor-pointer hover:shadow-2xl transition-all duration-500 border-none bg-primary/5 hover:bg-primary/10"
+                    <ScrollArea className="h-[880px] w-full pr-4 pb-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                            {visibleNews.map((news, index) => (
+                                <motion.div
+                                    key={news.id}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: (index % PAGE_SIZE) * 0.05 }}
+                                    className="h-full"
                                 >
-                                    <div className="relative h-48 w-full overflow-hidden">
-                                        <img
-                                            src={news.image}
-                                            alt={news.title}
-                                            className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
-                                            onError={(e) => {
-                                                (e.currentTarget as HTMLImageElement).src = "/logo-gimnasios.png";
-                                            }}
-                                        />
-                                        <Badge className="absolute top-4 left-4 font-medium backdrop-blur-md bg-primary/80 border-none">
-                                            {news.category}
-                                        </Badge>
-                                    </div>
-                                    <CardHeader className="space-y-2">
-                                        <div className="flex items-center text-xs text-muted-foreground gap-1.5 font-medium">
-                                            <Calendar className="h-3 w-3" />
-                                            {news.date}
+                                    <Card
+                                        onClick={() => handleNewsClick(news)}
+                                        className="overflow-hidden group cursor-pointer hover:shadow-2xl transition-all duration-500 border-none bg-primary/3 hover:bg-primary/6"
+                                    >
+                                        <div className="relative h-48 w-full overflow-hidden">
+                                            <img
+                                                src={news.image}
+                                                alt={news.title}
+                                                className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
+                                                onError={(e) => {
+                                                    (e.currentTarget as HTMLImageElement).src = "/logo-gimnasios.png";
+                                                }}
+                                            />
+                                            <Badge className="absolute top-4 left-4 font-medium backdrop-blur-md bg-primary/80 border-none">
+                                                {news.category}
+                                            </Badge>
                                         </div>
-                                        <CardTitle className="text-xl line-clamp-2 leading-tight group-hover:text-primary transition-colors">
-                                            {news.title}
-                                        </CardTitle>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <CardDescription className="line-clamp-3 text-sm leading-relaxed">
-                                            {news.description}
-                                        </CardDescription>
-                                    </CardContent>
-                                    <CardFooter>
-                                        <Button
-                                            variant="link"
-                                            className="px-0 text-primary font-bold group-hover:gap-2 transition-all"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleNewsClick(news);
-                                            }}
-                                        >
-                                            Leer más <ArrowRight className="h-4 w-4 ml-1 opacity-0 group-hover:opacity-100 transition-all" />
-                                        </Button>
-                                    </CardFooter>
-                                </Card>
-                            </motion.div>
-                        ))}
-                    </div>
-
-                    {/* Infinite scroll sentinel */}
-                    {hasMore && (
-                        <div ref={sentinelRef} className="flex justify-center py-6">
-                            {loadingMore && (
-                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                            )}
+                                        <CardHeader className="space-y-2">
+                                            <div className="flex items-center text-xs text-muted-foreground gap-1.5 font-medium">
+                                                <Calendar className="h-3 w-3" />
+                                                {news.date}
+                                            </div>
+                                            <CardTitle className="text-xl line-clamp-2 leading-tight group-hover:text-primary transition-colors">
+                                                {news.title}
+                                            </CardTitle>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <CardDescription className="line-clamp-3 text-sm leading-relaxed">
+                                                {news.description}
+                                            </CardDescription>
+                                        </CardContent>
+                                        <CardFooter>
+                                            <Button
+                                                variant="link"
+                                                className="px-0 text-primary font-bold group-hover:gap-2 transition-all"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handleNewsClick(news);
+                                                }}
+                                            >
+                                                Leer más <ArrowRight className="h-4 w-4 ml-1 opacity-0 group-hover:opacity-100 transition-all" />
+                                            </Button>
+                                        </CardFooter>
+                                    </Card>
+                                </motion.div>
+                            ))}
                         </div>
-                    )}
-                </div>
+
+                        {/* Infinite scroll sentinel */}
+                        {hasMore && (
+                            <div ref={sentinelRef} className="flex justify-center py-6">
+                                {loadingMore && (
+                                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                )}
+                            </div>
+                        )}
+                    </ScrollArea>
                 </>
             )}
 

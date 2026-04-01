@@ -2,6 +2,7 @@
 
 import React, { Suspense } from "react";
 import { Instagram, Mail, MapPin, Phone } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
 import dynamic from "next/dynamic";
 
 const PrivacyNotice = dynamic(() => import("./privacy-notice").then(mod => mod.PrivacyNotice), {
@@ -23,7 +24,7 @@ export function NoticiasFooter() {
                     </p>
                     <div className="flex gap-4">
                         <a href="https://www.instagram.com/guem.edomex?igsh=cXI1MXRyM2Y4MGNo&utm_source=qr" target="_blank" rel="noreferrer" title="Instagram" className="p-2 bg-background rounded-full hover:text-primary transition-colors shadow-sm border border-muted">
-                         <Instagram className="h-4 w-4" />
+                            <Instagram className="h-4 w-4" />
                         </a>
                     </div>
                 </div>
@@ -54,6 +55,15 @@ export function NoticiasFooter() {
                         </div>
                     </div>
                 </div>
+            </div>
+
+
+            <div className="container px-4 mx-auto mt-16 text-center">
+
+                <Suspense fallback={<div className="h-20" />}>
+                    <PrivacyNotice />
+                </Suspense>
+
             </div>
         </footer>
     );

@@ -126,8 +126,8 @@ export const mapStateToClubPayload = (data: any): SetClubPayload => {
         tipo_aparatos_imp: getBoolString("importados"),
         tipo_aparatos_fig: getBoolString("homologados"),
         tipo_aparatos_otros: getBoolString("otros"),
-        latitud: "0",
-        longitud: "0",
+        latitud: getString("latitud") || "0",
+        longitud: getString("longitud") || "0",
         asociacion: getString("asociacion"),
         email: getString("email"),
         web: getString("web"),
@@ -202,6 +202,8 @@ export interface ViewClubGral {
     Comprobante?: string
     Lugar_p?: string
     fecha_p?: string | null
+    latitud?: number
+    longitud?: number
 }
 
 export interface GetClubesResponse {
@@ -346,6 +348,20 @@ export const getClubMembershipReport = async (params: ClubMembershipReportParams
     // Determine if we need to send query params (GET)
     // The requirement says GET with query params.
     const response = await api.get<ClubMembershipItem[]>("/GetRepo_club_mem", { params });
+    return response.data;
+};
+
+export interface ClubLocationParams {
+    id: string;
+    latitud: string;
+    longitud: string;
+}
+
+export const postClubLocation = async (params: ClubLocationParams) => {
+    console.log("enviando datos para actualizar la ubicación del club", params);
+    const response = await api.post("/Post_Ubicacion", params);
+    console.log(response.data);
+
     return response.data;
 };
 

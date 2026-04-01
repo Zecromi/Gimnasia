@@ -21,26 +21,31 @@ export function DashboardHeader() {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.2, duration: 0.5 }}
-                        className="text-4xl md:text-5xl lg:text-6xl font-black tracking-tight text-gray-900 dark:text-emerald-50"
+                        className="font-black tracking-tight"
                     >
-                        Bienvenido <br />
-                        <span className="text-teal-900 dark:text-emerald-400"> a GUEM</span>
+                        <span className=" text-gray-900 dark:text-emerald-50 text-4xl md:text-2xl lg:text-4xl font-bold">  Bienvenido a</span>
+                        <br />
+                        <span className="relative inline-block text-teal-900 dark:text-emerald-400 text-6xl md:text-7xl lg:text-8xl font-black mt-1 pr-2 md:pr-0">
+                            GUEM
+
+                        </span>
+
                     </motion.h1>
 
                     <motion.p
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.3, duration: 0.5 }}
-                        className="text-lg md:text-xl text-teal-900/80 dark:text-emerald-100/80 font-medium max-w-lg leading-relaxed"
+                        className="text-md md:text-lg text-teal-900/80 dark:text-emerald-100/80 font-medium max-w-lg leading-relaxed pt-0"
                     >
-                        Gestion de afiliados, clubes y eventos desde un solo lugar.
+                        Gimnasios Unidos del Estado de México
                     </motion.p>
 
                     <motion.div
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4, duration: 0.5 }}
-                        className="pt-4"
+                        className="pt-2"
                     >
                         <Button
                             variant="link"
@@ -48,7 +53,7 @@ export function DashboardHeader() {
                             asChild
                         >
                             <a href="/api/download-manual" target="_blank" rel="noopener noreferrer">
-                                Ver manual de GUEM
+                                Ver manual
                                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                             </a>
                         </Button>
