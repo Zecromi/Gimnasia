@@ -90,6 +90,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             if (!isMounted) return false
             return authData?.tipo_registro === 1
         }
+                if (item.title === "Administración de Noticias") {
+            if (!isMounted) return false
+            return authData?.tipo_registro === 1
+        }
         return true
     })
 
