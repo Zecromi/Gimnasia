@@ -621,7 +621,7 @@ export function RegisterEventDialog({
                                                 <PopoverContent className="w-[350px] p-0" align="start" side="bottom">
                                                     <Command>
                                                         <CommandInput placeholder="Buscar nivel/categoria..." />
-                                                        <CommandList>
+                                                        <CommandList onWheel={(e) => e.stopPropagation()}>
                                                             <CommandEmpty>No se encontraron niveles para la edad del afiliado.</CommandEmpty>
                                                             <CommandGroup>
                                                                 {niveles.map((item) => {
@@ -632,7 +632,7 @@ export function RegisterEventDialog({
 
                                                                     if (match && member.Edad) {
                                                                         const edadNum = parseInt(member.Edad, 10);
-                                                                        if (!isNaN(edadNum) && (edadNum < match.edad_ini || edadNum > match.edad_fin)) {
+                                                                        if (!isNaN(edadNum) && (edadNum < match.edad_ini || (match.edad_fin !== 0 && edadNum > match.edad_fin))) {
                                                                             return null;
                                                                         }
                                                                     }
@@ -693,7 +693,7 @@ export function RegisterEventDialog({
                                                 <PopoverContent className="w-[300px] p-0" align="start" side="bottom">
                                                     <Command>
                                                         <CommandInput placeholder="Buscar aparato..." />
-                                                        <CommandList>
+                                                        <CommandList onWheel={(e) => e.stopPropagation()}>
                                                             <CommandEmpty>No se encontraron aparatos.</CommandEmpty>
                                                             <CommandGroup>
                                                                 {adicionales.map((item) => (
