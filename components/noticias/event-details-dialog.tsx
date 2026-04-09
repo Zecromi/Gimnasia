@@ -194,7 +194,7 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
 
                         <div className="pt-2">
                             <p className="text-[10px] text-muted-foreground font-medium italic">
-                                * Toda inscripción debe ser gestionada a través del sistema oficial de la Federación por los clubes afiliados.
+                                * Toda inscripción debe ser gestionada a través del sistema oficial de la Asociación por los clubes afiliados.
                             </p>
                         </div>
                     </div>

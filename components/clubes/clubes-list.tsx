@@ -91,7 +91,7 @@ export function ClubesList() {
         <div>
           <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#008f80] to-teal-400">Clubes Afiliados</h2>
           <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Encuentra y conoce los clubes afiliados a la federación.
+            Encuentra y conoce los clubes afiliados a la asociación.
           </p>
         </div>
 

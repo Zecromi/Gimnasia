@@ -57,7 +57,7 @@ export function ModalitiesGallery() {
                     Modalidades Deportivas
                 </h4>
                 <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
-                    Explora las diferentes disciplinas que forman parte de nuestra federación.
+                    Explora las diferentes disciplinas que forman parte de nuestra asociación.
                     Haz clic en una para conocer más detalles.
                 </p>
             </div>

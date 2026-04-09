@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button"
 import { ArrowRight } from "lucide-react"
 import { motion } from "framer-motion"
 import Image from "next/image"
+import Link from "next/link"
 
 export function DashboardHeader() {
     return (
@@ -45,17 +46,29 @@ export function DashboardHeader() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.4, duration: 0.5 }}
-                        className="pt-2"
+                        className="pt-2 flex flex-wrap items-center"
                     >
                         <Button
                             variant="link"
-                            className="group p-0 h-auto font-semibold text-teal-400 dark:text-teal-900 bg-black dark:bg-white m-2 p-2 rounded-full hover:no-underline"
+                            className="group p-0 h-auto font-semibold text-teal-400 dark:text-teal-900 bg-black dark:bg-white m-2 p-3 px-4 rounded-full hover:no-underline"
                             asChild
                         >
                             <a href="/api/download-manual" target="_blank" rel="noopener noreferrer">
                                 Ver manual
                                 <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                             </a>
+                        </Button>
+                        <Button
+                            variant="link"
+                            className="group p-0 h-auto font-semibold text-teal-400 dark:text-teal-900 bg-black dark:bg-white m-2 p-3 rounded-full hover:no-underline transition-all duration-500 ease-in-out flex items-center justify-center"
+                            asChild
+                        >
+                            <Link href="https://drive.google.com/drive/folders/1YKUdHDJKJKS-C0OZUV6WJXNKZq-ia8aJ?usp=drive_link" target="_blank" rel="noopener noreferrer" className="flex items-center justify-center">
+                                <span className="material-symbols-outlined shrink-0 text-xl leading-none">drive_export</span>
+                                <span className="max-w-0 overflow-hidden whitespace-nowrap opacity-0 group-hover:max-w-[200px] group-hover:opacity-100 group-hover:ml-2 transition-all duration-500 ease-in-out">
+                                    Drive GUEM
+                                </span>
+                            </Link>
                         </Button>
                     </motion.div>
                 </div>

@@ -6,7 +6,7 @@ import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 const sites = [
     {
-        title: "FIG - Federación Internacional de Gimnasia",
+        title: "FIG - Asociación Internacional de Gimnasia",
         url: "https://www.gymnastics.sport/site/",
         icon: Globe,
         color: "bg-blue-500/10 text-blue-500",

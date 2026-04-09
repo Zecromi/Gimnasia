@@ -25,7 +25,7 @@ export const MODALITIES_DATA: ModalityData[] = [
         title: "Gimnasia Aeróbica",
         color: { light: "#f87171", dark: "#ef4444" },
         description: [
-            "En los años ochenta surgen los ejercicios aeróbicos como rutinas de conservación principalmente practicadas por mujeres y masificada por la televisión. Pocos años después se convierte en una disciplina deportiva que mas tarde se incorpora al programa de modalidades técnicas de la Federación Internacional de Gimnasia.",
+            "En los años ochenta surgen los ejercicios aeróbicos como rutinas de conservación principalmente practicadas por mujeres y masificada por la televisión. Pocos años después se convierte en una disciplina deportiva que mas tarde se incorpora al programa de modalidades técnicas de la Asociación Internacional de Gimnasia.",
             "La Gimnasia Aeróbica es una disciplina que trabaja en el umbral aeróbico dentro de presentaciones dinámicas que cuentan con una base coreográfica acompañada de música y complementada con patrones de movimientos tanto estéticos como acrobáticos. Ha dado a México tres medallas mundiales y ocho campeonatos panamericanos."
         ],
         photos: []

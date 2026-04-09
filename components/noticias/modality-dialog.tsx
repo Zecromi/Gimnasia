@@ -38,7 +38,7 @@ export function ModalityDialog({ modality, open, onOpenChange }: ModalityDialogP
                 <DialogHeader className="sr-only">
                     <DialogTitle>{modality.title}</DialogTitle>
                     <DialogDescription>
-                        Información detallada sobre la modalidad de {modality.title} de la Federación de Gimnasia.
+                        Información detallada sobre la modalidad de {modality.title} de la Asociación de Gimnasia.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -53,7 +53,7 @@ export function ModalityDialog({ modality, open, onOpenChange }: ModalityDialogP
                     <div className="relative z-10 w-full flex justify-between items-end">
                         <div className="space-y-1">
                             <Badge variant="outline" className="bg-white/20 text-white border-white/40 backdrop-blur-sm uppercase tracking-widest text-[10px] font-bold">
-                                Federación de Gimnasia
+                                Asociación de Gimnasia
                             </Badge>
                             <h2 className="text-3xl md:text-5xl font-black text-white uppercase italic tracking-tighter leading-none">
                                 {modality.title}
