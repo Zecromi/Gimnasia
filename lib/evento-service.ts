@@ -275,3 +275,48 @@ export const delInscripcion = async (id_evento: string, id_afiliado: string) => 
     });
     return response.data;
 };
+
+export const postArchivoEvento = async (id_evento: string, extension: string, tipo: string, archivo: File) => {
+    const formData = new FormData();
+    formData.append("imagen", archivo);
+    console.log(formData)
+    console.log(id_evento)
+    console.log(extension)
+    console.log(tipo)
+    const response = await api.post("/Carga_Archivos", formData, {
+        params: {
+            id: id_evento,
+            extension: extension,
+            tipo: tipo,
+        },
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+    console.log(response.data)
+    return response.data;
+};
+
+
+export interface ArchivoEventoItem {
+    url: string;
+    nombre?: string;
+    extension?: string;
+}
+
+export interface GetArchivosEventoResponse {
+    archivo: ArchivoEventoItem | null;
+    url?: string;
+}
+
+export const getArchivosEvento = async (id: string, tipo: string): Promise<GetArchivosEventoResponse> => {
+    console.log(id)
+    const response = await api.get<GetArchivosEventoResponse>(`/Obt_archivo`, {
+        params: {
+            evento: id,
+            tipo: tipo,
+        }
+    });
+    console.log(response.data);
+    return response.data;
+};

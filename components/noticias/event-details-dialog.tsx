@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -18,12 +18,14 @@ import {
     Building2,
     Globe2,
     Clock,
-    UserCircle
+    UserCircle,
+    FileDown,
+    Loader2
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { EventosConfiguradosItem } from "@/lib/evento-service";
+import { EventosConfiguradosItem, getArchivosEvento } from "@/lib/evento-service";
 
 import { useTheme } from "next-themes";
 import { MODALITIES_DATA } from "@/lib/constants/modalities";
@@ -37,6 +39,30 @@ interface EventDetailsDialogProps {
 export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDialogProps) {
     const { theme, resolvedTheme } = useTheme();
     const currentTheme = (theme === 'system' ? resolvedTheme : theme) || 'dark';
+
+    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+    const [pdfLoading, setPdfLoading] = useState(false);
+
+    useEffect(() => {
+        if (!open || !event) {
+            setPdfUrl(null);
+            return;
+        }
+        const fetchPdf = async () => {
+            try {
+                setPdfLoading(true);
+                const data = await getArchivosEvento(String(event.id_Evento ?? event.id), "1");
+                // The API may return the URL directly or nested inside `archivo`
+                const url = data?.url ?? data?.archivo?.url ?? null;
+                setPdfUrl(url);
+            } catch {
+                setPdfUrl(null);
+            } finally {
+                setPdfLoading(false);
+            }
+        };
+        fetchPdf();
+    }, [open, event]);
 
     if (!event) return null;
 
@@ -119,15 +145,28 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
 
                             <div className="flex items-start gap-4 p-4 rounded-xl bg-muted/30">
                                 <div className="p-2 bg-white dark:bg-zinc-800 rounded-lg shadow-sm">
-                                    <Ticket className="h-5 w-5 text-primary" />
+                                    <FileDown className="h-5 w-5 text-teal-600 dark:text-teal-400" />
                                 </div>
-                                <div className="space-y-1">
-                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Costo</p>
-                                    <p className="font-bold text-lg text-primary">
-                                        {event.Costo_base === "0" || !event.Costo_base ? "Sin costo" : `$${event.Costo_base}`}
-                                    </p>
-                                    {event.es_grupo === "1" && (
-                                        <p className="text-xs text-muted-foreground">Grupal: ${event.Costo_grupo}</p>
+                                <div className="space-y-2">
+                                    <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Detalles del evento</p>
+                                    {pdfLoading ? (
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                            <span>Buscando documento...</span>
+                                        </div>
+                                    ) : pdfUrl ? (
+                                        <a
+                                            href={pdfUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            download
+                                            className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-1.5 rounded-full text-xs hover:scale-105 transition-all shadow-md"
+                                        >
+                                            <FileDown className="h-3.5 w-3.5" />
+                                            Descargar PDF
+                                        </a>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground italic">No disponible</p>
                                     )}
                                 </div>
                             </div>
