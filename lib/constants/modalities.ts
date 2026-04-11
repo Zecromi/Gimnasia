@@ -15,8 +15,7 @@ export const MODALITIES_DATA: ModalityData[] = [
         title: "Gimnasia Acrobática",
         color: { light: "#fb923c", dark: "#f97316" },
         description: [
-            "Sin duda alguna una de las modalidades de mayor atractivo por sus presentaciones llenas de acrobacia, fuerza y elegancia en mosaicos de la mano de bellas composiciones musicales es la Gimnasia Acrobática. En México, hace apenas unos cuantos años que se trabaja y desarrolla esta modalidad; y, ya se cuentan con delegaciones representativas que han tenido participación en campeonatos mundiales y panamericanos.",
-            "La acrobática como es llamada, puede ser practicada en pareja, trio o grupo cuyas conformaciones en sus integrantes puede ser también de manera mixta en género. El arte circense ha sido la base de desarrollo para esta modalidad deportiva en que las “pulsaciones” como se le conoce a la esencia de la acrobática, han tomado su propio camino de evolución técnica para que las presentaciones gimnásticas sean números de altísimo nivel como cualquier gran espectáculo en el mundo."
+            "En la gimnasia Acrobática se compite en 5 categorías: 1.pareja varonil, 2. pareja femenil, 3. pareja mixta, 4. grupo femenil y 5. grupo varonil En Mexico existe programa de desarrollo con niveles obligatorios hasta el nivel 5, nivel 6 y 7 la coreografía es libre con requerimientos específicos el nivel 8 es transición a FIG. Dentro de la FIG se compite con dos rutinas: Balance y Dinamic. Los gimnastas son juzgados por la dificultad del elemento, la estabilidad, ejecución, conexiones y mérito artístico"
         ],
         photos: []
     },
