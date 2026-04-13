@@ -13,6 +13,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { EventosConfiguradosItem } from "@/lib/evento-service";
 import { Search, CalendarDays, MapPin, Ticket, ChevronRight } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { DownloadPdfButton } from "./download-pdf-button";
 
 interface FullCalendarDialogProps {
     open: boolean;
@@ -110,10 +111,7 @@ export function FullCalendarDialog({ open, onOpenChange, events, onEventClick }:
                                                         <MapPin className="h-3.5 w-3.5 shrink-0" />
                                                         <span className="truncate">{event.Lugar}</span>
                                                     </div>
-                                                    <div className="flex items-center text-xs text-muted-foreground gap-1.5">
-                                                        <Ticket className="h-3.5 w-3.5 shrink-0" />
-                                                        <span>{event.Costo_base === "0" || !event.Costo_base ? "Sin costo" : `$${event.Costo_base}`}</span>
-                                                    </div>
+                                                    <DownloadPdfButton eventId={event.id} />
                                                 </div>
                                             </div>
                                         </div>

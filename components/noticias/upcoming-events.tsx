@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Users, Ticket, Award, Loader2 } from "lucide-react";
+import { MapPin, Users, Ticket, Award, Loader2, FileDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/tooltip";
 import { getEventos, EventosConfiguradosItem } from "@/lib/evento-service";
 import dynamic from "next/dynamic";
+import { DownloadPdfButton } from "./download-pdf-button";
 
 const EventDetailsDialog = dynamic(() => import("./event-details-dialog").then(mod => mod.EventDetailsDialog), {
     ssr: false,
@@ -128,10 +129,7 @@ export function UpcomingEvents() {
                                                 <Award className="h-3.5 w-3.5 shrink-0" />
                                                 <span className="truncate">Modalidad: {event.Modalidad}</span>
                                             </div>
-                                            <div className="flex items-center text-xs text-primary font-bold gap-2">
-                                                <Ticket className="h-3.5 w-3.5 shrink-0" />
-                                                {event.Costo_base === "0" || !event.Costo_base ? "Sin costo" : `$${event.Costo_base}`}
-                                            </div>
+                                            <DownloadPdfButton eventId={event.id} />
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -141,8 +139,8 @@ export function UpcomingEvents() {
                 </div>
 
                 <div className="flex justify-center pt-4">
-                    <Button 
-                        variant="outline" 
+                    <Button
+                        variant="outline"
                         onClick={() => setIsFullCalendarOpen(true)}
                         className="rounded-full px-12 border-primary/20 hover:border-primary"
                     >
