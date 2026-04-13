@@ -17,17 +17,23 @@ import dynamic from "next/dynamic";
 const EventDetailsDialog = dynamic(() => import("./event-details-dialog").then(mod => mod.EventDetailsDialog), {
     ssr: false,
 });
+const FullCalendarDialog = dynamic(() => import("./full-calendar-dialog").then(mod => mod.FullCalendarDialog), {
+    ssr: false,
+});
 
 export function UpcomingEvents() {
     const [events, setEvents] = useState<EventosConfiguradosItem[]>([]);
+    const [allEvents, setAllEvents] = useState<EventosConfiguradosItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedEvent, setSelectedEvent] = useState<EventosConfiguradosItem | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isFullCalendarOpen, setIsFullCalendarOpen] = useState(false);
 
     useEffect(() => {
         const fetchEvents = async () => {
             try {
                 const data = await getEventos();
+                setAllEvents(data.Eventos_configurados);
                 // Tomamos los primeros 9 eventos configurados para la sección destacada
                 setEvents(data.Eventos_configurados.slice(0, 9));
             } catch (error) {
@@ -135,7 +141,11 @@ export function UpcomingEvents() {
                 </div>
 
                 <div className="flex justify-center pt-4">
-                    <Button variant="outline" className="rounded-full px-12 border-primary/20 hover:border-primary">
+                    <Button 
+                        variant="outline" 
+                        onClick={() => setIsFullCalendarOpen(true)}
+                        className="rounded-full px-12 border-primary/20 hover:border-primary"
+                    >
                         Ver calendario completo
                     </Button>
                 </div>
@@ -145,6 +155,12 @@ export function UpcomingEvents() {
                         event={selectedEvent}
                         open={isDialogOpen}
                         onOpenChange={setIsDialogOpen}
+                    />
+                    <FullCalendarDialog
+                        open={isFullCalendarOpen}
+                        onOpenChange={setIsFullCalendarOpen}
+                        events={allEvents}
+                        onEventClick={handleEventClick}
                     />
                 </Suspense>
             </section>

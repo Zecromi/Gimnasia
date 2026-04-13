@@ -69,8 +69,9 @@ export function InfoEventoPdfForm({ id, evento }: { id: string, evento: Evento }
 
         try {
             setUploading(true)
+            const nombre = file.name
             const extension = file.name.split('.').pop() || "pdf"
-            const response = await postArchivoEvento(String(evento.id), String(extension), "1", file)
+            const response = await postArchivoEvento(String(evento.id), String(extension), "1", nombre, file)
 
             console.log(response.data)
             toast.success("Documento de información del evento actualizado correctamente")

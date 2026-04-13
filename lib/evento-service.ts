@@ -276,18 +276,20 @@ export const delInscripcion = async (id_evento: string, id_afiliado: string) => 
     return response.data;
 };
 
-export const postArchivoEvento = async (id_evento: string, extension: string, tipo: string, archivo: File) => {
+export const postArchivoEvento = async (id_evento: string, extension: string, tipo: string, nombre: string, archivo: File) => {
     const formData = new FormData();
     formData.append("imagen", archivo);
     console.log(formData)
     console.log(id_evento)
     console.log(extension)
     console.log(tipo)
+    console.log(nombre)
     const response = await api.post("/Carga_Archivos", formData, {
         params: {
             id: id_evento,
             extension: extension,
             tipo: tipo,
+            nombre: nombre,
         },
         headers: {
             "Content-Type": "multipart/form-data",
@@ -309,14 +311,10 @@ export interface GetArchivosEventoResponse {
     url?: string;
 }
 
-export const getArchivosEvento = async (id: string, tipo: string): Promise<GetArchivosEventoResponse> => {
-    console.log(id)
-    const response = await api.get<GetArchivosEventoResponse>(`/Obt_archivo`, {
-        params: {
-            evento: id,
-            tipo: tipo,
-        }
+export const downloadArchivoEventoPdf = async (id: string, tipo: string) => {
+    const response = await api.get('/Obt_archivo', {
+        params: { id, tipo },
+        responseType: 'blob',
     });
-    console.log(response.data);
-    return response.data;
+    return response;
 };

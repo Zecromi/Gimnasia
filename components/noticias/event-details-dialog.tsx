@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
     Dialog,
     DialogContent,
@@ -25,7 +25,8 @@ import {
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { EventosConfiguradosItem, getArchivosEvento } from "@/lib/evento-service";
+import { EventosConfiguradosItem, downloadArchivoEventoPdf } from "@/lib/evento-service";
+import { toast } from "sonner";
 
 import { useTheme } from "next-themes";
 import { MODALITIES_DATA } from "@/lib/constants/modalities";
@@ -40,31 +41,71 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
     const { theme, resolvedTheme } = useTheme();
     const currentTheme = (theme === 'system' ? resolvedTheme : theme) || 'dark';
 
-    const [pdfUrl, setPdfUrl] = useState<string | null>(null);
-    const [pdfLoading, setPdfLoading] = useState(false);
-
-    useEffect(() => {
-        if (!open || !event) {
-            setPdfUrl(null);
-            return;
-        }
-        const fetchPdf = async () => {
-            try {
-                setPdfLoading(true);
-                const data = await getArchivosEvento(String(event.id_Evento ?? event.id), "1");
-                // The API may return the URL directly or nested inside `archivo`
-                const url = data?.url ?? data?.archivo?.url ?? null;
-                setPdfUrl(url);
-            } catch {
-                setPdfUrl(null);
-            } finally {
-                setPdfLoading(false);
-            }
-        };
-        fetchPdf();
-    }, [open, event]);
+    const [isDownloading, setIsDownloading] = useState(false);
 
     if (!event) return null;
+
+    const handleDownloadPdf = async () => {
+        try {
+            setIsDownloading(true);
+            console.log(event.id ?? event.id);
+            const response = await downloadArchivoEventoPdf(String(event.id ?? event.id), "1");
+
+            // Check if the response is actually JSON acting as an error
+            if (response.headers['content-type']?.includes('application/json')) {
+                const text = await response.data.text();
+                try {
+                    const json = JSON.parse(text);
+                    if (json.status === false || json.error) {
+                        toast.error("El archivo no existe o no está disponible.");
+                        return;
+                    }
+                } catch (e) {
+                    // Not valid JSON or handled differently
+                }
+            }
+
+            if (response.data.size === 0) {
+                toast.error("El archivo no existe.");
+                return;
+            }
+
+            // Extract filename from header if possible
+            let filename = "Detalles_Evento.pdf";
+            const disposition = response.headers['content-disposition'];
+            if (disposition && disposition.indexOf('attachment') !== -1) {
+                // Prioritize UTF-8 filename* if present
+                const utf8FilenameRegex = /filename\*=UTF-8''([^;\n]+)/i;
+                const utf8Matches = utf8FilenameRegex.exec(disposition);
+
+                if (utf8Matches != null && utf8Matches[1]) {
+                    filename = decodeURIComponent(utf8Matches[1]);
+                } else {
+                    const filenameRegex = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/;
+                    const matches = filenameRegex.exec(disposition);
+                    if (matches != null && matches[1]) {
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+            }
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+            window.URL.revokeObjectURL(url);
+
+            toast.success("Descarga completada");
+        } catch (error) {
+            console.error(error);
+            toast.error("El archivo no existe o hubo un problema al descargarlo");
+        } finally {
+            setIsDownloading(false);
+        }
+    };
 
     // Normalizar texto para mejor emparejamiento (quitando acentos y espacios extra)
     const normalize = (text: string) =>
@@ -149,25 +190,14 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
                                 </div>
                                 <div className="space-y-2">
                                     <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Detalles del evento</p>
-                                    {pdfLoading ? (
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                            <span>Buscando documento...</span>
-                                        </div>
-                                    ) : pdfUrl ? (
-                                        <a
-                                            href={pdfUrl}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            download
-                                            className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-bold px-4 py-1.5 rounded-full text-xs hover:scale-105 transition-all shadow-md"
-                                        >
-                                            <FileDown className="h-3.5 w-3.5" />
-                                            Descargar PDF
-                                        </a>
-                                    ) : (
-                                        <p className="text-sm text-muted-foreground italic">No disponible</p>
-                                    )}
+                                    <button
+                                        onClick={handleDownloadPdf}
+                                        disabled={isDownloading}
+                                        className="inline-flex items-center gap-2 bg-teal-600 hover:bg-teal-700 disabled:opacity-70 disabled:cursor-not-allowed text-white font-bold px-4 py-1.5 rounded-full text-xs hover:scale-105 transition-all shadow-md"
+                                    >
+                                        {isDownloading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
+                                        {isDownloading ? "Descargando..." : "Descargar PDF"}
+                                    </button>
                                 </div>
                             </div>
                         </div>
