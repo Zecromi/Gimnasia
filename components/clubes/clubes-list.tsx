@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Search, MapPin, Mail, Globe, Users, Building2, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import dynamic from "next/dynamic";
+import { downloadArchivoEventoPdf } from "@/lib/evento-service";
 
 const ClubLocationDialog = dynamic(
   () => import("./club-location-dialog").then((mod) => mod.ClubLocationDialog),
@@ -16,6 +17,58 @@ const ClubLocationDialog = dynamic(
     ssr: false
   }
 );
+
+function ClubLogo({ clubId, clubName }: { clubId: string | number, clubName: string }) {
+  const [imgSrc, setImgSrc] = useState<string | null>(null);
+  const [error, setError] = useState(false);
+
+  useEffect(() => {
+    let objectUrl: string | null = null;
+    const loadLogo = async () => {
+      if (!clubId) {
+        setError(true);
+        return;
+      }
+      try {
+        const response = await downloadArchivoEventoPdf(String(clubId), "2");
+        if (response.data && response.data.size > 0 && response.data.type.startsWith('image/')) {
+          objectUrl = URL.createObjectURL(response.data);
+          setImgSrc(objectUrl);
+        } else {
+          setError(true);
+        }
+      } catch (err) {
+        setError(true);
+      }
+    };
+    loadLogo();
+
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [clubId]);
+
+  if (error || !imgSrc) {
+    return (
+      <div className="w-20 h-20 rounded-full bg-[#f0fcf9] text-[#00A389] dark:bg-teal-500/10 dark:text-teal-400 flex items-center justify-center flex-shrink-0 shadow-sm border border-teal-50/50">
+        <Building2 className="h-10 w-10" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-20 h-20 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-100 dark:border-zinc-700 shadow-md">
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img 
+        src={imgSrc} 
+        alt={`Logo de ${clubName}`} 
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+      />
+    </div>
+  );
+}
 
 export function ClubesList() {
   const [clubs, setClubs] = useState<ViewClubGral[]>([]);
@@ -142,9 +195,7 @@ export function ClubesList() {
                   <div className="h-1.5 w-full bg-[#3dd8c5] absolute top-0 left-0 right-0"></div>
                   <CardHeader className="pt-8 pb-4">
                     <div className="flex justify-between items-start mb-2">
-                      <div className="w-12 h-12 rounded-2xl bg-[#f0fcf9] text-[#00A389] dark:bg-teal-500/10 dark:text-teal-400 flex items-center justify-center flex-shrink-0">
-                        <Building2 className="h-6 w-6" />
-                      </div>
+                      <ClubLogo clubId={club.id} clubName={club.Club || "Club"} />
                       <div className="flex items-center gap-2">
                         {club.Alias && (
                           <span className="inline-flex items-center px-2 py-1 rounded-md text-[10px] font-bold tracking-wider uppercase bg-gray-50 text-gray-500 dark:bg-zinc-800 dark:text-gray-400">
