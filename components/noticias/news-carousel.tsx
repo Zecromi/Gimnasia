@@ -10,7 +10,7 @@ const slides = [
         id: 1,
         title: "Afiliados",
         description: "Los afiliados son el corazón de nuestra asociación.",
-        image: "/gimnasia_2.png",
+        image: "/gimnasia-5.jpeg",
         category: "Afiliados",
     },
     {
@@ -24,7 +24,7 @@ const slides = [
         id: 3,
         title: "Eventos",
         description: "Mira los próximos eventos de la asociación y participa en ellos",
-        image: "/gimnasia_3.jpg",
+        image: "/gimnasia-6.jpeg",
         category: "Eventos",
     },
 ];
