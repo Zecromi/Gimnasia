@@ -17,7 +17,7 @@ const slides = [
         id: 2,
         title: "POR LA SUPERACIÓN DE LA GIMNASIA MEXIQUENSE",
         description: "Gimnasios Unidos del Estado de México.",
-        image: "/gimnasia_1.png",
+        image: "/gimnasia-7.jpeg",
         category: "Institucional",
     },
     {
@@ -26,6 +26,13 @@ const slides = [
         description: "Mira los próximos eventos de la asociación y participa en ellos",
         image: "/gimnasia-6.jpeg",
         category: "Eventos",
+    },
+    {
+        id: 4,
+        title: "",
+        description: "",
+        image: "/gimnasia-8.jpeg",
+        category: "Deporte",
     },
 ];
 
