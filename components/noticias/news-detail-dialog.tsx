@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Dialog,
     DialogContent,
@@ -11,9 +11,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, X, ZoomIn } from "lucide-react";
+import { Calendar, X, ZoomIn, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { getImagenGalUrl } from "@/lib/noticias-service";
 
 interface NewsDetailDialogProps {
     news: {
@@ -66,12 +67,41 @@ function GalleryImage({ src, alt, onClick, className }: { src: string; alt: stri
     );
 }
 
+const GALLERY_IMAGE_COUNT = 5;
+
 export function NewsDetailDialog({ news, open, onOpenChange }: NewsDetailDialogProps) {
     const [activeImageUrl, setActiveImageUrl] = useState<string | null>(null);
+    const [galleryImages, setGalleryImages] = useState<string[]>([]);
+    const [isLoadingGallery, setIsLoadingGallery] = useState(false);
+
+    // Fetch gallery images from /Obt_img_gal when dialog opens
+    useEffect(() => {
+        if (open && news?.id) {
+            setIsLoadingGallery(true);
+            setGalleryImages([]);
+
+            const urls = Array.from({ length: GALLERY_IMAGE_COUNT }, (_, i) =>
+                getImagenGalUrl(news.id!, i + 1)
+            );
+
+            const checks = urls.map(
+                (url) =>
+                    new Promise<string | null>((resolve) => {
+                        const img = new window.Image();
+                        img.onload = () => resolve(url);
+                        img.onerror = () => resolve(null);
+                        img.src = url;
+                    })
+            );
+
+            Promise.all(checks).then((results) => {
+                setGalleryImages(results.filter((url): url is string => url !== null));
+                setIsLoadingGallery(false);
+            });
+        }
+    }, [open, news?.id]);
 
     if (!news) return null;
-
-
 
     return (
         <>
@@ -166,53 +196,22 @@ export function NewsDetailDialog({ news, open, onOpenChange }: NewsDetailDialogP
                                         Galería del Evento
                                     </h3>
                                     
-                                    {news.id === 2 ? (
-                                        <div className="grid grid-cols-2 md:grid-cols-6 gap-3 auto-rows-[140px] sm:auto-rows-[180px] md:auto-rows-[130px]">
-                                            <div className="col-span-2 md:col-span-3 md:row-span-2">
-                                                <GalleryImage
-                                                    src="/jueces_1.jpg"
-                                                    alt="Imagen de galería 1"
-                                                    onClick={() => setActiveImageUrl("/jueces_1.jpg")}
-                                                />
-                                            </div>
-                                            <div className="col-span-1 md:col-span-3">
-                                                <GalleryImage
-                                                    src="/jueces_2.jpg"
-                                                    alt="Imagen de galería 2"
-                                                    onClick={() => setActiveImageUrl("/jueces_2.jpg")}
-                                                />
-                                            </div>
-                                            <div className="col-span-1 md:col-span-3">
-                                                <GalleryImage
-                                                    src="/jueces_3.jpg"
-                                                    alt="Imagen de galería 3"
-                                                    onClick={() => setActiveImageUrl("/jueces_3.jpg")}
-                                                />
-                                            </div>
-                                            <div className="col-span-2 md:col-span-6">
-                                                <GalleryImage
-                                                    src="/jueces_5.jpg"
-                                                    alt="Imagen de galería 4"
-                                                    onClick={() => setActiveImageUrl("/jueces_5.jpg")}
-                                                />
-                                            </div>
+                                    {isLoadingGallery ? (
+                                        <div className="flex flex-col items-center justify-center py-10 px-4 gap-3">
+                                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                            <p className="text-sm font-medium text-muted-foreground">Cargando galería...</p>
                                         </div>
-                                    ) : news.id === 3 ? (
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 auto-rows-[180px] sm:auto-rows-[240px]">
-                                            <div>
-                                                <GalleryImage
-                                                    src="/parkour_1.jpg"
-                                                    alt="Imagen de galería Parkour 1"
-                                                    onClick={() => setActiveImageUrl("/parkour_1.jpg")}
-                                                />
-                                            </div>
-                                            <div>
-                                                <GalleryImage
-                                                    src="/parkour_2.jpg"
-                                                    alt="Imagen de galería Parkour 2"
-                                                    onClick={() => setActiveImageUrl("/parkour_2.jpg")}
-                                                />
-                                            </div>
+                                    ) : galleryImages.length > 0 ? (
+                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 auto-rows-[180px] sm:auto-rows-[220px]">
+                                            {galleryImages.map((src, index) => (
+                                                <div key={index} className={index === 0 ? "col-span-2 md:col-span-2 md:row-span-2" : ""}>
+                                                    <GalleryImage
+                                                        src={src}
+                                                        alt={`Imagen de galería ${index + 1}`}
+                                                        onClick={() => setActiveImageUrl(src)}
+                                                    />
+                                                </div>
+                                            ))}
                                         </div>
                                     ) : (
                                         <div className="flex flex-col items-center justify-center py-10 px-4 rounded-2xl border border-dashed border-border/40 bg-muted/10 text-center space-y-2">

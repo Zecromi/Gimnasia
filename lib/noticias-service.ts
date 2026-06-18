@@ -41,6 +41,19 @@ export const cargaImagen = async (id: string, extension: string, file: File) => 
     return response.data;
 };
 
+export const cargaImagenGal = async (id: string, extension: string, file: File) => {
+    const formData = new FormData();
+    formData.append("imagen", file);
+
+    const response = await api.post("/Carga_Imagen_gal", formData, {
+        params: { id, extension },
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+    return response.data;
+};
+
 export const getNoticia = async (id: string) => {
     const response = await api.get("/Obt_noticia", {
         params: { id }
@@ -58,3 +71,19 @@ export const getImagenNoticiaUrl = (id: number | string): string => {
     return `${baseUrl}/Obt_imagen_noticia?id=${id}`;
 };
 
+export const getImagenGalUrl = (id: number | string, numero: number): string => {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL ?? "";
+    return `${baseUrl}/Obt_img_gal?id=${id}&numero=${numero}`;
+};
+
+export const getContGal = async (id: number | string): Promise<number> => {
+    const response = await api.get("/Obt_cont_cal", {
+        params: { id },
+    });
+    // Response format: [{"Column1":"5"}]
+    const data = response.data;
+    if (Array.isArray(data) && data.length > 0 && data[0].Column1 !== undefined) {
+        return Number(data[0].Column1) || 0;
+    }
+    return typeof data === "number" ? data : Number(data) || 0;
+};

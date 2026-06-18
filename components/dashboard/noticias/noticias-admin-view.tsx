@@ -8,6 +8,7 @@ import { getColumns, Noticia } from "./noticias-columns"
 import { DataTable } from "../data-table"
 import { CreateNewsDialog } from "./create-news-dialog"
 import { EditNewsDialog } from "./edit-news-dialog"
+import { NewsGalleryDialog } from "./news-gallery-dialog"
 import { useNoticiasStore, NoticiaRaw } from "@/lib/store/noticias-store"
 import { postPresentaNoticia } from "@/lib/noticias-service"
 import { toast } from "sonner"
@@ -28,6 +29,8 @@ export function NoticiasAdminView() {
     const [isEditOpen, setIsEditOpen] = useState(false)
     const [deletingNoticia, setDeletingNoticia] = useState<Noticia | null>(null)
     const [isDeleting, setIsDeleting] = useState(false)
+    const [galleryNoticia, setGalleryNoticia] = useState<NoticiaRaw | null>(null)
+    const [isGalleryOpen, setIsGalleryOpen] = useState(false)
 
     const { rawNoticias, isLoading, fetchNoticias } = useNoticiasStore()
 
@@ -54,6 +57,11 @@ export function NoticiasAdminView() {
     const handleEdit = (noticia: Noticia) => {
         setEditingNoticia(noticia as NoticiaRaw)
         setIsEditOpen(true)
+    }
+
+    const handleGallery = (noticia: Noticia) => {
+        setGalleryNoticia(noticia as NoticiaRaw)
+        setIsGalleryOpen(true)
     }
 
     const handleDelete = (noticia: Noticia) => {
@@ -84,7 +92,7 @@ export function NoticiasAdminView() {
     }
 
     const columns = useMemo(
-        () => getColumns(handleEdit, handleDelete, handleView),
+        () => getColumns(handleEdit, handleDelete, handleView, handleGallery),
         // eslint-disable-next-line react-hooks/exhaustive-deps
         []
     )
@@ -147,6 +155,13 @@ export function NoticiasAdminView() {
                 noticia={editingNoticia}
                 open={isEditOpen}
                 onOpenChange={setIsEditOpen}
+                onSuccess={handleEditSuccess}
+            />
+
+            <NewsGalleryDialog
+                noticia={galleryNoticia}
+                open={isGalleryOpen}
+                onOpenChange={setIsGalleryOpen}
                 onSuccess={handleEditSuccess}
             />
 

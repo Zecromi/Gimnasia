@@ -1,7 +1,8 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { ColumnDef } from "@tanstack/react-table"
-import { Edit, Trash2, Check, X } from "lucide-react"
+import { Edit, Trash2, Check, X, Image } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn } from "@/lib/utils"
@@ -11,6 +12,7 @@ import {
     TooltipProvider,
     TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { getContGal } from "@/lib/noticias-service"
 
 export interface Noticia {
     id: number
@@ -24,11 +26,51 @@ export interface Noticia {
     Estado: string
 }
 
+function GalleryCellContent({ noticia, onGallery }: { noticia: Noticia; onGallery: (noticia: Noticia) => void }) {
+    const [count, setCount] = useState<number | null>(null)
+
+    useEffect(() => {
+        getContGal(noticia.id)
+            .then((data) => {
+                const num = typeof data === "number" ? data : Number(data) || 0
+                setCount(num)
+            })
+            .catch(() => setCount(0))
+    }, [noticia.id])
+
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        onClick={() => onGallery(noticia)}
+                        className="hover:bg-teal-100 dark:hover:bg-teal-900/30 text-teal-600 dark:text-teal-400 gap-1"
+                    >
+                        <Image className="h-4 w-4" />
+                        {count !== null && (
+                            <span className="text-[10px] font-bold leading-none min-w-[14px] text-center">{count}</span>
+                        )}
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top">Galería{count !== null ? ` (${count})` : ""}</TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    )
+}
+
 export const getColumns = (
     onEdit: (noticia: Noticia) => void,
     onDelete: (noticia: Noticia) => void,
-    onView: (noticia: Noticia) => void
+    onView: (noticia: Noticia) => void,
+    onGallery: (noticia: Noticia) => void
 ): ColumnDef<Noticia>[] => [
+        {
+            id: "galeria",
+            header: "Galería",
+            cell: ({ row }) => <GalleryCellContent noticia={row.original} onGallery={onGallery} />
+        },
         {
             accessorKey: "id",
             header: "ID",
