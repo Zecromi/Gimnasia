@@ -29,7 +29,8 @@ export function DownloadPdfButton({
             const response = await downloadArchivoEventoPdf(String(eventId), "1");
 
             // Check if the response is actually JSON acting as an error
-            if (response.headers['content-type']?.includes('application/json')) {
+            const contentType = String(response.headers['content-type'] || '');
+            if (contentType.includes('application/json')) {
                 const responseText = await response.data.text();
                 try {
                     const json = JSON.parse(responseText);

@@ -105,11 +105,11 @@ export function NoticiasAdminView() {
     }, [rawNoticias, searchTerm])
 
     return (
-        <div className="space-y-4">
-            <Card className="rounded-2xl border-none shadow-none bg-gray-50/50 dark:bg-zinc-900/50">
+        <div className="space-y-0">
+            <Card className="rounded-2xl border-none shadow-none bg-gray-50/50 dark:bg-zinc-900/50 pb-2">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
                     <div className="space-y-1">
-                        <CardTitle className="text-2xl font-bold flex items-center gap-2">
+                        <CardTitle className="text-2xl font-bold flex items-center gap-2 pt-2">
                             <Newspaper className="h-6 w-6 text-blue-600" />
                             Administración de Noticias
                         </CardTitle>

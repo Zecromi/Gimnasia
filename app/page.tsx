@@ -21,6 +21,7 @@ import {
 import { LazySection } from "@/components/noticias/lazy-section";
 import { NoticiasFooter } from "@/components/noticias/noticias-footer";
 import { motion, AnimatePresence } from "framer-motion";
+import { RhythmicBackground } from "@/components/ui/rhythmic-background";
 
 // Dynamic imports with skeletons as fallbacks
 const NewsCarousel = dynamic(() => import("@/components/noticias/news-carousel").then(mod => mod.NewsCarousel), {
@@ -87,7 +88,8 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-zinc-950 ">
+    <div className="flex flex-col min-h-screen bg-gray-50 dark:bg-zinc-950 relative overflow-x-hidden">
+      <RhythmicBackground />
       {/* Header / Navigation */}
       <header
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled ? "bg-white/60 dark:bg-zinc-950/80 backdrop-blur-md border-b border-gray-100 dark:border-zinc-800 py-3 shadow-sm" : "bg-transparent py-5"
@@ -99,7 +101,9 @@ export default function HomePage() {
               <Image
                 src="/logo-gimnasios.png"
                 alt="GUEM Logo"
-                fill
+
+                width={200}
+                height={200}
                 className="object-contain"
               />
             </div>
@@ -196,8 +200,8 @@ export default function HomePage() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 pt-20 ">
-        <div className="max-w-[1400px] bg-gray-50 dark:bg-zinc-950 mx-auto px-4 md:px-8 py-8 space-y-8 rounded-xl">
+      <main className="flex-1 pt-20 relative z-10">
+        <div className="max-w-[1400px] bg-gray-50 dark:bg-zinc-950 mx-auto px-4 md:px-8 py-8 space-y-8 rounded-xl  border border-gray-200/50 dark:border-zinc-900/50">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
             <div className="flex justify-center w-full mb-8">
               <TabsList className="grid w-[120px] grid-cols-2 h-11 shadow-sm rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 p-1">
@@ -231,7 +235,7 @@ export default function HomePage() {
             >
               {visitedTabs.has("inicio") && (
                 <>
-                  {/* Section 1: Hero Carousel */}
+                  {/* Section 1: Hero Carousel with integrated background video */}
                   <section id="carousel">
                     <Suspense fallback={<CarouselSkeleton />}>
                       <NewsCarousel />

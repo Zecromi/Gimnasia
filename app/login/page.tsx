@@ -115,8 +115,8 @@ export default function LoginPage() {
                             <Image
                                 src="/logo-gimnasios.png"
                                 alt="Gimnasios Unidos del Estado de México Logo"
-                                fill
-                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                width={440}
+                                height={296}
                                 className="object-contain rounded-2xl dark:opacity-80"
                                 priority
                             />

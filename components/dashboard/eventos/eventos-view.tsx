@@ -1,7 +1,7 @@
 "use client"
 
 import { Suspense, lazy, useEffect, useState, useCallback, useMemo } from "react"
-import { BrushCleaning, Calendar as CalendarIcon } from "lucide-react"
+import { BrushCleaning, Calendar as CalendarIcon, CheckCircle2, Clock, Users, ClubIcon } from "lucide-react"
 
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -30,6 +30,15 @@ import { es } from "date-fns/locale"
 import { cn } from "@/lib/utils"
 import { getEventos, EventosConfiguradosItem } from "@/lib/evento-service"
 import { useCatalogStore } from "@/lib/store/catalog-store"
+
+import { StatusLegend } from "@/components/ui/status-legend"
+
+export const STATUS_INDICATORS = [
+    { color: "bg-emerald-200/60 dark:bg-emerald-900/40", icon: CheckCircle2, text: "Atletas" },
+    { color: "bg-amber-200/60 dark:bg-amber-900/40", icon: Clock, text: "Entrenadores" },
+    { color: "bg-blue-200/60 dark:bg-blue-900/40", icon: ClubIcon, text: "Clubes" },
+    { color: "bg-rose-200/60 dark:bg-rose-900/40", icon: Users, text: "Asociaciones" }
+];
 
 export function EventosView() {
     const { Catalogo_eventos, fetchCatalogs } = useCatalogStore()
@@ -290,6 +299,9 @@ export function EventosView() {
                                         </Button>
                                     </div>
                                 </div>
+                            </div>
+                            <div className="flex items-center justify-center">
+                                <StatusLegend items={STATUS_INDICATORS} />
                             </div>
                         </div>
                         <div className="flex items-center justify-center xl:col-span-1 xl:border-l xl:pl-4 border-t xl:border-t-0 pt-4 xl:pt-0">
