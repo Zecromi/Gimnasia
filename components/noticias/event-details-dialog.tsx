@@ -52,7 +52,8 @@ export function EventDetailsDialog({ event, open, onOpenChange }: EventDetailsDi
             const response = await downloadArchivoEventoPdf(String(event.id ?? event.id), "1");
 
             // Check if the response is actually JSON acting as an error
-            if (response.headers['content-type']?.includes('application/json')) {
+            const contentType = response.headers['content-type'];
+            if (typeof contentType === 'string' && contentType.includes('application/json')) {
                 const text = await response.data.text();
                 try {
                     const json = JSON.parse(text);

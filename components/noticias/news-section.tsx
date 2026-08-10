@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import { useNoticiasStore } from "@/lib/store/noticias-store";
 import { useCatalogStore } from "@/lib/store/catalog-store";
 import { motion } from "framer-motion";
-import { Calendar, ArrowRight, Loader2 } from "lucide-react";
+import { Calendar, ArrowRight, Loader2, Origami } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -94,7 +94,7 @@ export function NewsSection() {
             </div>
 
             <div className="flex items-center justify-between">
-                <h3 className="text-2xl font-bold tracking-tight">Últimas Noticias</h3>
+                <h3 className="text-3xl font-bold tracking-tight flex items-center justify-center gap-2"><Origami className="text-primary w-7 h-7 text-teal-700 dark:text-teal-400" /> Últimas <span className="font-serif italic font-semibold text-teal-600 dark:text-teal-400">Noticias</span></h3>
             </div>
 
             {/* News Grid */}

@@ -142,9 +142,11 @@ export function ClubesList() {
     <div className="space-y-8 w-full max-w-7xl mx-auto px-2 md:px-0">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800">
         <div>
-          <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-[#008f80] to-teal-400">Clubes Afiliados</h2>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">
-            Encuentra y conoce los clubes afiliados a la asociación.
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white font-sans leading-tight">
+            Clubes <span className="font-serif italic font-normal text-teal-600 dark:text-teal-400">Afiliados</span>
+          </h2>
+          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1.5 font-medium">
+            Encuentra y conoce los clubes autorizados y registrados en la asociación.
           </p>
         </div>
 

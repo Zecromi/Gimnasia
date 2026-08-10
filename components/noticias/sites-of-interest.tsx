@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { ExternalLink, ShieldCheck, Trophy, Globe, Award, Map } from "lucide-react";
+import { ExternalLink, ShieldCheck, Trophy, Globe, Award, Map, Globe2 } from "lucide-react";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 
 const sites = [
@@ -41,8 +41,11 @@ export function SitesOfInterest() {
     return (
         <section className="py-12 space-y-8">
             <div className="text-center space-y-2">
-                <h3 className="text-2xl font-bold">Sitios de Interés</h3>
-                <p className="text-muted-foreground">Enlaces externos y recursos útiles para la comunidad gimnástica.</p>
+                <h3 className="text-2xl font-bold flex items-center justify-center gap-2">
+                    <Globe2 className="w-7 h-7 text-teal-700 dark:text-teal-400" />
+                    <span>Sitios de <span className="font-serif italic font-bold text-teal-600 dark:text-teal-400">Interés</span></span>
+                </h3>
+                <p className="text-muted-foreground text-sm">Enlaces externos y recursos útiles para la comunidad gimnástica.</p>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">

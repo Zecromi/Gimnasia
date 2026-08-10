@@ -252,6 +252,29 @@ export interface InscripcionReportItem {
     Status?: string;
 }
 
+export interface InfoEventoItem {
+    id: number,
+    id_Evento: number,
+    Organizador: string,
+    Asociacion: string,
+    Nombre: string,
+    Lugar: string,
+    Sede: string,
+    Region: string,
+    Limite_participantes: number,
+    Fini: string,
+    Ffin: string,
+    F_ini_incripciones: string,
+    fecha_fin_inscripciones: string,
+    Categorias: number,
+    Atletas: number,
+    Clubs: number
+}
+
+export interface GetInfoEventosResponse {
+    info_event: InfoEventoItem[]
+}
+
 export interface GetInscripcionesReportResponse {
     resultados: InscripcionReportItem[];
 }
@@ -318,3 +341,10 @@ export const downloadArchivoEventoPdf = async (id: string, tipo: string) => {
     });
     return response;
 };
+export const getInfo_Eventos = async (id: string) => {
+    const response = await api.get<GetInfoEventosResponse>(`/GetInf_Event?id=${id}`);
+    console.log(id)
+    console.log(response.data.info_event);
+    return response.data;
+};
+

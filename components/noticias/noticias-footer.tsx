@@ -32,7 +32,7 @@ export function NoticiasFooter() {
 
                 {/* Contact Info */}
                 <div className="space-y-6 flex flex-col items-center lg:items-start">
-                    <h5 className="font-bold text-lg uppercase tracking-wider">CONTÁCTANOS</h5>
+                    <h5 className="font-bold text-lg tracking-wider font-serif italic font-bold text-teal-600 dark:text-teal-400 ">Contáctanos</h5>
                     <div className="space-y-4 text-sm text-muted-foreground">
                         <div className="flex flex-col items-center lg:items-start gap-3">
                             <div className="flex items-center gap-2">

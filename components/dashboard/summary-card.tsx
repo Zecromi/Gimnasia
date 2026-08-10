@@ -13,17 +13,18 @@ interface SummaryCardProps {
     total: ReactNode | string | number
     icon: LucideIcon
     stats: SubStat[]
+    italic: string
 }
 
-export function SummaryCard({ title, total, icon: Icon, stats }: SummaryCardProps) {
+export function SummaryCard({ title, italic, total, icon: Icon, stats }: SummaryCardProps) {
     return (
-        <div className="space-y-3 py-2">
+        <div className="space-y-1 py-2 mb-0 pb-0">
             <div className="flex items-center justify-between px-1">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-primary/10 rounded-xl">
+                    <div className="p-2.5  bg-[#ebf3e6] dark:bg-emerald-950/40 rounded-xl">
                         <Icon className="h-6 w-6 text-primary" />
                     </div>
-                    <h3 className="text-2xl font-bold tracking-tight text-foreground">{title}</h3>
+                    <h3 className="text-2xl font-bold tracking-tight text-foreground">{title} <span className="font-serif italic font-semibold text-teal-600 dark:text-teal-400 ">{italic}</span></h3>
                 </div>
                 <div className="text-3xl font-black text-foreground drop-shadow-sm">{total}</div>
             </div>
@@ -31,24 +32,26 @@ export function SummaryCard({ title, total, icon: Icon, stats }: SummaryCardProp
                 {stats.map((stat, index) => (
                     <Card
                         key={index}
-                        className="flex flex-row overflow-hidden border-none bg-primary/5 hover:bg-primary/10 transition-colors shadow-none cursor-pointer group h-full min-h-[130px]"
+                        className="shadow-none flex flex-col justify-between p-6 bg-[#fafcf9] dark:bg-zinc-900/40 border border-[#e3ebd7] dark:border-emerald-950 rounded-[32px] hover:border-emerald-500/30 hover:shadow-md transition-all duration-300 cursor-pointer group min-h-[175px]"
                     >
-                        {/* Value Column */}
-                        <div className="flex flex-col items-center justify-center min-w-[7.5rem] px-4 text-center shrink-0 bg-gradient-to-br from-teal-400 via-emerald-400 to-cyan-400 dark:from-teal-900 dark:via-emerald-900 dark:to-cyan-900 text-teal-950 dark:text-white">
-                            <div className="text-5xl font-black tracking-tighter drop-shadow-sm [&_*]:bg-transparent [&_*]:text-current [&_*]:text-5xl [&_*]:p-0 [&_*]:shadow-none [&_*]:border-none [&_*]:rounded-none">
+                        {/* Top Row: Icon on the left, Large Metric Value on the right */}
+                        <div className="flex items-start justify-between w-full">
+                            <div className="p-2.5 bg-[#ebf3e6] dark:bg-emerald-950/40 rounded-2xl text-[#325227] dark:text-emerald-400 group-hover:scale-105 transition-transform duration-300">
+                                {stat.icon && <stat.icon className="h-8 w-8" />}
+                            </div>
+
+                            {/* Large Metric Value in Serif Italic font */}
+                            <div className="px-2 text-5xl md:text-6xl font-serif italic font-extrabold text-[#1b3a16] dark:text-emerald-300 tracking-tight leading-none drop-shadow-sm select-none pr-3 mr-4 [&_*]:bg-transparent [&_*]:text-current [&_*]:text-5xl md:[&_*]:text-6xl  [&_*]:shadow-none [&_*]:border-none [&_*]:rounded-none">
                                 {stat.value}
                             </div>
                         </div>
 
-                        {/* Info Column with Icon and Label */}
-                        <CardContent className="flex flex-col justify-center p-5 sm:p-6 flex-1 overflow-hidden">
-                            <div className="flex items-center gap-3.5 text-foreground/90 group-hover:text-primary transition-colors">
-                                {stat.icon && <stat.icon className="h-8 w-8 shrink-0 text-primary/80 group-hover:text-primary transition-colors" />}
-                                <h4 className="font-semibold text-lg sm:text-lg leading-snug line-clamp-2">
-                                    {stat.label}
-                                </h4>
-                            </div>
-                        </CardContent>
+                        {/* Bottom Row: Text Label */}
+                        <div className="mt-2">
+                            <h3 className="font-semibold text-md md:text-lg tracking-tight text-[#2d3a2a] dark:text-zinc-200 group-hover:text-[#325227] dark:group-hover:text-emerald-400 transition-colors leading-snug ">
+                                {stat.label}
+                            </h3>
+                        </div>
                     </Card>
                 ))}
             </div>

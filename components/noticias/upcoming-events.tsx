@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, Suspense } from "react";
 import { motion } from "framer-motion";
-import { MapPin, Users, Ticket, Award, Loader2, FileDown } from "lucide-react";
+import { MapPin, Award, Loader2, Calendars } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -81,8 +81,8 @@ export function UpcomingEvents() {
         <TooltipProvider>
             <section className="py-12 space-y-8">
                 <div className="flex flex-col gap-1">
-                    <h3 className="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                        Próximos Eventos
+                    <h3 className="text-3xl font-extrabold tracking-tight flex items-center justify-start gap-2 bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                        <Calendars className="text-primary w-7 h-7 text-teal-700 dark:text-teal-400" /> Próximos <span className="font-serif italic font-normal text-teal-600 dark:text-teal-400">Eventos</span>
                     </h3>
                     <p className="text-muted-foreground">No te pierdas de las actividades más importantes del calendario.</p>
                 </div>

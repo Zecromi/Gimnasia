@@ -54,6 +54,8 @@ const ClubesList = dynamic(() => import("@/components/clubes/clubes-list").then(
   ),
 });
 
+
+
 export default function HomePage() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -107,7 +109,7 @@ export default function HomePage() {
                 className="object-contain"
               />
             </div>
-            <span className={`font-bold text-xl md:text-2xl tracking-tighter transition-colors ${scrolled ? "text-gray-900 dark:text-white" : "text-gray-900 dark:text-white"
+            <span className={`font-extrabold text-xl italic md:text-2xl tracking-tighter transition-colors ${scrolled ? "text-gray-900 dark:text-white" : "text-gray-900 dark:text-white"
               }`}>
               GUEM
             </span>
@@ -228,13 +230,52 @@ export default function HomePage() {
               </TabsList>
             </div>
 
-            <TabsContent 
-              value="inicio" 
+            <TabsContent
+              value="inicio"
               className={cn("space-y-16 animate-in fade-in-50 duration-500 mt-0", activeTab !== "inicio" && "hidden")}
               forceMount={true}
             >
               {visitedTabs.has("inicio") && (
                 <>
+                  {/* Hero Header Section */}
+                  <motion.div
+                    initial="hidden"
+                    animate="visible"
+                    variants={{
+                      hidden: { opacity: 0 },
+                      visible: {
+                        opacity: 1,
+                        transition: {
+                          staggerChildren: 0.12,
+                        }
+                      }
+                    }}
+                    className="pt-8 pb-10 md:pt-12 md:pb-14 flex flex-col items-center justify-center space-y-4"
+                  >
+                    {/* Headline */}
+                    <motion.h1
+                      variants={{
+                        hidden: { opacity: 0, y: 20 },
+                        visible: { opacity: 1, y: 0, transition: { duration: 2, ease: [0.16, 1, 0.3, 1] } }
+                      }}
+                      className="text-4xl md:text-6xl lg:text-7xl font-bold tracking-tight text-gray-900 dark:text-white text-center max-w-4xl mx-auto leading-[1.1] font-sans"
+                    >
+                      La plataforma oficial <br />
+                      para la <span className="font-serif italic font-normal text-teal-600 dark:text-teal-400">Gimnasia</span> Mexiquense
+                    </motion.h1>
+
+                    {/* Subtitle */}
+                    <motion.p
+                      variants={{
+                        hidden: { opacity: 0, y: 15 },
+                        visible: { opacity: 1, y: 0, transition: { duration: 0.8, ease: [0.16, 1, 0.3, 1] } }
+                      }}
+                      className="text-xs md:text-sm text-gray-500 dark:text-gray-400 text-center max-w-md mx-auto mt-2 font-medium tracking-wide"
+                    >
+                      Gimnasios Unidos del Estado de México. Fomentando el desarrollo integral, la disciplina y el alto rendimiento.
+                    </motion.p>
+                  </motion.div>
+
                   {/* Section 1: Hero Carousel with integrated background video */}
                   <section id="carousel">
                     <Suspense fallback={<CarouselSkeleton />}>
@@ -281,8 +322,8 @@ export default function HomePage() {
               )}
             </TabsContent>
 
-            <TabsContent 
-              value="clubes" 
+            <TabsContent
+              value="clubes"
               className={cn("animate-in fade-in-50 duration-500 mt-0", activeTab !== "clubes" && "hidden")}
               forceMount={true}
             >

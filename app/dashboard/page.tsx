@@ -96,7 +96,7 @@ export default function DashboardPage() {
 
     return (
         <div className="flex-1 p-4">
-            <div className="mx-auto max-w-[1600px] space-y-2">
+            <div className="mx-auto max-w-[auto] space-y-2">
                 <DashboardHeader />
                 <div className="grid gap-6 lg:grid-cols-12">
                     {/* Main Content (Only for Non-Clubs) */}
@@ -109,7 +109,8 @@ export default function DashboardPage() {
                                 transition={{ delay: 0.3, duration: 0.5 }}
                             >
                                 <SummaryCard
-                                    title="Resumen de Clubes"
+                                    title="Resumen de"
+                                    italic="Clubes"
                                     total={<Badge variant="secondary" className="text-2xl "><CountUp end={totalClubes} /></Badge>}
                                     icon={Building2}
                                     stats={clubStats.length > 0 ? clubStats : [
@@ -128,7 +129,8 @@ export default function DashboardPage() {
                                 transition={{ delay: 0.4, duration: 0.5 }}
                             >
                                 <SummaryCard
-                                    title="Resumen de Inscripciones"
+                                    title="Resumen de"
+                                    italic="Inscripciones"
                                     total={<Badge variant="secondary" className="text-2xl"><CountUp end={totalEventos} /></Badge>}
                                     icon={CalendarClock}
                                     stats={eventStats.length > 0 ? eventStats : [
@@ -152,7 +154,8 @@ export default function DashboardPage() {
                                 transition={{ delay: 0.5, duration: 0.5 }}
                             >
                                 <SummaryCard
-                                    title="Conteos Afiliados"
+                                    title="Conteos"
+                                    italic="Afiliados"
                                     total={<Badge variant="secondary" className="text-2xl"><CountUp end={
                                         dataAfil.Conteos_afiliados.reduce((acc, curr) => acc + curr.conteo, 0)
                                     } /></Badge>}
@@ -174,6 +177,7 @@ export default function DashboardPage() {
                             >
                                 <SummaryCard
                                     title="Eventos"
+                                    italic="Inscritos Actualmente"
                                     total={<Badge variant="secondary" className="text-2xl"><CountUp end={totalAfilInscritos} /></Badge>}
                                     icon={ClipboardList}
                                     stats={[

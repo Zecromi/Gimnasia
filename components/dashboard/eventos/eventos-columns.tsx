@@ -1,5 +1,5 @@
 import { ColumnDef } from "@tanstack/react-table"
-import { Edit, ArrowUpDown } from "lucide-react"
+import { Edit, ArrowUpDown, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
@@ -12,13 +12,24 @@ const EditEventoDialog = dynamic(() => import("./edit-evento-dialog").then(mod =
     loading: () => <div className="h-8 w-8 animate-pulse bg-muted rounded-md" />
 })
 
+const DetalleEventoDialog = dynamic(() => import("./detalle-evento-dialog").then(mod => mod.DetalleEventoDialog), {
+    ssr: false,
+    loading: () => <div className="h-8 w-8 animate-pulse bg-muted rounded-md" />
+})
+
 export const getColumns = (onEventUpdated: () => void): ColumnDef<EventosConfiguradosItem>[] => [
     {
         id: "detalle",
         header: "Detalle",
         cell: ({ row }) => {
             return (
-                <div className="flex items-center">
+                <div className="flex items-center gap-2">
+                    <DetalleEventoDialog evento={row.original as any}>
+                        <Button variant="ghost" size="icon-xs" className="hover:bg-teal-200 dark:hover:bg-teal-800">
+                            <Eye className="h-3.5 w-3.5" />
+                            <span className="sr-only">Ver Detalle</span>
+                        </Button>
+                    </DetalleEventoDialog>
                     <EditEventoDialog evento={row.original as any} onSuccess={onEventUpdated}>
                         <Button variant="ghost" size="icon-xs" className="hover:bg-teal-200 dark:hover:bg-teal-800">
                             <Edit className="h-3.5 w-3.5" />

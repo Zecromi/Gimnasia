@@ -4,7 +4,7 @@ import { useTheme } from "next-themes";
 import dynamic from "next/dynamic";
 import CircularGallery from "@/src/component/CircularGallery";
 import { MODALITIES_DATA, ModalityData } from "@/lib/constants/modalities";
-
+import { Medal } from "lucide-react";
 const ModalityDialog = dynamic(() => import("./modality-dialog").then(mod => mod.ModalityDialog), {
     ssr: false,
 });
@@ -53,10 +53,10 @@ export function ModalitiesGallery() {
     return (
         <section className="py-10 space-y-2 overflow-hidden">
             <div className="text-center space-y-4 px-4">
-                <h4 className="text-4xl font-black tracking-tighter uppercase italic text-primary">
-                    Modalidades Deportivas
+                <h4 className="text-5xl font-black tracking-tighter font-bold  italic text-primary flex items-center justify-center gap-2">
+                    <Medal className="text-primary w-9 h-9 text-teal-700 dark:text-gray-100-900" />Modalidades <span className="font-serif italic font-semibold text-teal-600 dark:text-teal-400">Deportivas</span>
                 </h4>
-                <p className="text-muted-foreground max-w-2xl mx-auto text-lg">
+                <p className="text-muted-foreground max-w-2xl mx-auto text-sm font-semibold">
                     Explora las diferentes disciplinas que forman parte de nuestra asociación.
                     Haz clic en una para conocer más detalles.
                 </p>
