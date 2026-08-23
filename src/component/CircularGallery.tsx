@@ -435,7 +435,11 @@ class App {
   screen!: { width: number; height: number };
   viewport!: { width: number; height: number };
   raf: number = 0;
+  isVisible: boolean = true;
+  isLoopRunning: boolean = false;
+  observer?: IntersectionObserver;
 
+  boundUpdate!: () => void;
   boundOnResize!: () => void;
   boundOnWheel!: (e: Event) => void;
   boundOnTouchDown!: (e: MouseEvent | TouchEvent) => void;
@@ -466,21 +470,23 @@ class App {
     this.scroll = { ease: scrollEase, current: 0, target: 0, last: 0 };
     this.onCheckDebounce = debounce(this.onCheck.bind(this), 200);
     this.onItemClick = onItemClick;
+    this.boundUpdate = this.update.bind(this);
     this.createRenderer();
     this.createCamera();
     this.createScene();
     this.onResize();
     this.createGeometry();
     this.createMedias(items, bend, textColor, borderRadius, font);
-    this.update();
+    this.requestUpdate();
     this.addEventListeners();
+    this.initObserver();
   }
 
   createRenderer() {
     this.renderer = new Renderer({
       alpha: true,
       antialias: true,
-      dpr: Math.min(window.devicePixelRatio || 1, 2)
+      dpr: Math.min(window.devicePixelRatio || 1, 1.5)
     });
     this.gl = this.renderer.gl;
     this.gl.clearColor(0, 0, 0, 0);
@@ -499,8 +505,8 @@ class App {
 
   createGeometry() {
     this.planeGeometry = new Plane(this.gl, {
-      heightSegments: 50,
-      widthSegments: 100
+      heightSegments: 10,
+      widthSegments: 20
     });
   }
 
@@ -584,11 +590,31 @@ class App {
     });
   }
 
+  initObserver() {
+    if (typeof window !== 'undefined' && 'IntersectionObserver' in window) {
+      this.observer = new IntersectionObserver(([entry]) => {
+        this.isVisible = entry.isIntersecting;
+        if (this.isVisible) {
+          this.requestUpdate();
+        }
+      }, { threshold: 0.05 });
+      this.observer.observe(this.container);
+    }
+  }
+
+  requestUpdate() {
+    if (!this.isLoopRunning && this.isVisible) {
+      this.isLoopRunning = true;
+      this.raf = window.requestAnimationFrame(this.boundUpdate);
+    }
+  }
+
   onTouchDown(e: MouseEvent | TouchEvent) {
     this.isDown = true;
     this.scroll.position = this.scroll.current;
     this.start = 'touches' in e ? e.touches[0].clientX : e.clientX;
     this.startTime = Date.now();
+    this.requestUpdate();
   }
 
   onTouchMove(e: MouseEvent | TouchEvent) {
@@ -596,6 +622,7 @@ class App {
     const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
     const distance = (this.start - x) * (this.scrollSpeed * 0.025);
     this.scroll.target = (this.scroll.position ?? 0) + distance;
+    this.requestUpdate();
   }
 
   onTouchUp(e: MouseEvent | TouchEvent) {
@@ -609,20 +636,16 @@ class App {
 
     this.isDown = false;
     this.onCheck();
+    this.requestUpdate();
   }
 
   handleClick(mouseX: number) {
     if (!this.onItemClick) return;
 
-    // Convert mouseX to normalized viewport coordinates (-1 to 1) 
-    // where 0 is center
     const rect = this.container.getBoundingClientRect();
     const normX = ((mouseX - rect.left) / rect.width) * 2 - 1;
-
-    // Scale normX by viewport width / 2 to get position in world units
     const worldX = normX * (this.viewport.width / 2);
 
-    // Find the media item closest to this worldX
     let closestMedia: Media | null = null;
     let minDistance = Infinity;
     let closestIndex = -1;
@@ -646,6 +669,7 @@ class App {
     const wheelEvent = e as WheelEvent;
     const delta = wheelEvent.deltaY || (wheelEvent as any).wheelDelta || (wheelEvent as any).detail;
     this.scroll.target += (delta > 0 ? this.scrollSpeed : -this.scrollSpeed) * 0.2;
+    this.requestUpdate();
     this.onCheckDebounce();
   }
 
@@ -655,6 +679,7 @@ class App {
     const itemIndex = Math.round(Math.abs(this.scroll.target) / width);
     const item = width * itemIndex;
     this.scroll.target = this.scroll.target < 0 ? -item : item;
+    this.requestUpdate();
   }
 
   onResize() {
@@ -673,6 +698,7 @@ class App {
     if (this.medias) {
       this.medias.forEach(media => media.onResize({ screen: this.screen, viewport: this.viewport }));
     }
+    this.requestUpdate();
   }
 
   update() {
@@ -683,7 +709,13 @@ class App {
     }
     this.renderer.render({ scene: this.scene, camera: this.camera });
     this.scroll.last = this.scroll.current;
-    this.raf = window.requestAnimationFrame(this.update.bind(this));
+
+    const diff = Math.abs(this.scroll.target - this.scroll.current);
+    if (this.isVisible && (diff > 0.0005 || this.isDown)) {
+      this.raf = window.requestAnimationFrame(this.boundUpdate);
+    } else {
+      this.isLoopRunning = false;
+    }
   }
 
   addEventListeners() {
@@ -708,6 +740,10 @@ class App {
 
   destroy() {
     window.cancelAnimationFrame(this.raf);
+    this.isLoopRunning = false;
+    if (this.observer) {
+      this.observer.disconnect();
+    }
     window.removeEventListener('resize', this.boundOnResize);
 
     this.container.removeEventListener('mousewheel', this.boundOnWheel);

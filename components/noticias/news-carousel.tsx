@@ -129,14 +129,15 @@ export function NewsCarousel() {
               className={`absolute inset-0 w-full h-full bg-cover bg-center filter contrast-[1.05] transition-all duration-700 group-hover:scale-105 ${isHovered && activeSlide.hoverVideo ? "opacity-0" : "opacity-100"}`}
               style={{ backgroundImage: `url(${activeSlide.image})` }}
             />
-            {activeSlide.hoverVideo && (
+            {activeSlide.hoverVideo && isHovered && (
               <video
                 src={activeSlide.hoverVideo}
                 autoPlay
                 loop
                 muted
                 playsInline
-                className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ${isHovered ? "opacity-100" : "opacity-0"}`}
+                preload="metadata"
+                className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 opacity-100"
               />
             )}
           </motion.div>

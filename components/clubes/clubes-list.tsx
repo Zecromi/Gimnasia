@@ -18,6 +18,22 @@ const ClubLocationDialog = dynamic(
   }
 );
 
+function formatClubTitle(title?: string) {
+  if (!title) return "";
+  const trimmed = title.trim();
+  if (trimmed.length <= 4) {
+    return <span className="font-serif italic font-normal text-teal-600 dark:text-teal-400">{trimmed}</span>;
+  }
+  const first = trimmed.slice(0, -4);
+  const last = trimmed.slice(-4);
+  return (
+    <>
+      {first}
+      <span className="font-serif italic font-normal text-teal-600 dark:text-teal-400">{last}</span>
+    </>
+  );
+}
+
 function ClubLogo({ clubId, clubName }: { clubId: string | number, clubName: string }) {
   const [imgSrc, setImgSrc] = useState<string | null>(null);
   const [error, setError] = useState(false);
@@ -61,10 +77,10 @@ function ClubLogo({ clubId, clubName }: { clubId: string | number, clubName: str
   return (
     <div className="w-20 h-20 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center flex-shrink-0 overflow-hidden border border-gray-100 dark:border-zinc-700 shadow-md">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img 
-        src={imgSrc} 
-        alt={`Logo de ${clubName}`} 
-        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" 
+      <img
+        src={imgSrc}
+        alt={`Logo de ${clubName}`}
+        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
       />
     </div>
   );
@@ -140,7 +156,7 @@ export function ClubesList() {
 
   return (
     <div className="space-y-8 w-full max-w-7xl mx-auto px-2 md:px-0">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-zinc-800">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-none border border-gray-100 dark:border-zinc-800">
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white font-sans leading-tight">
             Clubes <span className="font-serif italic font-normal text-teal-600 dark:text-teal-400">Afiliados</span>
@@ -193,7 +209,7 @@ export function ClubesList() {
                 transition={{ duration: 0.2 }}
                 className="h-full"
               >
-                <Card className="h-full flex flex-col hover:shadow-md transition-shadow duration-300 border border-gray-100 dark:border-zinc-800 bg-white dark:bg-zinc-900 rounded-xl overflow-hidden relative group">
+                <Card className="h-full flex flex-col hover:shadow-md transition-shadow duration-300 dark:border-zinc-800 bg-white shadow-none dark:bg-zinc-900 rounded-xl overflow-hidden relative group">
                   <div className="h-1.5 w-full bg-[#3dd8c5] absolute top-0 left-0 right-0"></div>
                   <CardHeader className="pt-8 pb-4">
                     <div className="flex justify-between items-start mb-2">
@@ -208,7 +224,7 @@ export function ClubesList() {
                       </div>
                     </div>
                     <CardTitle className="text-[17px] font-bold uppercase tracking-tight text-gray-900 dark:text-white mt-0 mb-0 line-clamp-2 min-h-[0.5rem]">
-                      {club.Club}
+                      {formatClubTitle(club.Club)}
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="flex-1 flex flex-col justify-end pt-2 pb-6">

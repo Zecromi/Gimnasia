@@ -90,10 +90,10 @@ export function RhythmicBackground() {
         </svg>
       </div>
 
-      {/* Decorative ambient glowing lights */}
-      <div className="absolute top-[8%] left-[-15%] w-[600px] h-[600px] rounded-full bg-teal-500/5 dark:bg-teal-500/[0.02] blur-[120px] z-[-1] pointer-events-none" />
-      <div className="absolute top-[50%] right-[-15%] w-[700px] h-[700px] rounded-full bg-emerald-500/5 dark:bg-emerald-500/[0.02] blur-[140px] z-[-1] pointer-events-none" />
-      <div className="absolute bottom-[5%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-500/5 dark:bg-blue-500/[0.015] blur-[100px] z-[-1] pointer-events-none" />
+      {/* Decorative ambient glowing lights (hidden on mobile for high FPS performance) */}
+      <div className="hidden md:block absolute top-[8%] left-[-15%] w-[600px] h-[600px] rounded-full bg-teal-500/5 dark:bg-teal-500/[0.02] blur-[120px] z-[-1] pointer-events-none" />
+      <div className="hidden md:block absolute top-[50%] right-[-15%] w-[700px] h-[700px] rounded-full bg-emerald-500/5 dark:bg-emerald-500/[0.02] blur-[140px] z-[-1] pointer-events-none" />
+      <div className="hidden md:block absolute bottom-[5%] left-[-10%] w-[500px] h-[500px] rounded-full bg-blue-500/5 dark:bg-blue-500/[0.015] blur-[100px] z-[-1] pointer-events-none" />
     </div>
   );
 }

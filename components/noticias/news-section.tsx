@@ -9,7 +9,6 @@ import { Calendar, ArrowRight, Loader2, Origami } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 const NewsDetailDialog = dynamic(() => import("./news-detail-dialog").then(mod => mod.NewsDetailDialog), {
     ssr: false,
@@ -112,14 +111,14 @@ export function NewsSection() {
                 </div>
             ) : (
                 <>
-                    <ScrollArea className="h-[880px] w-full pr-4 pb-4">
+                    <div className="w-full">
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             {visibleNews.map((news, index) => (
                                 <motion.div
                                     key={news.id}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: (index % PAGE_SIZE) * 0.05 }}
+                                    transition={{ delay: (index % PAGE_SIZE) * 0.04 }}
                                     className="h-full"
                                 >
                                     <Card
@@ -130,6 +129,8 @@ export function NewsSection() {
                                             <img
                                                 src={news.image}
                                                 alt={news.title}
+                                                loading="lazy"
+                                                decoding="async"
                                                 className="object-cover w-full h-full transition-transform duration-500 group-hover:scale-110"
                                                 onError={(e) => {
                                                     (e.currentTarget as HTMLImageElement).src = "/logo-gimnasios.png";
@@ -178,7 +179,7 @@ export function NewsSection() {
                                 )}
                             </div>
                         )}
-                    </ScrollArea>
+                    </div>
                 </>
             )}
 
