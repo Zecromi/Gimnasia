@@ -14,10 +14,7 @@ export function ParallaxVideoBanner({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Parallax scroll effect using framer-motion
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"],
-  });
+  const { scrollYProgress } = useScroll();
 
   // Transform video position slightly as page scrolls
   const y = useTransform(scrollYProgress, [0, 1], ["-12%", "12%"]);
@@ -25,7 +22,6 @@ export function ParallaxVideoBanner({
 
   return (
     <div
-      ref={containerRef}
       className="relative w-full h-[320px] md:h-[420px] overflow-hidden rounded-3xl my-8 shadow-2xl border border-teal-500/20 dark:border-teal-500/30 group"
     >
       {/* Background Parallax Video */}

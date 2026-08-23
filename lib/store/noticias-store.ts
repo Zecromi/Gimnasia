@@ -48,11 +48,12 @@ export const useNoticiasStore = create<NoticiasStore>((set, get) => ({
 
         set({ isLoading: true, error: null });
         try {
-            // Ensure modalities are loaded to map category names correctly
-            await useCatalogStore.getState().fetchCatalogs();
+            // Fetch catalogs and noticias in parallel to eliminate waterfall
+            const [, data] = await Promise.all([
+                useCatalogStore.getState().fetchCatalogs(),
+                getNoticias(),
+            ]);
             const modalities = useCatalogStore.getState().Modalidades || [];
-
-            const data = await getNoticias();
             const resultados: any[] = data?.resultados ?? [];
 
             const noticias: NoticiaItem[] = resultados

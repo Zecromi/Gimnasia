@@ -60,14 +60,9 @@ export function NewsCarousel() {
   const [current, setCurrent] = useState(0);
   const [isHovered, setIsHovered] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-
   // Parallax scroll effect for background depth
-  const { scrollYProgress } = useScroll({
-    target: containerRef,
-    offset: ["start end", "end start"],
-  });
-  const backgroundY = useTransform(scrollYProgress, [0, 1], ["-2%", "5%"]);
+  const { scrollYProgress } = useScroll();
+  const backgroundY = useTransform(scrollYProgress, [0, 0.4], ["-2%", "5%"]);
 
   const startTimer = React.useCallback(() => {
     stopTimer();
@@ -115,7 +110,6 @@ export function NewsCarousel() {
 
   return (
     <div
-      ref={containerRef}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       className="relative w-full h-[440px] md:h-[540px] overflow-hidden rounded-3xl shadow-md border border-gray-200 dark:border-zinc-800 bg-zinc-950 group"
