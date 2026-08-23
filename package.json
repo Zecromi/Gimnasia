@@ -39,7 +39,7 @@
     "jspdf": "^4.1.0",
     "jspdf-autotable": "^5.0.7",
     "leaflet": "^1.9.4",
-    "lucide-react": "^0.555.0",
+    "lucide-react": "^1.33.0",
     "mapbox-gl": "^3.20.0",
     "mapkick": "^0.2.6",
     "next": "^16.0.6",

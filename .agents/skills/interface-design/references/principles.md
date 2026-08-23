@@ -214,6 +214,45 @@ Build a four-level system: foreground (primary) → secondary → muted → fain
 
 Gray builds structure. Color communicates — status, action, emphasis, identity. Unmotivated color is noise. Color that reinforces the product's world is character.
 
+## Brand Signature Heading & Dialog Anatomy
+
+### 1. Signature Headings Structure
+The application uses a distinctive, unified typography signature across all sections, headers, cards, and modal dialogs:
+- **Icon**: Colored category/context icon (e.g. `text-teal-700 dark:text-teal-400 w-6 h-6` or `text-primary`).
+- **Main Title**: Sans-serif bold/extrabold with tight tracking (`font-extrabold tracking-tight`).
+- **Keyword Accent**: Emphasized keyword inside `<span className="font-serif italic font-normal text-teal-600 dark:text-teal-400">Palabra</span>`.
+- **Subtitle / Description**: Accompanying description with `text-muted-foreground text-xs md:text-sm` for context.
+
+```tsx
+<h3 className="text-2xl md:text-3xl font-extrabold tracking-tight flex items-center gap-2 text-gray-900 dark:text-white">
+    <Calendars className="w-6 h-6 text-teal-700 dark:text-teal-400 shrink-0" />
+    <span>
+        Próximos <span className="font-serif italic font-normal text-teal-600 dark:text-teal-400">Eventos</span>
+    </span>
+</h3>
+<p className="text-muted-foreground text-sm">No te pierdas de las actividades más importantes del calendario.</p>
+```
+
+### 2. Dialog & Drawer Anatomy
+Every modal or drawer in the application MUST include:
+- `DialogTitle` / `DrawerTitle`: Formatted with the brand signature structure (icon + bold title + serif italic keyword accent).
+- `DialogDescription` / `DrawerDescription`: Required for accessibility (Radix UI) and UX clarity, explaining the modal's contents with `text-xs text-muted-foreground`.
+
+```tsx
+<DialogHeader className="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 space-y-1">
+    <DialogTitle className="text-xl font-extrabold tracking-tight flex items-center gap-2.5 text-gray-900 dark:text-white">
+        <Calendars className="w-6 h-6 text-teal-700 dark:text-teal-400 shrink-0" />
+        <span>
+            Detalles de <span className="font-serif italic font-normal text-teal-600 dark:text-teal-400">Evento</span>
+            {evento.Nombre && <span className="text-sm font-semibold text-gray-500 ml-2.5">· {evento.Nombre}</span>}
+        </span>
+    </DialogTitle>
+    <DialogDescription className="text-xs text-muted-foreground">
+        Consulta la información general y participantes registrados.
+    </DialogDescription>
+</DialogHeader>
+```
+
 ## Navigation Context
 
 Screens need grounding. A data table floating in space feels like a component demo, not a product. Consider including:

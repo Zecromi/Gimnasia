@@ -211,8 +211,11 @@ Don't mix approaches.
 ## Border Radius
 Sharper feels technical. Rounder feels friendly. Pick a scale and apply consistently.
 
-## Typography
-Headlines need weight and tight tracking. Body needs readability. Data needs monospace. Build a hierarchy.
+## Typography & Brand Signature
+Headlines need weight and tight tracking. Use the app's signature pattern: category icon + bold sans-serif title + `<span className="font-serif italic font-normal text-teal-600 dark:text-teal-400">Keyword</span>` + supporting description. Body needs readability. Data needs monospace. Build a hierarchy.
+
+## Modals & Dialogs (Accessibility & Structure)
+Every Dialog or Drawer MUST include a `DialogTitle`/`DrawerTitle` with the signature heading styling and a descriptive `DialogDescription`/`DrawerDescription` for accessibility (Radix UI) and clarity.
 
 ## Color & Surfaces
 Build from primitives: foreground (text hierarchy), background (surface elevation), border (separation hierarchy), brand, and semantic (destructive, warning, success). Every color should trace back to these. No random hex values — everything maps to the system.

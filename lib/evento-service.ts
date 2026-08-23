@@ -275,6 +275,20 @@ export interface GetInfoEventosResponse {
     info_event: InfoEventoItem[]
 }
 
+export interface InfoFiltroItem {
+    id_afiliado: number,
+    Column1: string,
+    Curp: string,
+    Categoria: string,
+    telefono_1: string,
+    telefono_2: string,
+    Club: string
+}
+
+export interface GetInfoFiltrosResponse {
+    info_event: InfoFiltroItem[]
+}
+
 export interface GetInscripcionesReportResponse {
     resultados: InscripcionReportItem[];
 }
@@ -348,3 +362,9 @@ export const getInfo_Eventos = async (id: string) => {
     return response.data;
 };
 
+export const getinfo_filtros = async (id: string, tipo?: string) => {
+    const response = await api.get<GetInfoFiltrosResponse>(`/GetInf_filtro?id=${id}&tipo=${tipo}`);
+    console.log(id)
+    console.log(response.data.info_event);
+    return response.data;
+};

@@ -3,6 +3,12 @@ import { Edit, ArrowUpDown, Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { format } from "date-fns"
 import { es } from "date-fns/locale"
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 import dynamic from "next/dynamic"
 import { EventosConfiguradosItem } from "@/lib/evento-service"
@@ -23,19 +29,36 @@ export const getColumns = (onEventUpdated: () => void): ColumnDef<EventosConfigu
         header: "Detalle",
         cell: ({ row }) => {
             return (
-                <div className="flex items-center gap-2">
-                    <DetalleEventoDialog evento={row.original as any}>
-                        <Button variant="ghost" size="icon-xs" className="hover:bg-teal-200 dark:hover:bg-teal-800">
-                            <Eye className="h-3.5 w-3.5" />
-                            <span className="sr-only">Ver Detalle</span>
-                        </Button>
-                    </DetalleEventoDialog>
-                    <EditEventoDialog evento={row.original as any} onSuccess={onEventUpdated}>
-                        <Button variant="ghost" size="icon-xs" className="hover:bg-teal-200 dark:hover:bg-teal-800">
-                            <Edit className="h-3.5 w-3.5" />
-                            <span className="sr-only">Editar</span>
-                        </Button>
-                    </EditEventoDialog>
+                <div className="flex items-center gap-1">
+                    <TooltipProvider delayDuration={300}>
+                        <Tooltip>
+                            <DetalleEventoDialog evento={row.original as any}>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon-xs" className="hover:bg-teal-200 dark:hover:bg-teal-800">
+                                        <Eye className="h-3.5 w-3.5" />
+                                        <span className="sr-only">Ver Detalle</span>
+                                    </Button>
+                                </TooltipTrigger>
+                            </DetalleEventoDialog>
+                            <TooltipContent side="right">
+                                <p>Ver Detalle</p>
+                            </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                            <EditEventoDialog evento={row.original as any} onSuccess={onEventUpdated}>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon-xs" className="hover:bg-teal-200 dark:hover:bg-teal-800">
+                                        <Edit className="h-3.5 w-3.5" />
+                                        <span className="sr-only">Editar</span>
+                                    </Button>
+                                </TooltipTrigger>
+                            </EditEventoDialog>
+                            <TooltipContent side="right">
+                                <p>Editar Evento</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                 </div>
             )
         },
