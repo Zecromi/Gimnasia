@@ -108,23 +108,10 @@ export function NewsDetailDialog({ news, open, onOpenChange }: NewsDetailDialogP
             <Dialog open={open} onOpenChange={onOpenChange}>
                 {/* The dialog content is wide enough for good reading and borderless */}
                 <DialogContent
-                    className="max-w-5xl w-[95vw] sm:w-[90vw] h-[85vh] p-0 border-none shadow-2xl bg-background overflow-hidden flex flex-col [&>button]:hidden"
+                    className="max-w-5xl w-[95vw] sm:w-[90vw] h-[85vh] p-0 border-none shadow-2xl bg-background overflow-hidden flex flex-col"
                     onInteractOutside={(e) => e.preventDefault()}
                     onEscapeKeyDown={(e) => e.preventDefault()}
                 >
-                    {/* Custom absolute close button */}
-                    <div className="absolute top-3 right-3 z-50">
-                        <Button
-                            onClick={() => onOpenChange(false)}
-                            variant="ghost"
-                            size="icon"
-                            className="rounded-full bg-black/40 hover:bg-black/70 text-white backdrop-blur-sm transition-all shadow-md"
-                        >
-                            <X className="h-5 w-5" />
-                            <span className="sr-only">Cerrar Noticia</span>
-                        </Button>
-                    </div>
-
                     {/* Visual Header with Image */}
                     <div 
                         className="w-full shrink-0 h-40 sm:h-56 relative bg-muted cursor-zoom-in group overflow-hidden"
