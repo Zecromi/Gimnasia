@@ -53,7 +53,7 @@ export function ModalitiesGallery() {
     return (
         <section className="py-10 space-y-2 overflow-hidden">
             <div className="text-center space-y-4 px-4">
-                <h4 className="text-5xl font-black tracking-tighter font-bold  italic text-primary flex items-center justify-center gap-2">
+                <h4 className="sm:text-4xl md:text-5xl lg:text-6xl xl:text-5xl 2xl:text-6xl text-3xl font-black tracking-tight font-bold  italic text-primary flex items-center justify-center gap-2">
                     <Medal className="text-primary w-9 h-9 text-teal-700 dark:text-gray-100-900" />Modalidades <span className="font-serif italic font-semibold text-teal-600 dark:text-teal-400">Deportivas</span>
                 </h4>
                 <p className="text-muted-foreground max-w-2xl mx-auto text-sm font-semibold">
