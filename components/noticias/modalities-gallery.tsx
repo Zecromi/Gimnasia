@@ -68,7 +68,7 @@ export function ModalitiesGallery() {
                     bend={1.5}
                     textColor={currentTheme === 'dark' ? '#ffffff' : '#141414'}
                     borderRadius={0.08}
-                    scrollEase={0.02}
+                    scrollEase={0.05}
                     scrollSpeed={2}
                     onItemClick={handleItemClick}
                 />

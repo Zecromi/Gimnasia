@@ -447,8 +447,12 @@ class App {
   boundOnTouchUp!: (e: MouseEvent | TouchEvent) => void;
 
   isDown: boolean = false;
+  isTouch: boolean = false;
   start: number = 0;
   startTime: number = 0;
+  lastTouchX: number = 0;
+  lastTouchTime: number = 0;
+  velocity: number = 0;
   onItemClick?: (item: { image: string; text: string }, index: number) => void;
 
   constructor(
@@ -611,30 +615,69 @@ class App {
 
   onTouchDown(e: MouseEvent | TouchEvent) {
     this.isDown = true;
+    this.isTouch = 'touches' in e;
     this.scroll.position = this.scroll.current;
-    this.start = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    this.startTime = Date.now();
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+    this.start = clientX;
+    this.lastTouchX = clientX;
+    this.startTime = performance.now();
+    this.lastTouchTime = this.startTime;
+    this.velocity = 0;
     this.requestUpdate();
   }
 
   onTouchMove(e: MouseEvent | TouchEvent) {
     if (!this.isDown) return;
-    const x = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    const distance = (this.start - x) * (this.scrollSpeed * 0.025);
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as MouseEvent).clientX;
+    const now = performance.now();
+    const dt = now - this.lastTouchTime;
+
+    // Track instantaneous velocity (pixels per millisecond) with weighted smoothing
+    if (dt > 8) {
+      const dx = this.lastTouchX - clientX;
+      const currentVelocity = dx / dt;
+      this.velocity = this.velocity * 0.35 + currentVelocity * 0.65;
+      this.lastTouchX = clientX;
+      this.lastTouchTime = now;
+    }
+
+    // Dynamic scale mapping:
+    // When dragging on a small screen (mobile), a swipe should move items proportionately.
+    const screenW = Math.max(this.screen?.width || window.innerWidth, 1);
+    const worldPerPixel = (this.viewport?.width || 10) / screenW;
+
+    // On touch devices, increase gesture responsiveness so movements are swift, agile, and natural
+    const touchFactor = this.isTouch ? 2.5 : 1.2;
+    const distance = (this.start - clientX) * worldPerPixel * touchFactor * (this.scrollSpeed * 0.85);
     this.scroll.target = (this.scroll.position ?? 0) + distance;
     this.requestUpdate();
   }
 
   onTouchUp(e: MouseEvent | TouchEvent) {
-    const endX = 'changedTouches' in (e as any) ? (e as any).changedTouches[0].clientX : (e as MouseEvent).clientX;
-    const distanceMoved = Math.abs(this.start - (endX || this.start));
-    const duration = Date.now() - this.startTime;
+    if (!this.isDown) return;
 
-    if (this.isDown && distanceMoved < 5 && duration < 250 && this.onItemClick) {
+    const endX = 'changedTouches' in (e as any)
+      ? (e as any).changedTouches[0].clientX
+      : (e as MouseEvent).clientX;
+    const distanceMoved = Math.abs(this.start - (endX || this.start));
+    const duration = performance.now() - this.startTime;
+
+    // Click / tap detection
+    if (distanceMoved < 8 && duration < 300 && this.onItemClick) {
       this.handleClick(endX || this.start);
     }
 
     this.isDown = false;
+
+    // Apply fluid inertial flick momentum when swiping on touch
+    if (this.isTouch && Math.abs(this.velocity) > 0.06) {
+      const screenW = Math.max(this.screen?.width || window.innerWidth, 1);
+      const worldPerPixel = (this.viewport?.width || 10) / screenW;
+      const clampedVelocity = Math.max(Math.min(this.velocity, 3.5), -3.5);
+      const momentum = clampedVelocity * 220 * worldPerPixel * this.scrollSpeed;
+      this.scroll.target += momentum;
+    }
+
     this.onCheck();
     this.requestUpdate();
   }
@@ -702,7 +745,13 @@ class App {
   }
 
   update() {
-    this.scroll.current = lerp(this.scroll.current, this.scroll.target, this.scroll.ease);
+    // When dragging on touch, use immediate tracking ease so it tracks the finger directly
+    // When released, smoothly decelerate
+    const activeEase = this.isDown
+      ? (this.isTouch ? 0.35 : 0.18)
+      : Math.max(this.scroll.ease, 0.05);
+
+    this.scroll.current = lerp(this.scroll.current, this.scroll.target, activeEase);
     const direction = this.scroll.current > this.scroll.last ? 'right' : 'left';
     if (this.medias) {
       this.medias.forEach(media => media.update(this.scroll, direction));
@@ -727,15 +776,16 @@ class App {
 
     window.addEventListener('resize', this.boundOnResize);
 
-    this.container.addEventListener('mousewheel', this.boundOnWheel);
-    this.container.addEventListener('wheel', this.boundOnWheel);
+    this.container.addEventListener('mousewheel', this.boundOnWheel, { passive: true } as any);
+    this.container.addEventListener('wheel', this.boundOnWheel, { passive: true } as any);
     this.container.addEventListener('mousedown', this.boundOnTouchDown);
-    this.container.addEventListener('touchstart', this.boundOnTouchDown);
+    this.container.addEventListener('touchstart', this.boundOnTouchDown, { passive: true });
 
     window.addEventListener('mousemove', this.boundOnTouchMove);
     window.addEventListener('mouseup', this.boundOnTouchUp);
-    window.addEventListener('touchmove', this.boundOnTouchMove);
-    window.addEventListener('touchend', this.boundOnTouchUp);
+    window.addEventListener('touchmove', this.boundOnTouchMove, { passive: true });
+    window.addEventListener('touchend', this.boundOnTouchUp, { passive: true });
+    window.addEventListener('touchcancel', this.boundOnTouchUp, { passive: true });
   }
 
   destroy() {
@@ -746,8 +796,8 @@ class App {
     }
     window.removeEventListener('resize', this.boundOnResize);
 
-    this.container.removeEventListener('mousewheel', this.boundOnWheel);
-    this.container.removeEventListener('wheel', this.boundOnWheel);
+    this.container.removeEventListener('mousewheel', this.boundOnWheel as any);
+    this.container.removeEventListener('wheel', this.boundOnWheel as any);
     this.container.removeEventListener('mousedown', this.boundOnTouchDown);
     this.container.removeEventListener('touchstart', this.boundOnTouchDown);
 
@@ -755,6 +805,7 @@ class App {
     window.removeEventListener('mouseup', this.boundOnTouchUp);
     window.removeEventListener('touchmove', this.boundOnTouchMove);
     window.removeEventListener('touchend', this.boundOnTouchUp);
+    window.removeEventListener('touchcancel', this.boundOnTouchUp);
 
     if (this.renderer && this.renderer.gl && this.renderer.gl.canvas.parentNode) {
       this.renderer.gl.canvas.parentNode.removeChild(this.renderer.gl.canvas as HTMLCanvasElement);
